@@ -10,6 +10,7 @@ import { toCanonicalUrl } from '@/lib/public-url';
 import { calculatePriorityOneExpansion, priorityOneExpansionDefinitions, type PriorityOneExpansionSlug } from '@/lib/priority-one-expansion';
 import { useUnitsPreferences } from '@/lib/units-preferences';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
+import { CalculatorDecisionExpansion } from '@/components/calculators/CalculatorDecisionExpansion';
 
 export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansionSlug }) {
   const definition = priorityOneExpansionDefinitions[slug];
@@ -65,6 +66,7 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
             <div className="advanced-result-actions"><button type="button" className="copy-button" disabled={Boolean(result.error)} onClick={() => void copy()} data-testid={`button-copy-${slug}`}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? ' Copied' : ' Copy result'}</button><button type="button" className="copy-button" disabled={Boolean(result.error)} onClick={() => void share()} data-testid={`button-share-${slug}`}><Share2 size={15} /> Share</button></div>
           </div>
           <div className="advanced-breakdown">{result.details.map(detail => <div key={detail.label}><span>{detail.label}</span><strong>{detail.value}</strong></div>)}</div>
+          {slug === 'retirement' && <CalculatorDecisionExpansion slug="retirement" values={values} currency={currency} />}
           <button type="button" className="reset-button mt-6" onClick={() => { setValues(definition.fields.map(field => field.value)); setCopied(false); }} data-testid={`button-reset-${slug}`}>Reset values</button>
         </section>
       </div>
