@@ -13,7 +13,7 @@ import { CurrencySelector } from '@/components/UnitsPreferencesSelectors';
 import { currencyPrefix, localizeCurrencyText, useUnitsPreferences } from '@/lib/units-preferences';
 import { getCalculatorSeoCapability } from '@/lib/seo-capabilities';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
-import { CalculatorDecisionExpansion } from '@/components/calculators/CalculatorDecisionExpansion';
+import { CalculatorDecisionExpansion, CalculatorModeSwitch, useCalculatorMode } from '@/components/calculators/CalculatorDecisionExpansion';
 
 const financeArticleLinks: Partial<Record<FinanceCalculatorSlug, { href: string; label: string }[]>> = {
   loan: [{ href: '/articles/loan-payment-calculations', label: 'How fixed loan payments are calculated' }],
@@ -31,6 +31,8 @@ export function FinanceCalculatorPage({ slug }: { slug: FinanceCalculatorSlug })
   const fields = coreFields[slug];
   const [values, setValues] = useState(() => fields.map((field) => field.value));
   const [copied, setCopied] = useState(false);
+  const supportsAdvancedMode = slug === 'loan' || slug === 'mortgage';
+  const [advancedMode, setAdvancedMode] = useCalculatorMode(supportsAdvancedMode);
   const { forCalculator, setCalculatorOverride, setCurrency } = useUnitsPreferences();
   const currency = forCalculator(slug).currency;
   const result = calculateCore(slug, values, 'default', { currency });
@@ -116,6 +118,7 @@ export function FinanceCalculatorPage({ slug }: { slug: FinanceCalculatorSlug })
               <span id={a11y.regionLabelId} className="mono">{content.title.toUpperCase()} — CALCULATE</span>
               <div className="live-dot"><i /> LIVE RESULT</div>
             </div>
+            {supportsAdvancedMode && <CalculatorModeSwitch advanced={advancedMode} onChange={setAdvancedMode} />}
             <label className="advanced-field" htmlFor={`${slug}-currency`}>
               <span>Currency</span>
               <CurrencySelector value={currency} onChange={setSelectedCurrency} id={`${slug}-currency`} />
@@ -171,7 +174,7 @@ export function FinanceCalculatorPage({ slug }: { slug: FinanceCalculatorSlug })
               </div>
             ) : null}
 
-            {(slug === 'loan' || slug === 'mortgage') && <CalculatorDecisionExpansion slug={slug} values={values} currency={currency} />}
+            {supportsAdvancedMode && <CalculatorDecisionExpansion slug={slug} values={values} currency={currency} open={advancedMode} />}
             <button className="reset-button mt-6" onClick={resetValues} data-testid="button-reset-finance-calculator">Reset values</button>
           </section>
         </div>

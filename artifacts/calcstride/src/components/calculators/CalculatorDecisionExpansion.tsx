@@ -1,10 +1,9 @@
-import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { amortizationScenario, budgetDecision, creditCardDecision, mortgageDecision, retirementDecision } from '@/lib/decision-calculators';
 import { formatCurrency, type CurrencyCode } from '@/lib/units-preferences';
 
 type ExpansionSlug = 'loan' | 'mortgage' | 'retirement' | 'budget' | 'credit-card';
-type Props = { slug: ExpansionSlug; values: string[]; currency?: CurrencyCode };
+type Props = { slug: ExpansionSlug; values: string[]; currency?: CurrencyCode; open: boolean };
 type ExtraField = { key: string; label: string; value: string; suffix?: string };
 
 const fields: Record<ExpansionSlug, ExtraField[]> = {
@@ -17,8 +16,21 @@ const fields: Record<ExpansionSlug, ExtraField[]> = {
 const labels: Record<ExpansionSlug, string> = { loan: 'Add fees, extra payments and a balloon amount', mortgage: 'Add ownership costs and early-payoff planning', retirement: 'Add employer contributions, increases and inflation', budget: 'Build a category budget and emergency-fund target', 'credit-card': 'Compare extra payments and continued card spending' };
 const duration = (months: number) => `${Math.floor(months / 12)} yr ${months % 12} mo`;
 
-export function CalculatorDecisionExpansion({ slug, values, currency = 'USD' }: Props) {
-  const [open, setOpen] = useState(false);
+const modeStorageKey = 'figurenest-calculator-mode';
+
+export function useCalculatorMode(enabled: boolean) {
+  const [advanced, setAdvanced] = useState(() => enabled && typeof window !== 'undefined' && window.localStorage.getItem(modeStorageKey) === 'advanced');
+  useEffect(() => {
+    if (enabled) window.localStorage.setItem(modeStorageKey, advanced ? 'advanced' : 'basic');
+  }, [advanced, enabled]);
+  return [advanced, setAdvanced] as const;
+}
+
+export function CalculatorModeSwitch({ advanced, onChange }: { advanced: boolean; onChange: (advanced: boolean) => void }) {
+  return <div className="calculator-mode" aria-label="Calculator mode"><span>Calculator mode</span><div className="calculator-mode-options"><button type="button" className={!advanced ? 'is-active' : ''} aria-pressed={!advanced} onClick={() => onChange(false)}>Basic</button><button type="button" className={advanced ? 'is-active' : ''} aria-pressed={advanced} onClick={() => onChange(true)}>Advanced</button></div></div>;
+}
+
+export function CalculatorDecisionExpansion({ slug, values, currency = 'USD', open }: Props) {
   const [extras, setExtras] = useState(() => fields[slug].map((field) => field.value));
   const n = values.map(Number), x = extras.map(Number);
   const money = (value: number) => formatCurrency(value, currency);
@@ -40,5 +52,6 @@ export function CalculatorDecisionExpansion({ slug, values, currency = 'USD' }: 
     const s = creditCardDecision(n[0], n[1], n[2], x[0], x[1]);
     if (s) results = [{ label: 'Estimated payoff time', value: duration(s.months) }, { label: 'Estimated interest', value: money(s.interest) }, { label: 'Months saved by extra payment', value: String(s.monthsSaved) }, { label: 'Interest saved by extra payment', value: money(s.interestSaved) }]; else error = 'The payment must be greater than monthly interest plus new purchases.';
   }
-  return <div className="decision-expansion"><button type="button" className="decision-expansion-toggle" aria-expanded={open} onClick={() => setOpen((current) => !current)}><span><strong>{open ? 'Advanced options' : 'Expand this calculation'}</strong><small>{labels[slug]}</small></span><ChevronDown size={18} className={open ? 'is-open' : ''} aria-hidden="true" /></button>{open && <div className="decision-expansion-body"><div className="advanced-fields">{fields[slug].map((field, index) => <label className="advanced-field" key={field.key}><span>{field.label}</span><div><input type="number" min="0" step="any" value={extras[index]} onChange={(event) => setExtras((current) => current.map((value, itemIndex) => itemIndex === index ? event.target.value : value))} />{field.suffix && <small>{field.suffix}</small>}</div></label>)}</div>{error ? <p className="decision-expansion-error" role="alert">{error}</p> : <div className="advanced-breakdown decision-expansion-results">{results.map((item) => <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>)}</div>}<p className="decision-expansion-note">Advanced results are planning scenarios. Confirm lender, provider, tax, benefit and account rules before making a financial decision.</p></div>}</div>;
+  if (!open) return null;
+  return <div className="decision-expansion"><div className="decision-expansion-heading"><strong>Advanced calculation</strong><small>{labels[slug]}</small></div><div className="decision-expansion-body"><div className="advanced-fields">{fields[slug].map((field, index) => <label className="advanced-field" key={field.key}><span>{field.label}</span><div><input type="number" min="0" step="any" value={extras[index]} onChange={(event) => setExtras((current) => current.map((value, itemIndex) => itemIndex === index ? event.target.value : value))} />{field.suffix && <small>{field.suffix}</small>}</div></label>)}</div>{error ? <p className="decision-expansion-error" role="alert">{error}</p> : <div className="advanced-breakdown decision-expansion-results">{results.map((item) => <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>)}</div>}<p className="decision-expansion-note">Advanced results are planning scenarios. Confirm lender, provider, tax, benefit and account rules before making a financial decision.</p></div></div>;
 }

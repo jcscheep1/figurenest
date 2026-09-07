@@ -10,7 +10,7 @@ import { toCanonicalUrl } from '@/lib/public-url';
 import { calculatePriorityOneExpansion, priorityOneExpansionDefinitions, type PriorityOneExpansionSlug } from '@/lib/priority-one-expansion';
 import { useUnitsPreferences } from '@/lib/units-preferences';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
-import { CalculatorDecisionExpansion } from '@/components/calculators/CalculatorDecisionExpansion';
+import { CalculatorDecisionExpansion, CalculatorModeSwitch, useCalculatorMode } from '@/components/calculators/CalculatorDecisionExpansion';
 
 export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansionSlug }) {
   const definition = priorityOneExpansionDefinitions[slug];
@@ -20,6 +20,8 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
   });
   const [values, setValues] = useState(() => definition.fields.map(field => field.value));
   const [copied, setCopied] = useState(false);
+  const supportsAdvancedMode = slug === 'retirement';
+  const [advancedMode, setAdvancedMode] = useCalculatorMode(supportsAdvancedMode);
   const { forCalculator, setCurrency, setCalculatorOverride } = useUnitsPreferences();
   const currency = forCalculator(slug).currency;
   const result = calculatePriorityOneExpansion(slug, values, currency);
@@ -53,6 +55,7 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
         </header>
         <section className="advanced-calculator-card" aria-labelledby={a11y.regionLabelId}>
           <div className="advanced-calc-head"><span id={a11y.regionLabelId} className="mono">{definition.name.toUpperCase()} — CALCULATE</span><div className="live-dot"><i /> LIVE RESULT</div></div>
+          {supportsAdvancedMode && <CalculatorModeSwitch advanced={advancedMode} onChange={setAdvancedMode} />}
           <div className="date-method-notes" role="note" data-testid={`safety-notice-${slug}`}><p><strong>Important context:</strong> {definition.safetyNotice}</p></div>
           {slug === 'currency' && <label className="advanced-field" htmlFor={`${slug}-currency`}><span>Display currency</span><CurrencySelector id={`${slug}-currency`} value={currency} onChange={next => { setCurrency(next); setCalculatorOverride(slug, { ...forCalculator(slug).calculatorOverrides[slug], currency: next }); }} /></label>}
           <div className="advanced-fields">{definition.fields.map((field, index) => <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}><span>{field.label}</span><div>
@@ -66,7 +69,7 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
             <div className="advanced-result-actions"><button type="button" className="copy-button" disabled={Boolean(result.error)} onClick={() => void copy()} data-testid={`button-copy-${slug}`}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? ' Copied' : ' Copy result'}</button><button type="button" className="copy-button" disabled={Boolean(result.error)} onClick={() => void share()} data-testid={`button-share-${slug}`}><Share2 size={15} /> Share</button></div>
           </div>
           <div className="advanced-breakdown">{result.details.map(detail => <div key={detail.label}><span>{detail.label}</span><strong>{detail.value}</strong></div>)}</div>
-          {slug === 'retirement' && <CalculatorDecisionExpansion slug="retirement" values={values} currency={currency} />}
+          {slug === 'retirement' && <CalculatorDecisionExpansion slug="retirement" values={values} currency={currency} open={advancedMode} />}
           <button type="button" className="reset-button mt-6" onClick={() => { setValues(definition.fields.map(field => field.value)); setCopied(false); }} data-testid={`button-reset-${slug}`}>Reset values</button>
         </section>
       </div>
