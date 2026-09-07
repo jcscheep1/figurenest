@@ -2,5 +2,10 @@
   "buildCommand": "cd artifacts/calcstride && npm install && npm run build",
   "outputDirectory": "artifacts/calcstride/dist",
   "framework": "vite",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- artifacts/calcstride"
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
