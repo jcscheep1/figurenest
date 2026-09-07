@@ -1,5 +1,3 @@
 {
-  "buildCommand": "pnpm install && pnpm --filter=calcstride build",
-  "outputDirectory": "artifacts/calcstride/dist",
   "framework": "vite"
 }
