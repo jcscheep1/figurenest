@@ -18,14 +18,19 @@
 .advanced-field small { padding-left: 12px; color: #596579; font-family: var(--app-font-sans); font-size: 14px; }
 .select-wrapper { position: relative; width: 100%; }
 .advanced-field input:focus, .advanced-field select:focus { outline: 2px solid var(--brand-blue); outline-offset: 2px; }
-.advanced-result { padding: 24px; color: #f8fafc; background: var(--ink); border-radius: 8px; box-shadow: var(--shadow-sm); }
-.advanced-result.has-error { background: #b91c1c; }
+.advanced-result { padding: 24px; color: #f8fafc; background: var(--ink); border-radius: 8px 8px 0 0; box-shadow: var(--shadow-sm); }
+.advanced-result.has-error { background: #b91c1c; border-radius: 8px; }
 .advanced-result > span { color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 .advanced-result > strong { display: block; margin-top: 8px; font-family: var(--app-font-sans); font-weight: 600; font-size: 32px; letter-spacing: -0.02em; }
 .advanced-result > p { margin-top: 8px; color: #cbd5e1; font-size: 14px; line-height: 1.5; }
 .advanced-result-actions { display: flex; gap: 8px; margin-top: 18px; }
 .advanced-result-actions .copy-button { position: static; min-height: 44px; }
 .advanced-calculator-card .reset-button { min-height: 44px; padding: 10px 14px; }
+.advanced-result + .advanced-breakdown { margin-top: 0; padding: 4px 24px 16px; color: #f8fafc; background: var(--ink); border-top: 1px solid rgba(203,213,225,.22); border-radius: 0 0 8px 8px; box-shadow: var(--shadow-sm); }
+.advanced-result + .advanced-breakdown > div { padding: 14px 0; border-bottom: 1px solid rgba(203,213,225,.18); }
+.advanced-result + .advanced-breakdown > div:last-child { border-bottom: 0; }
+.advanced-result + .advanced-breakdown > div span { color: #cbd5e1; font-weight: 500; }
+.advanced-result + .advanced-breakdown > div strong { color: #f8fafc; font-size: 16px; }
 .advanced-breakdown { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
 .advanced-breakdown > span { display: block; margin-bottom: 12px; color: #596579; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 .advanced-breakdown > div { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding: 12px 0; border-bottom: 1px solid var(--border); }
