@@ -399,6 +399,9 @@ for (const { route, html } of indexablePages) {
   canonicals.set(canonical, route);
 
   if (calculatorRoutes.has(route)) {
+    const main = value(html, /<main\b[^>]*>([\s\S]*?)<\/main>/i);
+    const mainWords = wordCount(visibleText(main));
+    if (mainWords < 500) failures.push(`${route}: main content has ${mainWords} words; 500 required`);
     const proseBlocks = educationalProseBlocks(html);
     calculatorProseBlocks.push(...proseBlocks.map((text) => ({ route, text })));
     if (proseBlocks.length < 4) failures.push(`${route}: calculator guide has ${proseBlocks.length} substantive prose blocks; at least 4 required`);
