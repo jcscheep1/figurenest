@@ -27,6 +27,18 @@ const defaultFilters: DirectoryFilters = { q: '', category: '', letter: '', sort
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
+// Some directory categories are intentionally broader than the underlying SEO categories.
+// Electrical remains independently addressable, while Home & Construction acts as the
+// parent browsing view for both construction and electrical tools.
+const directoryCategoryMembers: Readonly<Record<string, readonly string[]>> = {
+  construction: ['construction', 'electrical'],
+};
+
+export function matchesDirectoryCategory(toolCategorySlug: string, selectedCategory: string): boolean {
+  if (!selectedCategory) return true;
+  return (directoryCategoryMembers[selectedCategory] ?? [selectedCategory]).includes(toolCategorySlug);
+}
+
 /** Returns only published tools matching all active directory filters. */
 export function filterDirectoryTools(
   tools: readonly DirectoryTool[],
@@ -37,7 +49,7 @@ export function filterDirectoryTools(
   return tools.filter((tool) => {
     const searchable = [tool.name, tool.description, tool.category, ...tool.tags].join(' ').toLocaleLowerCase();
     return (!query || searchable.includes(query))
-      && (!category || tool.categorySlug === category)
+      && matchesDirectoryCategory(tool.categorySlug, category)
       && (!normalizedLetter || tool.name.toLocaleUpperCase().startsWith(normalizedLetter));
   });
 }
