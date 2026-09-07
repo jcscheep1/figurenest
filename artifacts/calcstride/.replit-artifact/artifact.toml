@@ -1,0 +1,33 @@
+kind = "web"
+previewPath = "/"
+title = "FigureNest"
+description = "Calculate. Convert. Figure It Out. A global platform for free online calculators, converters, estimators, checkers, comparison tools, and practical utilities."
+version = "1.0.0"
+id = "artifacts/calcstride"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18840
+
+[services.development]
+run = "pnpm --filter @workspace/calcstride run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/calcstride", "run", "build:static" ]
+
+[services.production.run]
+args = [ "node", "artifacts/calcstride/dist/runtime/production-server.mjs" ]
+
+[services.production.run.env]
+NODE_ENV = "production"
+
+[services.production.health.startup]
+path = "/healthz"
+
+[services.env]
+PORT = "18840"
+BASE_PATH = "/"
+SITE_URL = "https://figurenest.com"
+VITE_SITE_URL = "https://figurenest.com"

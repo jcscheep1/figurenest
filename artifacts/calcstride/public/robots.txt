@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /account/
+Disallow: /auth/
+Disallow: /internal/
+Disallow: /private/
+Disallow: /control-center/
+Disallow: /sign-in/
+Disallow: /sign-up/
+
+Sitemap: https://figurenest.com/sitemap.xml

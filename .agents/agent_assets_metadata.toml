@@ -1,0 +1,58 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "krrsFbrWSIbczBXnB1Xpw"
+uri = "file://screenshots/percentage-change-desktop.jpg"
+type = "image"
+title = "Percentage Change Calculator — Desktop"
+description = "Final 1440 px desktop capture of the new FigureNest calculator page."
+logical_id = "1a7ea4eb-965f-45d3-bedc-f5e58b6db34a"
+content_hash = "sha256:9f9743fa931a88fa37d2591bb5ec03650585e8218463bc8f1605c047035dd070"
+size = 83221
+mtime_ms = 1788086690385
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:6cfb75a6-0972-4757-8099-75aa461bb1b6/1a7ea4eb-965f-45d3-bedc-f5e58b6db34a/c1b3ace3-da75-4e92-a023-c3376a647959"
+storage_version_token = "1788086704222477"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "0MWaWsIsBqVPt6uD6iBnz"
+uri = "file://screenshots/percentage-change-mobile.jpg"
+type = "image"
+title = "Percentage Change Calculator — Mobile"
+description = "Final 390 px mobile capture confirming the responsive layout."
+logical_id = "b2f08682-3537-4509-a001-9017661a38c1"
+content_hash = "sha256:064f7a2be6f75069472e70dcb9ccd5e70b91bd36cb16912ccdf6c1f073db667d"
+size = 43007
+mtime_ms = 1788086692055
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:6cfb75a6-0972-4757-8099-75aa461bb1b6/b2f08682-3537-4509-a001-9017661a38c1/c8ff5e2f-9f3b-43e0-bec9-3880f006d986"
+storage_version_token = "1788086704929317"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "Jgs30wTpgLl67Sh0kyD4t"
+uri = "file://screenshots/date-duration-desktop.jpg"
+type = "image"
+title = "Date Duration Calculator — Desktop"
+description = "Final desktop capture of the production-ready FigureNest Date Duration Calculator."
+logical_id = "e1a3bf2d-a77c-4cbc-b0e2-cdd1809540c8"
+content_hash = "sha256:6168e738c7ac6906efbc0bce59e4ba458dcd8e3f5b88322c22aee8f7a4aca471"
+size = 84223
+mtime_ms = 1788087873609
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:6cfb75a6-0972-4757-8099-75aa461bb1b6/e1a3bf2d-a77c-4cbc-b0e2-cdd1809540c8/4bb02434-5067-437f-9b4b-073f6087c3be"
+storage_version_token = "1788087883667721"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "aeas7FoZcIQoyFxNqzscO"
+uri = "file://screenshots/date-duration-mobile.jpg"
+type = "image"
+title = "Date Duration Calculator — Mobile"
+description = "Final 390 px mobile capture confirming the responsive calculator layout."
+logical_id = "ac7f63af-48c4-4d67-88e4-e9d845862d8a"
+content_hash = "sha256:880b6cc0184fee1b7e048394c17aff33450fd8aa034953d1e5841fbe36de5de2"
+size = 41194
+mtime_ms = 1788087875303
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:6cfb75a6-0972-4757-8099-75aa461bb1b6/ac7f63af-48c4-4d67-88e4-e9d845862d8a/cf9a361b-77e5-47f1-a8b2-20d1994ef694"
+storage_version_token = "1788087884400537"
+content_type = "image/jpeg"

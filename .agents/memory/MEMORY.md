@@ -1,0 +1,18 @@
+- [Static deployment canonical routes](static-deployment-canonical-routes.md) — directory routes gain trailing slashes; static rewrites cannot emit HTTP redirects.
+- [Artifact static response headers](artifact-static-response-headers.md) — static-handler limits do not apply after switching the web service to a runnable Autoscale server.
+- [Analytics release gates](analytics-release-gates.md) — keep Replit Analytics off and disable GA4 history-based page views before every republish.
+- [Consolidated release validation](consolidated-release-validation.md) — assemble related page upgrades before one full release-level validation pass.
+- [PWA cache boundary](pwa-cache-boundary.md) — service workers may cache known public routes/assets only; auth, private, and API traffic must bypass them.
+- [AdSense consent boundary](adsense-consent-boundary.md) — one exact-host publisher loader; the certified CMP owns ad signals while FigureNest controls analytics separately.
+- [FigureNest Autoscale latency](figurenest-autoscale-latency.md) — keep usage-based Autoscale; distinguish fast warm responses from unavoidable idle cold starts.
+- [Multi-artifact static publishing](multi-artifact-static-publishing.md) — a runnable sibling artifact prevents the combined project from becoming a true Static deployment.
+- [Advertising CSP rollout](advertising-csp-rollout.md) — keep CSP in Report-Only until live Google advertising and consent resource origins are observed after publish.
+- [FigureNest HSTS scope](figurenest-hsts-scope.md) — protect the apex and www hosts with two-year HSTS including subdomains, but do not request browser preload.
+- [Horsepower intent consolidation](horsepower-intent-consolidation.md) — engine horsepower and generic horsepower share one torque/RPM canonical; the Power converter stays separate.
+- [Integer-factor intent consolidation](integer-factor-intent-consolidation.md) — common-factor synonyms share one GCF route; factor listing and prime factorization share one route.
+- [Health intent boundaries](health-intent-boundaries.md) — consolidate overlapping health searches only when one validated method and safety context can serve them.
+- [Finance payoff intent consolidation](finance-payoff-intent-consolidation.md) — annuity payout, card payoff, and debt payoff remain modes of three canonical finance tools.
+- [Bundle chunk attribution](bundle-chunk-attribution.md) — chunk filenames can misidentify shared payloads; verify the manifest graph before optimizing.
+- [Homepage catalogue boundary](homepage-catalogue-boundary.md) — public discovery uses lightweight metadata; full calculator definitions stay in deferred page-family chunks.
+- [FigureNest tool counting](figurenest-tool-counting.md) — count 162 directory tools; keep the broad Unit Converter as a separate indexable hub, not a ninth focused converter.
+- [Mobile homepage flow](mobile-homepage-flow.md) — keep visible homepage sections and search suggestions in normal flow; do not use content-visibility containment on the long mobile page.

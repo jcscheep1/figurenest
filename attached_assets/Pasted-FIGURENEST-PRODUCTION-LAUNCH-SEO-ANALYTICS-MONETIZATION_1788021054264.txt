@@ -1,0 +1,800 @@
+FIGURENEST — PRODUCTION LAUNCH, SEO, ANALYTICS & MONETIZATION READINESS
+
+FigureNest is now live at:
+
+https://figurenest.com
+
+The website is working and currently contains approximately 51 published tools across 9 active categories.
+
+Do NOT rebuild the website.
+Do NOT change the FigureNest branding.
+Do NOT redesign the website.
+Do NOT add more calculators during this task.
+
+The objective is to make the existing FigureNest production site technically ready for:
+
+- Google indexing
+- Bing indexing
+- organic SEO growth
+- Google Search Console
+- Google Analytics 4
+- Microsoft Clarity
+- Google AdSense
+- future affiliate monetization
+- future FigureNest Control Center integrations
+
+Production domain:
+
+https://figurenest.com
+
+Preferred canonical host:
+
+https://figurenest.com
+
+---
+
+1. WWW DOMAIN / REDIRECT
+
+---
+
+The current production domain works:
+
+https://figurenest.com
+
+However:
+
+https://www.figurenest.com
+
+is not currently configured.
+
+Prepare the application for www.figurenest.com.
+
+If Replit requires manual domain/DNS configuration, clearly tell me exactly what needs to be added.
+
+Once www works, permanently redirect:
+
+https://www.figurenest.com/*
+
+to:
+
+https://figurenest.com/*
+
+using HTTP 301/308 permanent redirects.
+
+Preserve the complete URL path and query string.
+
+Example:
+
+https://www.figurenest.com/home-construction/concrete-calculator
+
+must redirect to:
+
+https://figurenest.com/home-construction/concrete-calculator
+
+Do NOT redirect everything to the homepage.
+
+There must be only one canonical production hostname:
+
+https://figurenest.com
+
+---
+
+2. HTTPS
+
+---
+
+Verify HTTPS works correctly throughout production.
+
+Ensure:
+
+- no mixed-content warnings
+- no HTTP resources loaded unnecessarily
+- HTTP requests redirect permanently to HTTPS
+- secure cookies where applicable
+
+Preferred final URL format:
+
+https://figurenest.com/...
+
+---
+
+3. CANONICAL URL AUDIT
+
+---
+
+Audit every public page.
+
+Every indexable page must contain exactly one correct canonical URL.
+
+Production canonical URLs must use:
+
+https://figurenest.com
+
+Never use:
+
+- kira.replit.dev
+- replit.app
+- localhost
+- www.figurenest.com
+- old SolveOra domains
+
+in production canonical tags.
+
+Examples:
+
+https://figurenest.com/
+
+https://figurenest.com/home-construction
+
+https://figurenest.com/home-construction/concrete-calculator
+
+https://figurenest.com/calculators/finance/percentage
+
+Canonical generation should use centralized production configuration rather than scattered hard-coded values.
+
+---
+
+4. XML SITEMAP
+
+---
+
+Create or thoroughly audit:
+
+https://figurenest.com/sitemap.xml
+
+It must automatically include every INDEXABLE public page:
+
+- homepage
+- category hubs
+- calculator pages
+- converter pages
+- About
+- other useful public informational pages where appropriate
+
+Exclude:
+
+- admin routes
+- authentication routes
+- internal APIs
+- test routes
+- development routes
+- duplicate URLs
+- search result pages
+- private dashboard pages
+- parameter-generated duplicate pages
+- error pages
+
+All sitemap URLs must use:
+
+https://figurenest.com
+
+Never use Replit preview URLs.
+
+Where meaningful, include accurate lastmod values.
+
+The sitemap should update automatically whenever a calculator or public page is published/unpublished.
+
+Do not require manually editing sitemap.xml every time a tool is added.
+
+---
+
+5. ROBOTS.TXT
+
+---
+
+Create or verify:
+
+https://figurenest.com/robots.txt
+
+Allow legitimate search engines to crawl all public FigureNest content.
+
+Block private/admin/internal areas where appropriate.
+
+Include:
+
+Sitemap: https://figurenest.com/sitemap.xml
+
+Do NOT accidentally block:
+
+- homepage
+- categories
+- calculators
+- converters
+- CSS/JS needed for rendering
+
+---
+
+6. HTTP STATUS CODES
+
+---
+
+Audit HTTP behaviour.
+
+Valid pages:
+200
+
+Permanent redirects:
+301 or 308
+
+Missing pages:
+404
+
+Server errors:
+5xx
+
+Do NOT return HTTP 200 for nonexistent URLs.
+
+Create a useful custom 404 page.
+
+The 404 page should include:
+
+- FigureNest branding
+- search
+- popular calculators
+- major categories
+- link back to homepage
+
+The 404 page itself must NOT be indexed.
+
+---
+
+7. INDEXABILITY AUDIT
+
+---
+
+Audit all public pages for accidental:
+
+noindex
+nofollow
+robots blocking
+canonical mistakes
+redirect loops
+
+Every intended calculator/category page should be indexable.
+
+Private/admin pages should not be indexable.
+
+---
+
+8. SERVER RENDERING / CRAWLABILITY
+
+---
+
+FigureNest has already been improved so important content is crawlable.
+
+Do NOT regress this.
+
+Verify using raw HTML without JavaScript that search engines can see:
+
+- FigureNest branding
+- H1
+- page description
+- calculator name
+- category names
+- supporting text
+- normal HTML internal links
+- breadcrumbs
+- related calculators
+
+Primary SEO content must not rely entirely on client-side JavaScript.
+
+---
+
+9. SEO METADATA
+
+---
+
+Audit all indexable pages for unique:
+
+- HTML title
+- meta description
+- H1
+- canonical
+- Open Graph title
+- Open Graph description
+- Open Graph URL
+
+Avoid duplicated metadata.
+
+Use sensible title formats such as:
+
+Concrete Calculator | FigureNest
+
+Percentage Calculator | FigureNest
+
+Home & Construction Calculators | FigureNest
+
+Do not keyword stuff.
+
+---
+
+10. STRUCTURED DATA
+
+---
+
+Audit existing JSON-LD.
+
+Implement only valid structured data appropriate to each page.
+
+Use where appropriate:
+
+- WebSite
+- Organization
+- BreadcrumbList
+
+Ensure all URLs use:
+
+https://figurenest.com
+
+Do not create fake ratings, reviews or other misleading structured data.
+
+Use FAQ structured data only where it is valid under current search-engine guidelines and where the FAQ content is visibly present.
+
+Validate JSON-LD output.
+
+---
+
+11. INTERNAL LINKING
+
+---
+
+Audit internal linking.
+
+Important calculators should be reachable through crawlable HTML links from:
+
+Homepage
+→ Category
+→ Calculator
+
+Each calculator should link to genuinely related calculators.
+
+Examples:
+
+Concrete Calculator
+→ Concrete Slab
+→ Concrete Bags
+→ Concrete Cost
+
+Tile
+→ Flooring
+→ Square Footage
+
+Roof Pitch
+→ Roofing Material
+
+EV Charging Cost
+→ EV Charging Time
+→ Fuel Cost
+
+Profit Margin
+→ Markup
+→ Break-Even
+→ ROI
+
+Avoid excessive sitewide linking to every tool.
+
+Use contextual relevance.
+
+---
+
+12. BREADCRUMBS
+
+---
+
+Ensure calculator pages have crawlable breadcrumbs.
+
+Example:
+
+Home
+
+«Home & Construction
+Concrete Calculator»
+
+Breadcrumb links should use normal HTML anchors.
+
+Add valid BreadcrumbList structured data where appropriate.
+
+---
+
+13. GOOGLE SEARCH CONSOLE READINESS
+
+---
+
+Prepare FigureNest for Google Search Console.
+
+Do NOT invent verification codes.
+
+Create a configuration/environment variable for Google verification if needed.
+
+Tell me exactly what manual action is required to verify:
+
+figurenest.com
+
+Prefer Domain Property verification via DNS when practical.
+
+Once configured, sitemap submission should use:
+
+https://figurenest.com/sitemap.xml
+
+---
+
+14. GOOGLE ANALYTICS 4
+
+---
+
+Prepare GA4 integration.
+
+Do NOT invent a Measurement ID.
+
+Use an environment variable such as:
+
+GA_MEASUREMENT_ID
+
+or the appropriate secure configuration mechanism.
+
+Load analytics only in production when a valid ID exists.
+
+Avoid duplicate page-view tracking.
+
+Track useful events such as:
+
+calculator_used
+calculation_completed
+tool_search
+related_tool_clicked
+share_result
+copy_result
+affiliate_click
+
+Do not send sensitive calculator input values to analytics.
+
+---
+
+15. MICROSOFT CLARITY
+
+---
+
+Prepare Microsoft Clarity integration.
+
+Do NOT invent a project ID.
+
+Use an environment variable/configuration value.
+
+Load Clarity only in production when configured.
+
+Ensure it does not materially degrade performance.
+
+Respect consent requirements where applicable.
+
+---
+
+16. GOOGLE ADSENSE READINESS
+
+---
+
+Prepare FigureNest for Google AdSense.
+
+Do NOT invent:
+
+- publisher IDs
+- ad unit IDs
+- AdSense account information
+
+Create configurable responsive ad components.
+
+Potential locations:
+
+- after calculator result
+- between useful content sections
+- desktop sidebar where appropriate
+- lower page content
+
+IMPORTANT:
+
+Do not place ads where they could be mistaken for:
+
+- calculator inputs
+- calculate buttons
+- results
+- navigation controls
+
+Do not create excessive ad density.
+
+User experience and SEO come first.
+
+The website must work normally when no AdSense account is configured.
+
+Prepare configuration such as:
+
+ADSENSE_CLIENT_ID
+
+and configurable ad-unit IDs.
+
+---
+
+17. ADS.TXT
+
+---
+
+Prepare support for:
+
+https://figurenest.com/ads.txt
+
+Do NOT invent an AdSense publisher ID.
+
+When an actual publisher ID is supplied later, make it easy to configure the correct ads.txt entry.
+
+Until then, do not publish fake AdSense credentials.
+
+---
+
+18. COOKIE CONSENT / GDPR
+
+---
+
+FigureNest will serve users internationally, including EU users.
+
+Audit cookie/privacy handling.
+
+Create or improve consent management where required.
+
+Separate:
+
+Essential
+Analytics
+Advertising
+
+Analytics/advertising scripts should respect applicable consent requirements.
+
+Do not block essential calculator functionality when optional cookies are rejected.
+
+Make it possible for users to change their consent preferences later.
+
+Ensure:
+
+Privacy Policy
+Cookie Policy
+Terms
+Disclaimer
+
+are easily accessible.
+
+---
+
+19. PERFORMANCE
+
+---
+
+Run a production performance audit.
+
+Target:
+
+Performance: 90+
+Accessibility: 95+
+Best Practices: 95+
+SEO: 95+
+
+Pay special attention to mobile.
+
+Optimize:
+
+- JavaScript bundles
+- unused code
+- fonts
+- images
+- caching
+- lazy loading
+- render-blocking resources
+- layout shifts
+- unnecessary third-party scripts
+
+Do NOT sacrifice calculator functionality for a Lighthouse score.
+
+---
+
+20. CORE WEB VITALS
+
+---
+
+Optimize for:
+
+LCP
+INP
+CLS
+
+Ensure ad placeholders reserve appropriate space to reduce layout shift once advertising is enabled.
+
+---
+
+21. ACCESSIBILITY
+
+---
+
+Audit:
+
+- form labels
+- keyboard navigation
+- focus states
+- contrast
+- semantic HTML
+- ARIA only where necessary
+- error messages
+- calculator result announcements
+
+Calculator tools should be usable with keyboard and screen readers.
+
+---
+
+22. MOBILE AUDIT
+
+---
+
+Test common mobile widths.
+
+Verify:
+
+- no horizontal overflow
+- calculator fields fit correctly
+- result boxes fit
+- navigation works
+- search works
+- buttons are touch friendly
+- ads cannot cover controls
+- tables are responsive
+
+---
+
+23. SECURITY
+
+---
+
+Run a basic production security audit.
+
+Check:
+
+- secrets not exposed client-side
+- admin routes protected
+- input validation
+- rate limiting where appropriate
+- secure headers
+- dependency vulnerabilities
+- API abuse protection
+- safe external links
+
+Never expose API keys in frontend code.
+
+---
+
+24. FALLBACK REPLIT DOMAIN
+
+---
+
+The fallback deployment currently exists at:
+
+https://calc-stride-calculator-platform.replit.app
+
+FigureNest.com must be the primary public/indexable domain.
+
+Prevent duplicate-content problems between the Replit fallback domain and FigureNest.
+
+Where technically possible:
+
+- redirect public fallback traffic to equivalent figurenest.com URLs
+
+OR
+
+- ensure the fallback deployment is not independently indexed and all canonicals point to figurenest.com.
+
+Do not create two indexable copies of FigureNest.
+
+---
+
+25. FIGURENEST CONTROL CENTER PREPARATION
+
+---
+
+Do NOT build the full Control Center yet.
+
+Prepare clean integration architecture for a future private dashboard that will combine:
+
+- GA4
+- Google Search Console
+- AdSense
+- Microsoft Clarity
+- affiliate tracking
+- internal calculator usage
+- SEO health
+- indexing status
+- revenue
+- AI recommendations
+- voice assistant
+
+Do not make external API calls until credentials are provided.
+
+---
+
+26. FINAL PRODUCTION AUDIT
+
+---
+
+After implementing everything above, run a full audit of the production configuration.
+
+Verify:
+
+Homepage
+Category pages
+Calculator pages
+Legal pages
+404
+sitemap.xml
+robots.txt
+canonical tags
+structured data
+metadata
+internal links
+breadcrumbs
+mobile
+performance
+analytics integration readiness
+AdSense readiness
+consent management
+
+Also scan for old brand/domain references:
+
+SolveOra
+solveora
+CalcStride
+calcstride
+kira.replit.dev
+
+Remove inappropriate production references.
+
+Do NOT remove technically necessary development configuration if required for Replit.
+
+---
+
+FINAL REPORT
+
+When finished, provide a concise production launch report.
+
+Report:
+
+1. Production domain status
+2. WWW status
+3. HTTPS status
+4. Sitemap URL and number of URLs
+5. Robots.txt status
+6. Canonical audit status
+7. Number of indexable calculator pages
+8. Number of category pages
+9. Structured data status
+10. 404 status
+11. Internal-link audit
+12. Mobile audit
+13. Performance scores
+14. Accessibility score
+15. GA4 readiness
+16. Search Console readiness
+17. Clarity readiness
+18. AdSense readiness
+19. GDPR/consent status
+20. Security findings
+21. Any remaining manual actions I must perform
+
+IMPORTANT:
+
+Do not claim an external integration is active unless it has actually been authenticated/configured.
+
+Clearly distinguish:
+
+DONE AUTOMATICALLY
+
+from
+
+MANUAL ACTION REQUIRED
+
+Do not add new calculators during this task.
+
+Do not redesign FigureNest.
+
+Focus entirely on making the existing FigureNest production website technically excellent and ready for indexing, analytics, growth and monetization.

@@ -1,0 +1,330 @@
+Perform one complete repair and optimization batch on the FigureNest project based on the independent live audit below.
+
+PRIMARY PRODUCTION DOMAIN
+https://figurenest.com
+
+IMPORTANT: Work on the project code only. Do not publish or deploy. Stop after completing all changes and tests, then provide a detailed completion report for manual review.
+
+NON-NEGOTIABLE SAFETY RULES
+
+- Create a checkpoint before changing anything.
+- Do not delete existing calculators, guides, categories or policy pages.
+- Preserve all existing public URLs.
+- Do not change URL slugs unless absolutely required.
+- Preserve the existing 78-page sitemap coverage.
+- Preserve GA4, Google Consent Mode, the cookie-preference system and all consent-controlled analytics behaviour.
+- Preserve AdSense publisher ID: ca-pub-8048023190382309.
+- Preserve the valid ads.txt entry:
+  google.com, pub-8048023190382309, DIRECT, f08c47fec0942fa0
+- Do not send calculator inputs or results to analytics.
+- Preserve all existing calculator formulas, unit systems, currency display options, schema, metadata, canonicals and content unless explicitly improving them.
+- Currency changes must remain display-format changes only, not live foreign-exchange conversions.
+- Do not introduce new dependencies unless genuinely necessary.
+- Do not deploy or publish.
+
+AUDIT FINDINGS
+
+The independent production audit tested all 78 sitemap URLs.
+
+Passed:
+
+- All 78 sitemap URLs returned HTTP 200.
+- No broken sitemap pages were found.
+- robots.txt is valid.
+- sitemap.xml is valid.
+- ads.txt is valid.
+- HTTP redirects to HTTPS.
+- www redirects to the canonical non-www domain.
+- Every audited page has a title, meta description, canonical, one H1, Open Graph metadata and structured data.
+- No duplicate titles or meta descriptions were found.
+- The calculator calculations tested correctly.
+- Calculator inputs have associated labels.
+- No genuine site-side JavaScript errors were found.
+
+Problems requiring repair:
+
+1. CRITICAL PERFORMANCE PROBLEM
+
+Independent uncached live requests showed:
+
+- Homepage response times of approximately 5–11.3 seconds.
+- Average response time across 78 sitemap URLs: approximately 11.52 seconds.
+- Slowest response: approximately 15.45 seconds.
+
+Investigate and fix the actual server-side cause. Do not hide the issue with a loading animation.
+
+Check for:
+
+- Database or storage calls occurring on every public request.
+- Authentication/session initialization on public pages.
+- Dashboard, admin or private-service initialization leaking into public routes.
+- Dynamic sitemap or content generation on every request.
+- Blocking external API calls.
+- Server-side analytics or consent initialization.
+- Repeated content transformations.
+- Unnecessary middleware.
+- Poor route caching.
+- Cold-start-heavy application architecture.
+- Oversized server bundles.
+- Duplicate requests or initialization.
+- Pages being rendered dynamically when they can be statically generated.
+
+Required performance changes:
+
+- Public calculator, category, guide and policy pages should not require database access to render.
+- Pre-render or statically generate public content wherever safe.
+- Cache stable public HTML appropriately.
+- Cache static images, fonts, CSS and JavaScript using long-lived immutable caching where filenames are fingerprinted.
+- Keep sitemap.xml and robots.txt lightweight.
+- Do not apply private/no-cache settings to stable public pages without a real reason.
+- Preserve correct consent and calculator behaviour.
+- Do not cache personalized or private routes publicly.
+- Add safe performance instrumentation or timing logs in development if needed, but remove noisy debugging before completion.
+
+After fixing, run repeated production-equivalent tests, including a cold request and multiple warm requests. Report TTFB and total response time separately.
+
+Target:
+
+- Warm server response/TTFB preferably under 500 ms.
+- Normal total HTML response preferably under 1 second.
+- Cold requests should be materially faster than the current 5–15 seconds.
+
+If hosting infrastructure prevents achieving this, identify the exact remaining bottleneck with evidence. Do not claim it is fixed without measured results.
+
+2. IMPLEMENT THE APPROVED BRAND IDENTITY
+
+Use the attached “FigureNest Brand Identity Board.png” as the authoritative visual reference.
+
+The approved identity includes:
+
+- Calculator icon held inside a proper layered nest.
+- Green leaves on both sides.
+- Navy, bright blue, green and orange accents.
+- FigureNest wordmark with “Figure” in navy and “Nest” in blue.
+- “CALCULATE • PLAN • DECIDE” secondary tagline where appropriate.
+- Full-colour favicon and icon versions shown on the board.
+
+The production site currently uses an older simplified calculator-and-blue-arcs icon. Replace the old identity consistently.
+
+Required assets:
+
+- Full horizontal logo for light backgrounds.
+- Compact icon-and-text logo for the responsive header.
+- Dark-background version if used.
+- Transparent full-colour icon.
+- Monochrome version where required.
+- favicon.svg.
+- favicon.ico if supported by the project.
+- 16×16 favicon.
+- 32×32 favicon.
+- 64×64 favicon.
+- 96×96 icon.
+- 192×192 PWA icon.
+- 512×512 PWA icon.
+- Apple touch icon.
+- Social/Open Graph image at 1200×630.
+- Any maskable PWA icon required by the manifest.
+
+Do not stretch, distort or casually redraw the supplied identity. Preserve its proportions, colours and clarity. Small favicons must remain recognizable and should use the simplified icon treatment from the board where necessary.
+
+Update all relevant references:
+
+- Header.
+- Footer.
+- favicon links.
+- Apple touch icon.
+- PWA icons.
+- structured-data Organization logo.
+- Open Graph image.
+- Twitter/social metadata.
+- browser theme colours.
+- any reusable logo components.
+
+Remove references to obsolete logo files only when it is safe and confirmed that nothing still uses them.
+
+3. CREATE A VALID WEB APP MANIFEST
+
+The audited URL "/site.webmanifest" currently returns 404.
+
+Create a valid public manifest and reference it in the HTML "<head>".
+
+Include:
+
+- name: FigureNest
+- short_name: FigureNest
+- description matching the current site purpose.
+- start_url: /
+- scope: /
+- display: standalone
+- correct theme colour.
+- correct background colour.
+- 192×192 icon.
+- 512×512 icon.
+- maskable icon if available.
+
+Confirm:
+
+- "/site.webmanifest" returns HTTP 200.
+- It has the correct manifest MIME type.
+- Every icon referenced by it returns HTTP 200.
+- It contains no development or Replit URLs.
+
+4. CLEAN UP SECURITY HEADERS
+
+The live server currently returns two different Strict-Transport-Security headers.
+
+Consolidate this into one correct HSTS header:
+
+Strict-Transport-Security: max-age=63072000; includeSubDomains
+
+Only include "preload" if the whole domain configuration is genuinely ready for HSTS preload.
+
+The Content Security Policy is currently report-only.
+
+Review all required sources for:
+
+- FigureNest scripts and assets.
+- Google Analytics.
+- Google Tag Manager if used.
+- AdSense.
+- Google-certified consent/CMP services.
+- Google fonts if still used.
+- required frames, workers and connections.
+
+Test the policy first. If all required functions work without violations, move from "Content-Security-Policy-Report-Only" to an enforced "Content-Security-Policy".
+
+Do not enforce a policy that breaks:
+
+- Analytics after consent.
+- AdSense.
+- Cookie or consent controls.
+- calculator functionality.
+- sharing/copy controls.
+- fonts or images.
+
+If it cannot safely be enforced in this batch, keep report-only and explain the exact remaining violations in the completion report.
+
+Preserve:
+
+- X-Content-Type-Options.
+- Referrer-Policy.
+- Permissions-Policy.
+- frame protection.
+- HTTPS redirects.
+
+5. EXPAND THE WEAKEST CONSTRUCTION CALCULATORS
+
+Improve these pages first:
+
+- Fence material calculator.
+- Deck material calculator.
+- Brick calculator.
+- Drywall calculator.
+- Gravel calculator.
+
+Do not change their URLs or calculation behaviour unless correcting a confirmed bug.
+
+Each page should have useful, readable and genuinely page-specific content, preferably at least 700–1,000 meaningful main-content words where the topic supports it.
+
+Add or strengthen:
+
+- Clear explanation of what the calculator calculates.
+- Inputs and measurement units.
+- Formula or calculation method.
+- At least two worked examples.
+- Waste-factor guidance.
+- Assumptions.
+- Common mistakes.
+- Edge cases.
+- Step-by-step instructions.
+- Practical limitations.
+- Relevant FAQs.
+- Related calculator links.
+- Link to an appropriate guide or methodology page.
+
+Requirements:
+
+- Avoid keyword stuffing.
+- Do not duplicate paragraphs between calculators.
+- Do not fabricate engineering or building-code requirements.
+- Explain that users must verify local regulations and supplier specifications.
+- Unit-sensitive text must remain correct when metric or imperial settings change.
+- Add accurate visible FAQs and matching FAQ schema.
+- Preserve the existing page design and writing tone.
+
+6. COMPLETE TECHNICAL VALIDATION
+
+After all changes, test the complete project as one batch.
+
+Required checks:
+
+- Production build succeeds.
+- No TypeScript, lint or compilation errors.
+- No new browser-console errors.
+- All 78 existing sitemap URLs still return HTTP 200 in the test environment.
+- Sitemap contains only canonical, indexable pages.
+- robots.txt still references the correct production sitemap.
+- ads.txt still returns the exact valid publisher entry.
+- No Replit development URLs appear in canonical, schema, sitemap, manifest or social metadata.
+- HTTP and www redirect to "https://figurenest.com/".
+- Every indexable page has one H1.
+- Titles and meta descriptions remain unique.
+- Canonicals are self-referencing and correct.
+- Structured data parses as valid JSON.
+- Visible FAQs match FAQ schema.
+- Organization schema uses the new logo asset.
+- Open Graph image loads correctly.
+- All new logo, favicon and PWA files return HTTP 200.
+- Manifest returns HTTP 200 and validates.
+- Mobile header and navigation work at 320, 375 and 430-pixel viewport widths.
+- No horizontal overflow.
+- Keyboard navigation works.
+- Visible labels remain connected to calculator inputs.
+- Calculator result regions remain accessible.
+- Cookie preferences work.
+- Rejecting analytics prevents analytics activation.
+- Accepting analytics enables the expected consent-controlled behaviour.
+- Calculator values are never sent to analytics.
+- AdSense and consent configuration remain intact.
+
+CALCULATOR REGRESSION TESTS
+
+At minimum, test:
+
+- Loan calculator:
+  10,000 at 5% for 2 years = approximately 438.71 per month.
+- Loan calculator at 0% interest.
+- Currency display switching between USD, EUR, GBP and ZAR.
+- Mortgage calculator.
+- Compound-interest calculator.
+- Percentage calculator.
+- One metric/imperial construction calculator.
+- Temperature converter.
+- Length converter.
+- Date calculator.
+- Reset, copy and share controls.
+
+COMPLETION REPORT
+
+Do not publish or deploy.
+
+When finished, provide:
+
+1. Checkpoint or backup created.
+2. Root cause of the performance problem.
+3. Files changed.
+4. Performance changes made.
+5. Before-and-after timing results.
+6. Brand assets created or replaced.
+7. Confirmation that the supplied identity board was followed.
+8. Manifest validation result.
+9. Security-header changes.
+10. Construction pages expanded.
+11. Build, lint and test results.
+12. Sitemap and broken-link results.
+13. Calculator regression-test results.
+14. Consent, GA4 and AdSense preservation results.
+15. Any remaining warnings or limitations.
+16. Clear statement: “Not published or deployed.”
+
+Do not mark a task complete merely because code was added. Verify the resulting behaviour.

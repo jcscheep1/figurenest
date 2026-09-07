@@ -1,0 +1,18 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F6F8FB"/>
+  <circle cx="1050" cy="90" r="210" fill="#E9F1FF"/>
+  <circle cx="1120" cy="560" r="250" fill="#E8F7F1"/>
+  <g transform="translate(110 145) scale(4.5)">
+    <rect x="7" y="6" width="50" height="52" rx="14" fill="#122B46"/>
+    <path d="M13 29c-6-1-9-5-9-10 6 0 11 3 13 8M51 29c6-1 9-5 9-10-6 0-11 3-13 8" fill="#62C7A9"/>
+    <path d="M4 37C8 24 19 15 32 15s24 9 28 22M8 48c6-8 14-12 24-12s18 4 24 12" stroke="#6AA5FF" stroke-width="3.5" stroke-linecap="round"/>
+    <rect x="20" y="17" width="24" height="32" rx="5" fill="#F8FAFC"/>
+    <rect x="25" y="22" width="14" height="6" rx="2" fill="#2D7BEA"/>
+    <g fill="#122B46"><circle cx="26" cy="35" r="2"/><circle cx="32" cy="35" r="2"/><circle cx="38" cy="35" r="2"/><circle cx="26" cy="42" r="2"/><circle cx="32" cy="42" r="2"/></g>
+    <path d="M36 40h4v4h-4z" fill="#F28C5B"/>
+  </g>
+  <text x="440" y="280" fill="#122B46" font-family="Arial, sans-serif" font-size="92" font-weight="700">Figure</text>
+  <text x="700" y="280" fill="#2D7BEA" font-family="Arial, sans-serif" font-size="92" font-weight="700">Nest</text>
+  <text x="445" y="345" fill="#526779" font-family="Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="6">CALCULATE • PLAN • DECIDE</text>
+  <text x="445" y="420" fill="#526779" font-family="Arial, sans-serif" font-size="28">Clear tools for the numbers behind your next move.</text>
+</svg>

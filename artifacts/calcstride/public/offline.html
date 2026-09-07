@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#122B46" />
+  <title>FigureNest — Offline</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #122b46; background: #f6f8fb; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; box-sizing: border-box; }
+    main { width: min(440px, 100%); text-align: center; }
+    img { width: 72px; height: 72px; }
+    h1 { margin: 22px 0 10px; font-size: clamp(30px, 8vw, 42px); letter-spacing: -1.5px; }
+    p { margin: 0 auto; max-width: 36ch; color: #53677d; line-height: 1.6; }
+    button { min-height: 46px; margin-top: 24px; padding: 0 20px; color: white; background: #1f74e8; border: 0; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
+    button:focus-visible { outline: 3px solid #1f74e8; outline-offset: 4px; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="./favicon.svg" alt="" />
+    <h1>You’re offline.</h1>
+    <p>Previously opened FigureNest tools may still be available. Reconnect and try again for pages you have not visited yet.</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+  </main>
+</body>
+</html>

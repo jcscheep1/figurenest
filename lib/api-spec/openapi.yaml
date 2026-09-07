@@ -1,0 +1,513 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: tools
+    description: Calculator catalog operations
+  - name: categories
+    description: Tool category operations
+  - name: analytics
+    description: Lightweight usage summaries
+  - name: control
+    description: Authenticated FigureNest Control Center operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /tools:
+    get:
+      operationId: listTools
+      tags: [tools]
+      summary: List published calculators
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Published calculator tools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tool"
+  /tools/{slug}:
+    get:
+      operationId: getTool
+      tags: [tools]
+      summary: Get a calculator by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Calculator tool
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tool"
+        "404":
+          description: Tool not found
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List calculator categories
+      responses:
+        "200":
+          description: Calculator categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+  /analytics/summary:
+    get:
+      operationId: getAnalyticsSummary
+      tags: [analytics]
+      summary: Get high-level usage summary
+      responses:
+        "200":
+          description: Usage summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSummary"
+  /control/projects:
+    get:
+      operationId: listProjects
+      tags: [control]
+      responses:
+        "200":
+          description: Owner projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [control]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /control/projects/{projectId}/archive:
+    post:
+      operationId: archiveProject
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Archived project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /control/projects/{projectId}/dashboard:
+    get:
+      operationId: getDashboardSummary
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Project dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /control/projects/{projectId}/integrations:
+    get:
+      operationId: listProjectIntegrations
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Project integration states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntegrationState"
+    post:
+      operationId: createProjectIntegration
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIntegrationRequest"
+      responses:
+        "201":
+          description: Pending integration approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+  /control/projects/{projectId}/alerts:
+    get:
+      operationId: listProjectAlerts
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Project alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+    post:
+      operationId: createProjectAlert
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAlertRequest"
+      responses:
+        "201":
+          description: Created alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+  /control/projects/{projectId}/audit:
+    get:
+      operationId: listProjectAuditEvents
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Redacted project audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEvent"
+  /control/projects/{projectId}/assistant/command:
+    post:
+      operationId: runAssistantCommand
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantCommandRequest"
+      responses:
+        "200":
+          description: Local advisory response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantCommandResponse"
+  /control/projects/{projectId}/approvals:
+    get:
+      operationId: listProjectApprovals
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: Project approvals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Approval"
+    post:
+      operationId: createProjectApproval
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApprovalRequest"
+      responses:
+        "201":
+          description: Created pending approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+  /control/projects/{projectId}/approvals/{approvalId}/confirm:
+    post:
+      operationId: confirmProjectApproval
+      tags: [control]
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+        - name: approvalId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F-]{36}$"
+      responses:
+        "200":
+          description: Approved record; no external action is executed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Approval"
+components:
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9a-fA-F-]{36}$"
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Tool:
+      type: object
+      required:
+        - slug
+        - name
+        - description
+        - category
+        - categorySlug
+        - href
+        - tags
+        - featured
+        - lastUpdated
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        categorySlug:
+          type: string
+        href:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        featured:
+          type: boolean
+        lastUpdated:
+          type: string
+        icon:
+          type: string
+    Category:
+      type: object
+      required:
+        - slug
+        - name
+        - description
+        - toolCount
+        - accent
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        toolCount:
+          type: number
+        accent:
+          type: string
+    AnalyticsSummary:
+      type: object
+      required:
+        - totalTools
+        - calculationsToday
+        - topCategory
+      properties:
+        totalTools:
+          type: number
+        calculationsToday:
+          type: number
+        topCategory:
+          type: string
+    Project:
+      type: object
+      required: [id, name, domain, status, constructionToolCount, analyticsStatus, revenueStatus, indexingStatus, createdAt, updatedAt]
+      properties:
+        id: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        name: { type: string }
+        domain: { type: string, minLength: 1 }
+        status: { type: string, enum: [active, archived] }
+        constructionToolCount: { type: number, minimum: 0 }
+        publicRouteCount: { type: [number, "null"], minimum: 0 }
+        analyticsStatus: { type: string, enum: [not_connected, connected] }
+        revenueStatus: { type: string, enum: [not_connected, connected] }
+        indexingStatus: { type: string, enum: [not_connected, connected] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateProjectRequest:
+      type: object
+      additionalProperties: false
+      required: [name, domain]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        domain: { type: string, minLength: 1 }
+    IntegrationState:
+      type: object
+      required: [id, projectId, provider, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        projectId: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        provider: { type: string }
+        status: { type: string, enum: [not_connected, pending, connected, error] }
+        lastCheckedAt: { type: [string, "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateIntegrationRequest:
+      type: object
+      additionalProperties: false
+      required: [provider]
+      properties:
+        provider: { type: string, minLength: 1, maxLength: 80 }
+    Alert:
+      type: object
+      required: [id, projectId, severity, title, message, resolved, createdAt]
+      properties:
+        id: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        projectId: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        severity: { type: string, enum: [info, warning, critical] }
+        title: { type: string }
+        message: { type: string }
+        resolved: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    CreateAlertRequest:
+      type: object
+      additionalProperties: false
+      required: [severity, title, message]
+      properties:
+        severity: { type: string, enum: [info, warning, critical] }
+        title: { type: string, minLength: 1, maxLength: 160 }
+        message: { type: string, minLength: 1, maxLength: 2000 }
+    AuditEvent:
+      type: object
+      required: [id, projectId, action, entityType, redactedDetails, createdAt]
+      properties:
+        id: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        projectId: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        action: { type: string }
+        entityType: { type: string }
+        entityId: { type: [string, "null"] }
+        redactedDetails: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+    Approval:
+      type: object
+      required: [id, projectId, action, summary, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        projectId: { type: string, pattern: "^[0-9a-fA-F-]{36}$" }
+        action: { type: string }
+        summary: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateApprovalRequest:
+      type: object
+      additionalProperties: false
+      required: [action, summary]
+      properties:
+        action: { type: string, minLength: 1, maxLength: 120 }
+        summary: { type: string, minLength: 1, maxLength: 1000 }
+    DashboardSummary:
+      type: object
+      required: [project, activeAlerts, pendingApprovals, analytics, revenue, indexing]
+      properties:
+        project: { $ref: "#/components/schemas/Project" }
+        activeAlerts: { type: number }
+        pendingApprovals: { type: number }
+        analytics: { type: "null" }
+        revenue: { type: "null" }
+        indexing: { type: "null" }
+    AssistantCommandRequest:
+      type: object
+      additionalProperties: false
+      required: [command]
+      properties:
+        command: { type: string, minLength: 1, maxLength: 2000 }
+    AssistantCommandResponse:
+      type: object
+      required: [category, message, available, approval]
+      properties:
+        category:
+          type: string
+          enum: [performance, calculator_ideas, indexing, comparison, revenue, project_switch, approval_required, general]
+        message: { type: string }
+        available: { type: boolean }
+        approval:
+          anyOf:
+            - $ref: "#/components/schemas/Approval"
+            - type: "null"
+

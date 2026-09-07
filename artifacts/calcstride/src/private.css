@@ -1,0 +1,17 @@
+.admin-shell { max-width: 1184px; margin: auto; padding: 53px 0 100px; }.admin-lock { display: inline-flex; gap: 8px; align-items: center; color: var(--orange); font: 10px var(--app-font-mono); border: 1px solid #e5c7af; padding: 8px 10px; }.admin-heading { display: flex; justify-content: space-between; align-items: flex-end; margin: 47px 0 52px; }.admin-heading h1 { font: 600 64px/.96 var(--app-font-serif); letter-spacing: -3px; margin-top: 15px; }.admin-user { color: #8c9992; font-size: 10px; line-height: 1.65; text-align: right; }.admin-user b { color: var(--orange); font-weight: 400; }.admin-stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #d7dbd2; border-bottom: 1px solid #d7dbd2; }.admin-stats > div { padding: 23px 25px; border-right: 1px solid #d7dbd2; }.admin-stats > div:last-child { border: 0; }.admin-stats span { color: #87938e; font-size: 10px; }.admin-stats strong { display: block; color: var(--teal); font: 500 29px var(--app-font-mono); margin: 13px 0 7px; }.admin-stats small { color: #83908c; font-size: 11px; }.admin-table { margin-top: 42px; border: 1px solid #d8ddd3; background: #fbfaf5; }.table-head, .table-row { display: grid; grid-template-columns: 2fr 1.3fr 1fr 1fr; align-items: center; gap: 12px; padding: 14px 18px; font-size: 12px; }.table-head { color: #89948e; background: #edf1e9; font: 10px var(--app-font-mono); text-transform: uppercase; }.table-row { border-top: 1px solid #e5e6dd; color: #63736e; }.table-row > span:first-child { display: flex; align-items: center; gap: 9px; color: var(--ink); font-weight: 600; }.table-row .tool-icon { width: 28px; height: 28px; }.status-live { display: flex; align-items: center; gap: 6px; color: var(--teal); }.table-row .mono { color: #99a39c; font-size: 10px; }
+
+@media (max-width: 900px) {
+  .admin-shell { margin-left: 28px; margin-right: 28px; }
+}
+
+@media (max-width: 680px) {
+  .admin-shell { margin-left: 18px; margin-right: 18px; }
+  .admin-heading { align-items: flex-start; flex-direction: column; gap: 24px; }
+  .admin-heading h1 { font-size: 53px; }
+  .admin-user { text-align: left; }
+  .admin-stats { grid-template-columns: 1fr; }
+  .admin-stats > div { border-right: 0; border-bottom: 1px solid #d7dbd2; }
+  .table-head { display: none; }
+  .table-row { grid-template-columns: 1fr auto; padding: 15px; }
+  .table-row > span:nth-child(2), .table-row > span:nth-child(4) { display: none; }
+}
