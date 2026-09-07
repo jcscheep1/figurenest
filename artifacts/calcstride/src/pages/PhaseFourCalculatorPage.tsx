@@ -8,9 +8,15 @@ import { publishedTools } from '@/lib/catalog';
 import { calculatePhaseFour, phaseFourDefinitions, type PhaseFourSlug } from '@/lib/phase-four';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 import { CalculatorDecisionExpansion, CalculatorModeSwitch, useCalculatorMode } from '@/components/calculators/CalculatorDecisionExpansion';
+import { ShoeSizeConverter } from '@/components/calculators/ShoeSizeConverter';
+
+export function PhaseFourCalculatorPage({ slug }: { slug: PhaseFourSlug }) {
+  if (slug === 'shoe-size') return <ShoeSizeConverter />;
+  return <StandardPhaseFourCalculatorPage slug={slug} />;
+}
 
 /** Typed Phase Four renderer. It deliberately does not share Phase Three's family contract. */
-export function PhaseFourCalculatorPage({ slug }: { slug: PhaseFourSlug }) {
+function StandardPhaseFourCalculatorPage({ slug }: { slug: PhaseFourSlug }) {
   const definition = phaseFourDefinitions[slug];
   const defaults = () => definition.fields.map((field) => field.value);
   const [values, setValues] = useState(defaults);
