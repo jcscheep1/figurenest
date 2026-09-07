@@ -1,11 +1,5 @@
 {
-  "buildCommand": "cd artifacts/calcstride && npm install && npm run build",
+  "buildCommand": "pnpm install && pnpm --filter=calcstride build",
   "outputDirectory": "artifacts/calcstride/dist",
-  "framework": "vite",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "framework": "vite"
 }
