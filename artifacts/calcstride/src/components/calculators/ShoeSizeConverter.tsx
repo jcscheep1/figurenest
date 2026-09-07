@@ -71,6 +71,12 @@ export function ShoeSizeConverter() {
     const row = tables[next][Math.floor(tables[next].length / 2)];
     setSize(fmt(Number(row[keyForRegion[region]])));
   };
+  const changeRegion = (next: Region) => {
+    if (next === region) return;
+    const matched = result;
+    setRegion(next);
+    if (matched) setSize(fmt(Number(matched[keyForRegion[next]])));
+  };
 
   return <Shell><Seo path="/converters/shoe-size" /><div className="advanced-calc-page shoe-size-page" data-testid="page-shoe-size">
     <div className="advanced-calc-layout">
@@ -79,7 +85,7 @@ export function ShoeSizeConverter() {
         <div className="advanced-calc-head"><span className="mono">SHOE SIZE — CONVERT</span><div className="live-dot"><i /> LOCAL RESULT</div></div>
         <div className="advanced-fields">
           <label className="advanced-field"><span>Who is the shoe for?</span><div><select value={group} onChange={(e)=>changeGroup(e.target.value as Group)} data-testid="select-shoe-group">{(Object.keys(groupLabels) as Group[]).map((key)=><option key={key} value={key}>{groupLabels[key]}</option>)}</select></div></label>
-          <label className="advanced-field"><span>Input sizing system</span><div><select value={region} onChange={(e)=>{const next=e.target.value as Region;setRegion(next);const row=result??rows[0];setSize(fmt(Number(row[keyForRegion[next]])));}} data-testid="select-shoe-region"><option value="US">US</option><option value="UK">UK</option><option value="EU">EU</option></select></div></label>
+          <label className="advanced-field"><span>Input sizing system</span><div><select value={region} onChange={(e)=>changeRegion(e.target.value as Region)} data-testid="select-shoe-region"><option value="US">US</option><option value="UK">UK</option><option value="EU">EU</option></select></div></label>
           <label className="advanced-field"><span>Shoe size</span><div><input type="number" step="0.5" min={range.min} max={range.max} value={size} onChange={(e)=>setSize(e.target.value)} data-testid="input-shoe-size" /></div><small>Supported {groupLabels[group]} {region} reference sizes: {supported.map(fmt).join(', ')}.</small></label>
         </div>
         <div className={`shoe-result-panel${!result?' has-error':''}`} role="status" aria-live="polite">
