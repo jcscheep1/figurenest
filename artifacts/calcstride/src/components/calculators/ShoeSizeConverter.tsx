@@ -54,12 +54,17 @@ export function ShoeSizeConverter() {
   const [region, setRegion] = useState<Region>('EU');
   const [size, setSize] = useState('42.5');
   const rows = tables[group];
+  const range = useMemo(() => {
+    const key = keyForRegion[region];
+    const values = rows.map(row => Number(row[key]));
+    return { min: Math.min(...values), max: Math.max(...values) };
+  }, [region, rows]);
   const result = useMemo(() => {
     const value = Number(size);
-    if (!size.trim() || !Number.isFinite(value)) return undefined;
+    if (!size.trim() || !Number.isFinite(value) || value < range.min || value > range.max) return undefined;
     const key = keyForRegion[region];
     return rows.reduce((best, row) => Math.abs(Number(row[key]) - value) < Math.abs(Number(best[key]) - value) ? row : best, rows[0]);
-  }, [group, region, rows, size]);
+  }, [group, region, range.max, range.min, rows, size]);
 
   const changeGroup = (next: Group) => {
     setGroup(next);
@@ -75,15 +80,15 @@ export function ShoeSizeConverter() {
         <div className="advanced-fields">
           <label className="advanced-field"><span>Who is the shoe for?</span><div><select value={group} onChange={(e)=>changeGroup(e.target.value as Group)} data-testid="select-shoe-group">{(Object.keys(groupLabels) as Group[]).map((key)=><option key={key} value={key}>{groupLabels[key]}</option>)}</select></div></label>
           <label className="advanced-field"><span>Input sizing system</span><div><select value={region} onChange={(e)=>{const next=e.target.value as Region;setRegion(next);const row=result??rows[0];setSize(fmt(Number(row[keyForRegion[next]])));}} data-testid="select-shoe-region"><option value="US">US</option><option value="UK">UK</option><option value="EU">EU</option></select></div></label>
-          <label className="advanced-field"><span>Shoe size</span><div><input type="number" step="0.5" value={size} onChange={(e)=>setSize(e.target.value)} data-testid="input-shoe-size" /></div></label>
+          <label className="advanced-field"><span>Shoe size</span><div><input type="number" step="0.5" min={range.min} max={range.max} value={size} onChange={(e)=>setSize(e.target.value)} data-testid="input-shoe-size" /></div><small>Reference range for {groupLabels[group]} in {region}: {fmt(range.min)}–{fmt(range.max)}.</small></label>
         </div>
-        <div className={`shoe-result-panel${!result?' has-error':''}`}>
-          <div className="advanced-result"><span className="mono">{result?'CLOSEST REFERENCE SIZE':'CHECK THE SIZE'}</span><strong className="advanced-result-output">{result ? `${groupLabels[group]} · EU ${fmt(result.eu)}` : 'Enter a valid size'}</strong><p>{result ? `Closest table match for ${region} ${size}. Brand-specific sizing may differ.` : 'Enter a numeric shoe size to convert.'}</p></div>
+        <div className={`shoe-result-panel${!result?' has-error':''}`} role="status" aria-live="polite">
+          <div className="advanced-result"><span className="mono">{result?'CLOSEST REFERENCE SIZE':'CHECK THE SIZE'}</span><strong className="advanced-result-output">{result ? `${groupLabels[group]} · EU ${fmt(result.eu)}` : 'Size outside reference range'}</strong><p>{result ? `Closest table match for ${region} ${size}. Brand-specific sizing may differ.` : `Enter a ${region} size from ${fmt(range.min)} to ${fmt(range.max)} for ${groupLabels[group]}.`}</p></div>
           {result && <div className="advanced-breakdown"><div><span>US size</span><strong>{fmt(result.us)}</strong></div><div><span>UK size</span><strong>{fmt(result.uk)}</strong></div><div><span>EU size</span><strong>{fmt(result.eu)}</strong></div><div><span>Approx. foot length</span><strong>{fmt(result.cm)} cm</strong></div></div>}
         </div>
         <button type="button" className="reset-button mt-6" onClick={()=>{setGroup('men');setRegion('EU');setSize('42.5');}}>Reset values</button>
       </section>
     </div>
-    <div className="advanced-content-grid"><article className="advanced-content"><section><div className="eyebrow">HOW TO USE IT</div><h2>Choose the correct sizing group first.</h2><p>Baby and toddler, children and youth, women, and men use different size sequences. Select the group printed on the footwear or appropriate for the wearer, then choose the sizing system and enter the labelled size.</p></section><section><div className="eyebrow">ACCURACY</div><h2>Why shoe conversions are references, not exact formulas.</h2><p>Regional labels do not map through one reliable universal equation. This converter therefore uses separate reference rows instead of the previous single adult arithmetic formula. Half sizes and EU labels are matched to the closest reference row.</p><p>For the best fit, measure the foot while standing, measure both feet, use the larger measurement, and compare it with the specific brand’s current chart. Width, shoe last, socks, materials and intended activity can change the size that feels correct.</p></section><section className="advanced-faq"><div className="eyebrow">FAQ</div><h2>Common shoe-size questions.</h2><details><summary>Does this converter include children?</summary><p>Yes. It has separate Baby / toddler and Children / youth modes in addition to Women and Men.</p></details><details><summary>Why can two brands fit differently at the same size?</summary><p>Shoe-size labels are nominal. Last shape, width, construction and brand-specific grading can all change fit, so the manufacturer chart remains the final reference.</p></details></section></article></div>
+    <div className="advanced-content-grid"><article className="advanced-content"><section><div className="eyebrow">HOW TO USE IT</div><h2>Choose the correct sizing group first.</h2><p>Baby and toddler, children and youth, women, and men use different size sequences. Select the group printed on the footwear or appropriate for the wearer, then choose the sizing system and enter the labelled size.</p></section><section><div className="eyebrow">ACCURACY</div><h2>Why shoe conversions are references, not exact formulas.</h2><p>Regional labels do not map through one reliable universal equation. This converter therefore uses separate reference rows instead of the previous single adult arithmetic formula. Half sizes and EU labels are matched to the closest reference row only when the entered size is inside the selected table's supported range.</p><p>For the best fit, measure the foot while standing, measure both feet, use the larger measurement, and compare it with the specific brand’s current chart. Width, shoe last, socks, materials and intended activity can change the size that feels correct.</p></section><section className="advanced-faq"><div className="eyebrow">FAQ</div><h2>Common shoe-size questions.</h2><details><summary>Does this converter include children?</summary><p>Yes. It has separate Baby / toddler and Children / youth modes in addition to Women and Men.</p></details><details><summary>Why can two brands fit differently at the same size?</summary><p>Shoe-size labels are nominal. Last shape, width, construction and brand-specific grading can all change fit, so the manufacturer chart remains the final reference.</p></details><details><summary>What happens if I enter a size outside the table?</summary><p>The converter now stops and shows the supported range instead of silently mapping an unsupported size to the smallest or largest reference row.</p></details></section></article></div>
   </div></Shell>;
 }
