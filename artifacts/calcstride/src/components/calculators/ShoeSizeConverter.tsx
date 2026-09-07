@@ -67,7 +67,7 @@ export function ShoeSizeConverter() {
     setSize(fmt(Number(row[keyForRegion[region]])));
   };
 
-  return <Shell><Seo path="/converters/shoe-size" /><div className="advanced-calc-page" data-testid="page-shoe-size">
+  return <Shell><Seo path="/converters/shoe-size" /><div className="advanced-calc-page shoe-size-page" data-testid="page-shoe-size">
     <div className="advanced-calc-layout">
       <header className="advanced-calc-copy"><div className="eyebrow"><span className="eyebrow-dot" /> FIGURENEST CONVERTERS</div><h1>Shoe Size Converter<span>.</span></h1><p>Convert shoe sizes across US, UK and EU systems for babies, children, women and men using age-group-specific reference tables.</p><div className="date-method-notes" role="note"><p><strong>Fit note:</strong> Shoe sizing is not perfectly standardized between brands. Use the conversion as a reference, then check the manufacturer’s size chart and measured foot length.</p></div></header>
       <section className="advanced-calculator-card" aria-label="Shoe size converter">
@@ -77,8 +77,10 @@ export function ShoeSizeConverter() {
           <label className="advanced-field"><span>Input sizing system</span><div><select value={region} onChange={(e)=>{const next=e.target.value as Region;setRegion(next);const row=result??rows[0];setSize(fmt(Number(row[keyForRegion[next]])));}} data-testid="select-shoe-region"><option value="US">US</option><option value="UK">UK</option><option value="EU">EU</option></select></div></label>
           <label className="advanced-field"><span>Shoe size</span><div><input type="number" step="0.5" value={size} onChange={(e)=>setSize(e.target.value)} data-testid="input-shoe-size" /></div></label>
         </div>
-        <div className={`advanced-result${!result?' has-error':''}`}><span className="mono">{result?'CLOSEST REFERENCE SIZE':'CHECK THE SIZE'}</span><strong className="advanced-result-output">{result ? `${groupLabels[group]} · EU ${fmt(result.eu)}` : 'Enter a valid size'}</strong><p>{result ? `Closest table match for ${region} ${size}. Brand-specific sizing may differ.` : 'Enter a numeric shoe size to convert.'}</p></div>
-        {result && <div className="advanced-breakdown"><div><span>US size</span><strong>{fmt(result.us)}</strong></div><div><span>UK size</span><strong>{fmt(result.uk)}</strong></div><div><span>EU size</span><strong>{fmt(result.eu)}</strong></div><div><span>Approx. foot length</span><strong>{fmt(result.cm)} cm</strong></div></div>}
+        <div className={`shoe-result-panel${!result?' has-error':''}`}>
+          <div className="advanced-result"><span className="mono">{result?'CLOSEST REFERENCE SIZE':'CHECK THE SIZE'}</span><strong className="advanced-result-output">{result ? `${groupLabels[group]} · EU ${fmt(result.eu)}` : 'Enter a valid size'}</strong><p>{result ? `Closest table match for ${region} ${size}. Brand-specific sizing may differ.` : 'Enter a numeric shoe size to convert.'}</p></div>
+          {result && <div className="advanced-breakdown"><div><span>US size</span><strong>{fmt(result.us)}</strong></div><div><span>UK size</span><strong>{fmt(result.uk)}</strong></div><div><span>EU size</span><strong>{fmt(result.eu)}</strong></div><div><span>Approx. foot length</span><strong>{fmt(result.cm)} cm</strong></div></div>}
+        </div>
         <button type="button" className="reset-button mt-6" onClick={()=>{setGroup('men');setRegion('EU');setSize('42.5');}}>Reset values</button>
       </section>
     </div>
