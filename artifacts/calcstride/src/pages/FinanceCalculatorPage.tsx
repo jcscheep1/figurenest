@@ -13,6 +13,7 @@ import { CurrencySelector } from '@/components/UnitsPreferencesSelectors';
 import { currencyPrefix, localizeCurrencyText, useUnitsPreferences } from '@/lib/units-preferences';
 import { getCalculatorSeoCapability } from '@/lib/seo-capabilities';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
+import { CalculatorDecisionExpansion } from '@/components/calculators/CalculatorDecisionExpansion';
 
 const financeArticleLinks: Partial<Record<FinanceCalculatorSlug, { href: string; label: string }[]>> = {
   loan: [{ href: '/articles/loan-payment-calculations', label: 'How fixed loan payments are calculated' }],
@@ -170,6 +171,7 @@ export function FinanceCalculatorPage({ slug }: { slug: FinanceCalculatorSlug })
               </div>
             ) : null}
 
+            {(slug === 'loan' || slug === 'mortgage') && <CalculatorDecisionExpansion slug={slug} values={values} currency={currency} />}
             <button className="reset-button mt-6" onClick={resetValues} data-testid="button-reset-finance-calculator">Reset values</button>
           </section>
         </div>
