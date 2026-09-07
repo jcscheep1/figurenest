@@ -100,7 +100,7 @@ export function ConverterCalculatorPage({ slug }: { slug: ConverterSlug }) {
 
   const { forCalculator, setCalculatorOverride, setMeasurementSystem } = useUnitsPreferences();
   const preferences = forCalculator(slug);
-  const appliedMeasurementSystem = useRef<MeasurementSystem>('metric');
+  const appliedMeasurementSystem = useRef<MeasurementSystem | null>(null);
   const applyMeasurementSystem = (measurementSystem: MeasurementSystem) => {
     if (measurementSystem === appliedMeasurementSystem.current) return;
     const pair = converterUnitPairs[dimension][measurementSystem];
