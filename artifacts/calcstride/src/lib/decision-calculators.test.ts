@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { amortizationScenario, budgetDecision, creditCardDecision, mortgageDecision, retirementDecision } from './decision-calculators';
+import { amortizationScenario, aprDecision, autoLoanDecision, budgetDecision, creditCardDecision, growthDecision, mortgageDecision, mortgagePayoffDecision, retirementDecision, savingsTargetDecision } from './decision-calculators';
 
 test('loan scenarios include fees, balloon, and faster payoff from extra payments', () => {
   const base = amortizationScenario(24000, 7.2, 5);
@@ -37,4 +37,40 @@ test('credit card extra payments reduce payoff time and interest', () => {
   assert.ok(result);
   assert.ok(result.monthsSaved > 0);
   assert.ok(result.interestSaved > 0);
+});
+
+test('auto loan advanced scenario includes rebate, balloon and ownership costs', () => {
+  const result = autoLoanDecision(32000, 4000, 3000, 6.5, 60, 6, 500, 1000, 2500, 100, 350);
+  assert.ok(result);
+  assert.equal(result.financed, 26420);
+  assert.ok(result.ownershipMonthly > result.payment);
+  assert.ok(result.interestSaved > 0);
+});
+
+test('mortgage payoff scenario applies a lump sum and delayed extra payments', () => {
+  const result = mortgagePayoffDecision(240000, 5.5, 1600, 200, 10000, 150, 7);
+  assert.ok(result);
+  assert.ok(result.monthsSaved > 0);
+  assert.ok(result.interestSaved > 0);
+});
+
+test('compound growth accounts for fees, inflation and increasing contributions', () => {
+  const result = growthDecision(5000, 250, 6, 10, 3, 0.5, 2.5, true);
+  assert.ok(result);
+  assert.ok(result.balance > result.deposited);
+  assert.ok(result.todayValue < result.balance);
+});
+
+test('savings target reports the target gap and required monthly deposit', () => {
+  const result = savingsTargetDecision(1200, 300, 4.5, 3, 15000, 0, false);
+  assert.ok(result);
+  assert.ok(result.targetGap > 0);
+  assert.ok(result.requiredMonthly && result.requiredMonthly > 300);
+});
+
+test('APR advanced scenario includes upfront and final charges', () => {
+  const result = aprDecision(9800, 220, 60, 200, 100, 250, 10);
+  assert.ok(result);
+  assert.ok(result.effectiveApr > 10);
+  assert.equal(result.totalFees, 550);
 });

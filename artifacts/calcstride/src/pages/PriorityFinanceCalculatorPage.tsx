@@ -18,12 +18,15 @@ import {
   useUnitsPreferences,
 } from '@/lib/units-preferences';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
+import { CalculatorDecisionExpansion, CalculatorModeSwitch, useCalculatorMode } from '@/components/calculators/CalculatorDecisionExpansion';
 
 export function PriorityFinanceCalculatorPage({ slug }: { slug: PriorityFinanceSlug }) {
   const content = priorityFinanceContent[slug];
   const path = `/calculators/finance/${slug}`;
   const [values, setValues] = useState(() => content.fields.map((field) => field.value));
   const [copied, setCopied] = useState(false);
+  const supportsAdvancedMode = slug === 'auto-loan' || slug === 'mortgage-payoff';
+  const [advancedMode, setAdvancedMode] = useCalculatorMode(supportsAdvancedMode);
   const { forCalculator, setCalculatorOverride, setCurrency } = useUnitsPreferences();
   const currency = forCalculator(slug).currency;
   const result = calculatePriorityFinance(slug, values, currency);
@@ -89,6 +92,7 @@ export function PriorityFinanceCalculatorPage({ slug }: { slug: PriorityFinanceS
               <span id={a11y.regionLabelId} className="mono">{content.title.toUpperCase()} — CALCULATE</span>
               <div className="live-dot"><i /> LIVE RESULT</div>
             </div>
+            {supportsAdvancedMode && <CalculatorModeSwitch advanced={advancedMode} onChange={setAdvancedMode} />}
             <label className="advanced-field" htmlFor={`${slug}-currency`}>
               <span>Currency</span>
               <CurrencySelector id={`${slug}-currency`} value={currency} onChange={selectCurrency} />
@@ -117,6 +121,7 @@ export function PriorityFinanceCalculatorPage({ slug }: { slug: PriorityFinanceS
                 </label>
               ))}
             </div>
+            {supportsAdvancedMode && <CalculatorDecisionExpansion slug={slug} values={values} currency={currency} open={advancedMode} />}
             <CalculatorResultAnnouncement error={result.error} result={result.primary} />
             <div className={`advanced-result${result.error ? ' has-error' : ''}`}>
               <span className="mono">{result.error ? 'CHECK THE VALUES' : content.resultLabel}</span>

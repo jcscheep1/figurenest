@@ -86,3 +86,73 @@ export const creditCardDecision = (balance: number, annualRate: number, basePaym
   if (!base || !accelerated) return undefined;
   return { ...accelerated, interestSaved: Math.max(0, base.interest - accelerated.interest), monthsSaved: Math.max(0, base.months - accelerated.months) };
 };
+
+export const autoLoanDecision = (price: number, down: number, trade: number, annualRate: number, months: number, taxRate: number, fees: number, rebate: number, balloon: number, extraMonthly: number, ownershipMonthly: number) => {
+  const financed = price * (1 + taxRate / 100) + fees - down - trade - rebate;
+  const years = months / 12;
+  const base = amortizationScenario(financed, annualRate, years, 0, 0, balloon);
+  const accelerated = amortizationScenario(financed, annualRate, years, extraMonthly, 0, balloon);
+  if (!base || !accelerated || [rebate, balloon, extraMonthly, ownershipMonthly].some((value) => !Number.isFinite(value) || value < 0) || financed <= 0 || balloon > financed) return undefined;
+  return { financed, payment: accelerated.paymentWithExtra, ownershipMonthly: accelerated.paymentWithExtra + ownershipMonthly, payoffMonths: accelerated.months, interest: accelerated.interest, interestSaved: Math.max(0, base.interest - accelerated.interest), balloon: accelerated.balloon };
+};
+
+const payoffSchedule = (balance: number, annualRate: number, paymentAmount: number, extraMonthly: number, lumpSum: number, extraStartMonth: number) => {
+  if (![balance, annualRate, paymentAmount, extraMonthly, lumpSum, extraStartMonth].every(Number.isFinite) || balance <= 0 || annualRate < 0 || paymentAmount <= 0 || extraMonthly < 0 || lumpSum < 0 || extraStartMonth < 1) return undefined;
+  let remaining = Math.max(0, balance - lumpSum), interest = 0;
+  for (let month = 1; month <= 1200; month += 1) {
+    const charge = remaining * annualRate / 1200;
+    const paid = paymentAmount + (month >= extraStartMonth ? extraMonthly : 0);
+    if (paid <= charge) return undefined;
+    interest += charge;
+    remaining += charge;
+    if (paid >= remaining) return { months: month, interest, totalPaid: balance - lumpSum + interest + lumpSum };
+    remaining -= paid;
+  }
+  return undefined;
+};
+
+export const mortgagePayoffDecision = (balance: number, annualRate: number, paymentAmount: number, currentExtra: number, lumpSum: number, addedExtra: number, extraStartMonth: number) => {
+  const base = payoffSchedule(balance, annualRate, paymentAmount, currentExtra, 0, 1);
+  const advanced = payoffSchedule(balance, annualRate, paymentAmount, currentExtra + addedExtra, lumpSum, extraStartMonth);
+  if (!base || !advanced) return undefined;
+  return { ...advanced, monthsSaved: Math.max(0, base.months - advanced.months), interestSaved: Math.max(0, base.interest - advanced.interest) };
+};
+
+export const growthDecision = (start: number, monthly: number, annualRate: number, years: number, annualIncrease: number, annualFee: number, inflation: number, beginningOfMonth: boolean) => {
+  if ([start, monthly, annualRate, years, annualIncrease, annualFee, inflation].some((value) => !Number.isFinite(value) || value < 0) || years <= 0) return undefined;
+  let balance = start, contribution = monthly, deposited = start;
+  const months = Math.round(years * 12);
+  for (let month = 0; month < months; month += 1) {
+    if (beginningOfMonth) balance += contribution;
+    balance *= 1 + (annualRate - annualFee) / 1200;
+    if (!beginningOfMonth) balance += contribution;
+    deposited += contribution;
+    if ((month + 1) % 12 === 0) contribution *= 1 + annualIncrease / 100;
+  }
+  return { balance, deposited, growth: balance - deposited, todayValue: balance / ((1 + inflation / 100) ** years) };
+};
+
+export const savingsTargetDecision = (start: number, monthly: number, annualRate: number, years: number, target: number, annualIncrease: number, beginningOfMonth: boolean) => {
+  const scenario = growthDecision(start, monthly, annualRate, years, annualIncrease, 0, 0, beginningOfMonth);
+  if (!scenario || !Number.isFinite(target) || target < 0) return undefined;
+  const months = Math.round(years * 12);
+  const rate = annualRate / 1200;
+  const startFuture = start * (1 + rate) ** months;
+  const factor = rate === 0 ? months : ((1 + rate) ** months - 1) / rate * (beginningOfMonth ? 1 + rate : 1);
+  const requiredMonthly = target > startFuture && annualIncrease === 0 ? (target - startFuture) / factor : undefined;
+  return { ...scenario, targetGap: target - scenario.balance, requiredMonthly };
+};
+
+export const aprDecision = (received: number, paymentAmount: number, months: number, withheldFees: number, upfrontFees: number, finalFee: number, advertisedRate: number) => {
+  if (![received, paymentAmount, months, withheldFees, upfrontFees, finalFee, advertisedRate].every(Number.isFinite) || received <= upfrontFees || paymentAmount <= 0 || months < 1 || withheldFees < 0 || upfrontFees < 0 || finalFee < 0 || advertisedRate < 0) return undefined;
+  const netReceived = received - upfrontFees;
+  const presentValue = (monthlyRate: number) => paymentAmount * (1 - (1 + monthlyRate) ** -months) / monthlyRate + finalFee / (1 + monthlyRate) ** months;
+  let low = 0, high = 1;
+  if (paymentAmount * months + finalFee <= netReceived) return undefined;
+  for (let i = 0; i < 100; i += 1) {
+    const mid = (low + high) / 2;
+    if (presentValue(mid) > netReceived) low = mid; else high = mid;
+  }
+  const effectiveApr = (low + high) / 2 * 1200;
+  return { effectiveApr, totalBorrowingCost: paymentAmount * months + upfrontFees + finalFee - received, totalFees: withheldFees + upfrontFees + finalFee, advertisedDifference: effectiveApr - advertisedRate };
+};

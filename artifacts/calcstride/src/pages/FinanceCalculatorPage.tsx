@@ -31,7 +31,7 @@ export function FinanceCalculatorPage({ slug }: { slug: FinanceCalculatorSlug })
   const fields = coreFields[slug];
   const [values, setValues] = useState(() => fields.map((field) => field.value));
   const [copied, setCopied] = useState(false);
-  const supportsAdvancedMode = slug === 'loan' || slug === 'mortgage';
+  const supportsAdvancedMode = slug === 'loan' || slug === 'mortgage' || slug === 'compound-interest';
   const [advancedMode, setAdvancedMode] = useCalculatorMode(supportsAdvancedMode);
   const { forCalculator, setCalculatorOverride, setCurrency } = useUnitsPreferences();
   const currency = forCalculator(slug).currency;
@@ -145,6 +145,7 @@ export function FinanceCalculatorPage({ slug }: { slug: FinanceCalculatorSlug })
                 </label>
               ))}
             </div>
+            {supportsAdvancedMode && <CalculatorDecisionExpansion slug={slug} values={values} currency={currency} open={advancedMode} />}
 
             <CalculatorResultAnnouncement error={result.error} result={result.primary} />
             <div className={`advanced-result ${result.error ? 'has-error' : ''}`}>
@@ -174,7 +175,6 @@ export function FinanceCalculatorPage({ slug }: { slug: FinanceCalculatorSlug })
               </div>
             ) : null}
 
-            {supportsAdvancedMode && <CalculatorDecisionExpansion slug={slug} values={values} currency={currency} open={advancedMode} />}
             <button className="reset-button mt-6" onClick={resetValues} data-testid="button-reset-finance-calculator">Reset values</button>
           </section>
         </div>

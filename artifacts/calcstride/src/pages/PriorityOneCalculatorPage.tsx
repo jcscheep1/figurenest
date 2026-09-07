@@ -63,13 +63,13 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
               <input {...a11y.field(field.key)} type={field.type === 'date' || field.type === 'time' ? field.type : 'number'} min={field.min} max={field.max} step={field.step ?? (field.type === 'date' || field.type === 'time' ? undefined : 'any')} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
             {field.suffix && <small>{field.suffix}</small>}
           </div></label>)}</div>
+          {slug === 'retirement' && <CalculatorDecisionExpansion slug="retirement" values={values} currency={currency} open={advancedMode} />}
           <CalculatorResultAnnouncement error={result.error} result={result.primary} />
           <div className={`advanced-result${result.error ? ' has-error' : ''}`} data-testid={`status-${slug}`}>
             <span className="mono">{result.error ? 'CHECK THE VALUES' : definition.resultLabel}</span><strong data-testid={`result-${slug}`}>{result.primary}</strong><p id={result.error ? a11y.errorId : undefined}>{result.summary}</p>
             <div className="advanced-result-actions"><button type="button" className="copy-button" disabled={Boolean(result.error)} onClick={() => void copy()} data-testid={`button-copy-${slug}`}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? ' Copied' : ' Copy result'}</button><button type="button" className="copy-button" disabled={Boolean(result.error)} onClick={() => void share()} data-testid={`button-share-${slug}`}><Share2 size={15} /> Share</button></div>
           </div>
           <div className="advanced-breakdown">{result.details.map(detail => <div key={detail.label}><span>{detail.label}</span><strong>{detail.value}</strong></div>)}</div>
-          {slug === 'retirement' && <CalculatorDecisionExpansion slug="retirement" values={values} currency={currency} open={advancedMode} />}
           <button type="button" className="reset-button mt-6" onClick={() => { setValues(definition.fields.map(field => field.value)); setCopied(false); }} data-testid={`button-reset-${slug}`}>Reset values</button>
         </section>
       </div>
