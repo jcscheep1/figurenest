@@ -57,8 +57,8 @@ test('mortgage amortization remains stable near the end of supported high-rate s
   assert.equal(result.error, undefined);
   assert.equal(result.primary, '$83,333,333,333.33');
   assert.deepEqual(result.details.slice(0, 3), [
-    { label: 'Principal in payment 599', value: '$6,410,256,410.26' },
-    { label: 'Interest in payment 599', value: '$76,923,076,923.08' },
+    { label: 'Principal in payment 599', value: '$71,005,917,159.76' },
+    { label: 'Interest in payment 599', value: '$12,327,416,173.57' },
     { label: 'Balance after payment 599', value: '$76,923,076,923.08' },
   ]);
 });
