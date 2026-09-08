@@ -108,7 +108,7 @@ jobs:
               panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
               assert 'has-error' in panel.get_attribute('class'), panel.text
               body = driver.find_element(By.CSS_SELECTOR, '.decision-expansion-body')
-              assert 'Check that fees, extra payment and balloon amount are valid.' in body.text, body.text
+              assert 'Check the mortgage and advanced values.' in body.text, body.text
               print('PASS: Mortgage Advanced rejects the same non-month-aligned term')
           finally:
               driver.quit()
