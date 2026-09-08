@@ -257,7 +257,7 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
       ],
     };
   }
-  if (slug === 'vat') { const gross = mode === 'remove' ? a : a * (1 + b / 100); const net = mode === 'remove' ? a / (1 + b / 100) : a; return { primary: formatMoney(mode === 'remove' ? net : gross), details: [{ label: mode === 'remove' ? 'VAT removed' : 'VAT amount', value: formatMoney(gross - net) }, { label: mode === 'remove' ? 'Price before VAT' : 'Price including VAT', value: formatMoney(gross) }] }; }
+  if (slug === 'vat') { const gross = mode === 'remove' ? a : a * (1 + b / 100); const net = mode === 'remove' ? a / (1 + b / 100) : a; return { primary: formatMoney(mode === 'remove' ? net : gross), details: [{ label: mode === 'remove' ? 'VAT removed' : 'VAT amount', value: formatMoney(gross - net) }, { label: mode === 'remove' ? 'Price before VAT' : 'Price including VAT', value: formatMoney(mode === 'remove' ? net : gross) }] }; }
   if (slug === 'salary') {
     if (!b || !c) return invalid('Hours and weeks must be greater than zero');
     if (a > MAX_PAY_AMOUNT) return invalid(`Enter an annual salary no greater than ${trillionLabel(currency)}`);
