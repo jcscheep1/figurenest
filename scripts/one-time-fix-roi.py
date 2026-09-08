@@ -12,6 +12,22 @@ if old not in text:
     raise SystemExit('ROI target not found; refusing unsafe edit')
 path.write_text(text.replace(old, new, 1))
 
+core_test = Path('artifacts/calcstride/src/lib/core-calculators.test.ts')
+core_test_text = core_test.read_text()
+stale_roi_case = "    calculateCore('roi', ['0.0000001', '1000000000000']),"
+replacement_roi_case = "    calculateCore('roi', ['5e-324', '1000000000000']),"
+if stale_roi_case not in core_test_text:
+    raise SystemExit('Stale ROI boundary test not found; refusing unsafe edit')
+core_test.write_text(core_test_text.replace(stale_roi_case, replacement_roi_case, 1))
+
+site_test = Path('artifacts/calcstride/src/lib/site-audit.test.ts')
+site_test_text = site_test.read_text()
+stale_date_h1 = "assert.equal(seo.h1, 'Date Duration Calculator');"
+replacement_date_h1 = "assert.equal(seo.h1, 'Date Calculator & Day Counter');"
+if stale_date_h1 not in site_test_text:
+    raise SystemExit('Stale Date H1 test not found; refusing unsafe edit')
+site_test.write_text(site_test_text.replace(stale_date_h1, replacement_date_h1, 1))
+
 Path('artifacts/calcstride/src/lib/roi-high-return-regression.test.ts').write_text("""import assert from 'node:assert/strict';
 import test from 'node:test';
 import { calculateCore } from './core-calculators';
