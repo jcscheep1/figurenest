@@ -10,9 +10,11 @@ import { normalizePhaseFourInputs, phaseFourFieldMin, phaseFourFieldStep } from 
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 import { CalculatorDecisionExpansion, CalculatorModeSwitch, useCalculatorMode } from '@/components/calculators/CalculatorDecisionExpansion';
 import { ShoeSizeConverter } from '@/components/calculators/ShoeSizeConverter';
+import { SocialSecurityEstimator } from '@/components/calculators/SocialSecurityEstimator';
 
 export function PhaseFourCalculatorPage({ slug }: { slug: PhaseFourSlug }) {
   if (slug === 'shoe-size') return <ShoeSizeConverter />;
+  if (slug === 'social-security') return <SocialSecurityEstimator />;
   return <StandardPhaseFourCalculatorPage slug={slug} />;
 }
 
