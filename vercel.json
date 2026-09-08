@@ -1,5 +1,15 @@
 {
   "framework": "vite",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "www.figurenest.com" }
+      ],
+      "destination": "https://figurenest.com/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
