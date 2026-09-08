@@ -22,6 +22,9 @@ def setv(e,v):
     if v!='': e.send_keys(str(v))
     e.send_keys(Keys.TAB); time.sleep(.35)
 def out(): return d.find_element(By.CSS_SELECTOR,'.advanced-result-output').text.strip()
+def rejected(text):
+    normalized=text.lower()
+    return 'check the values' in normalized or 'valid range' in normalized
 
 try:
     d.get(URL); wait.until(lambda x:x.execute_script('return document.readyState')=='complete'); time.sleep(.8); dismiss()
@@ -34,15 +37,15 @@ try:
     print('PASS Annuity zero-rate monthly payout $416.67')
 
     setv(fs[1],'5'); setv(fs[2],'20.01')
-    assert 'valid range' in out().lower(), out()
+    assert rejected(out()), out()
     print('PASS Annuity fractional monthly payout period rejected')
 
     setv(fs[2],'20.5')
-    assert '$' in out() and 'VALID RANGE' not in out().upper(), out()
+    assert '$' in out() and not rejected(out()), out()
     print('PASS Annuity 20.5 years accepted in monthly mode (246 periods)')
 
     Select(mode()).select_by_value('annual'); time.sleep(.35)
-    assert 'valid range' in out().lower(), out()
+    assert rejected(out()), out()
     print('PASS Annuity fractional year rejected in annual mode')
 
     setv(fs[2],'20')
