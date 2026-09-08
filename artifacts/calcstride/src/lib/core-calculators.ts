@@ -193,8 +193,10 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
     if (d === 0 || b > a) return invalid('Enter a valid loan term and down payment');
     const boundsError = financeBoundsError([a, b, e, f], c, d, currency);
     if (boundsError) return invalid(boundsError);
+    const rawMonths = d * 12;
+    const months = Math.round(rawMonths);
+    if (Math.abs(rawMonths - months) > 1e-9) return invalid('Mortgage term must resolve to a whole number of months');
     const principal = a - b;
-    const months = d * 12;
     const loanPayment = payment(principal, c, months);
     const loanTotal = loanPayment * months;
     const interest = loanTotal - principal;

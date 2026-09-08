@@ -134,7 +134,7 @@ export function FinanceCalculatorPage({ slug }: { slug: FinanceCalculatorSlug })
                       {...a11y.field(field.key)}
                       type="number"
                       min="0"
-                      step={slug === 'loan' && field.key === 'years' ? '0.08333333333333333' : 'any'}
+                      step={['loan', 'mortgage'].includes(slug) && field.key === 'years' ? '0.08333333333333333' : 'any'}
                       value={values[index]}
                       onChange={(event) => update(index, event.target.value)}
                       onBlur={trackSuccessfulCalculation}
