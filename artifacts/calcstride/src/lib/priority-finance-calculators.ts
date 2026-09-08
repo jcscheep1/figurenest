@@ -169,7 +169,7 @@ export const priorityFinanceContent: Record<PriorityFinanceSlug, PriorityFinance
       { key: 'principal', label: 'Mortgage principal', value: '300000', prefix: '$', min: 0 },
       { key: 'rate', label: 'Annual interest rate', value: '6', suffix: '%', min: 0, max: 100 },
       { key: 'years', label: 'Amortization term', value: '30', suffix: 'years', min: 1, max: 50 },
-      { key: 'paymentNumber', label: 'Inspect payment number', value: '12', min: 1, max: 600 },
+      { key: 'paymentNumber', label: 'Inspect payment number', value: '12', min: 1, max: 600, step: '1' },
     ],
     whenUseful: ['See how a level payment is divided between interest and principal.', 'Estimate the remaining scheduled balance after a chosen number of payments.', 'Compare the early and later stages of a fixed-rate mortgage.'],
     examples: [{
@@ -406,7 +406,8 @@ export function calculatePriorityFinance(
   if (slug === 'mortgage-amortization') {
     const [principal, rate, years, selectedPayment] = n;
     const months = Math.round(years * 12);
-    const k = Math.round(selectedPayment);
+    if (!Number.isInteger(selectedPayment)) return invalid('Use a whole-number payment within the mortgage term');
+    const k = selectedPayment;
     if (!principal || !months || years > 50 || rate > 100 || !k || k > months) return invalid('Use a term of 1–50 years and a payment number within that term');
     const monthly = payment(principal, rate, months);
     const monthlyRate = rate / 1200;
