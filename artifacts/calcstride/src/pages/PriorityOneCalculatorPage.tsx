@@ -7,10 +7,18 @@ import { CurrencySelector } from '@/components/UnitsPreferencesSelectors';
 import { Link } from '@/components/PublicLink';
 import { publishedTools } from '@/lib/catalog';
 import { toCanonicalUrl } from '@/lib/public-url';
-import { calculatePriorityOneExpansion, priorityOneExpansionDefinitions, type PriorityOneExpansionSlug } from '@/lib/priority-one-expansion';
+import { calculatePriorityOneExpansion, priorityOneExpansionDefinitions, type PriorityOneExpansionSlug, type PriorityOneResult } from '@/lib/priority-one-expansion';
+import { STUDENT_LOAN_MIN_YEARS, STUDENT_LOAN_TERM_ERROR, STUDENT_LOAN_YEAR_STEP, studentLoanTermMonths } from '@/lib/student-loan-validation';
 import { useUnitsPreferences } from '@/lib/units-preferences';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 import { CalculatorDecisionExpansion, CalculatorModeSwitch, useCalculatorMode } from '@/components/calculators/CalculatorDecisionExpansion';
+
+const studentLoanTermError = (): PriorityOneResult => ({
+  primary: STUDENT_LOAN_TERM_ERROR,
+  summary: STUDENT_LOAN_TERM_ERROR,
+  details: [],
+  error: STUDENT_LOAN_TERM_ERROR,
+});
 
 export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansionSlug }) {
   const definition = priorityOneExpansionDefinitions[slug];
@@ -24,7 +32,10 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
   const [advancedMode, setAdvancedMode] = useCalculatorMode(supportsAdvancedMode);
   const { forCalculator, setCurrency, setCalculatorOverride } = useUnitsPreferences();
   const currency = forCalculator(slug).currency;
-  const result = calculatePriorityOneExpansion(slug, values, currency);
+  const calculatedResult = calculatePriorityOneExpansion(slug, values, currency);
+  const result = slug === 'student-loan' && studentLoanTermMonths(values[2] ?? '') === null
+    ? studentLoanTermError()
+    : calculatedResult;
   const a11y = calculatorFieldA11y(slug, result.error);
   const update = (index: number, value: string) => {
     setValues(current => current.map((item, itemIndex) => itemIndex === index ? value : item));
@@ -58,11 +69,14 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
           {supportsAdvancedMode && <CalculatorModeSwitch advanced={advancedMode} onChange={setAdvancedMode} />}
           <div className="date-method-notes" role="note" data-testid={`safety-notice-${slug}`}><p><strong>Important context:</strong> {definition.safetyNotice}</p></div>
           {slug === 'currency' && <label className="advanced-field" htmlFor={`${slug}-currency`}><span>Display currency</span><CurrencySelector id={`${slug}-currency`} value={currency} onChange={next => { setCurrency(next); setCalculatorOverride(slug, { ...forCalculator(slug).calculatorOverrides[slug], currency: next }); }} /></label>}
-          <div className="advanced-fields">{definition.fields.map((field, index) => <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}><span>{field.label}</span><div>
-            {field.type === 'select' ? <select {...a11y.field(field.key)} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select> :
-              <input {...a11y.field(field.key)} type={field.type === 'date' || field.type === 'time' ? field.type : 'number'} min={field.min} max={field.max} step={field.step ?? (field.type === 'date' || field.type === 'time' ? undefined : 'any')} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
-            {field.suffix && <small>{field.suffix}</small>}
-          </div></label>)}</div>
+          <div className="advanced-fields">{definition.fields.map((field, index) => {
+            const isStudentLoanTerm = slug === 'student-loan' && field.key === 'years';
+            return <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}><span>{field.label}</span><div>
+              {field.type === 'select' ? <select {...a11y.field(field.key)} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select> :
+                <input {...a11y.field(field.key)} type={field.type === 'date' || field.type === 'time' ? field.type : 'number'} min={isStudentLoanTerm ? STUDENT_LOAN_MIN_YEARS : field.min} max={field.max} step={isStudentLoanTerm ? STUDENT_LOAN_YEAR_STEP : field.step ?? (field.type === 'date' || field.type === 'time' ? undefined : 'any')} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
+              {field.suffix && <small>{field.suffix}</small>}
+            </div></label>;
+          })}</div>
           {slug === 'retirement' && <CalculatorDecisionExpansion slug="retirement" values={values} currency={currency} open={advancedMode} />}
           <CalculatorResultAnnouncement error={result.error} result={result.primary} />
           <div className={`advanced-result${result.error ? ' has-error' : ''}`} data-testid={`status-${slug}`}>
