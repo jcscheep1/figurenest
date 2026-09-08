@@ -44,20 +44,19 @@ jobs:
               el.send_keys(value)
               el.send_keys(Keys.TAB)
               time.sleep(0.35)
+              return el
 
           try:
               # PR #40 production verification: browser exposes a real date field and leap day remains valid.
               driver.get('https://figurenest.com/calculators/health/pregnancy-conception')
-              last_period = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-pregnancy-conception-lastPeriod"]')))
+              last_period = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-testid="input-pregnancy-conception-lastPeriod"]')))
               assert last_period.get_attribute('type') == 'date', last_period.get_attribute('type')
-              driver.execute_script("""
-                const el = arguments[0];
-                const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-                setter.call(el, '2024-02-29');
-                el.dispatchEvent(new Event('input', {bubbles:true}));
-                el.dispatchEvent(new Event('change', {bubbles:true}));
-              """, last_period)
+              last_period.click()
+              last_period.send_keys(Keys.CONTROL, 'a')
+              last_period.send_keys('02/29/2024')
+              last_period.send_keys(Keys.TAB)
               time.sleep(0.5)
+              assert last_period.get_attribute('value') == '2024-02-29', 'date entry did not take: ' + str(last_period.get_attribute('value'))
               pregnancy = driver.find_element(By.CSS_SELECTOR, '[data-testid="status-pregnancy-conception"]')
               assert 'has-error' not in pregnancy.get_attribute('class'), pregnancy.text
               assert '2024-03-28' in pregnancy.text, pregnancy.text
