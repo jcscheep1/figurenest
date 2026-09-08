@@ -83,6 +83,7 @@ const addCalendarDays = (date: CalendarDate, days: number, enforceBounds = true)
   const value = new Date(0);
   value.setUTCHours(0, 0, 0, 0);
   value.setUTCFullYear(date.year, date.month - 1, date.day + days);
+  if (!Number.isFinite(value.getTime())) throw new RangeError('Date is outside the supported calendar range.');
   const result = { year: value.getUTCFullYear(), month: value.getUTCMonth() + 1, day: value.getUTCDate() };
   if (enforceBounds && (result.year < 1 || result.year > 9999)) throw new RangeError('Date is outside the supported calendar range.');
   return result;
