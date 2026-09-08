@@ -30,26 +30,13 @@ jobs:
       - run: python scripts/one-time-repair-mileage-metric.py
       - run: pnpm --filter @workspace/calcstride typecheck
       - run: pnpm --filter @workspace/calcstride generate:seo
-      - name: Unit tests
-        id: tests
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          pnpm --filter @workspace/calcstride test 2>&1 | tee mileage-tests.log
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: mileage-tests-log
-          path: mileage-tests.log
-      - name: Stop on unit-test failure
-        if: steps.tests.outcome == 'failure'
-        run: exit 1
+      - run: pnpm --filter @workspace/calcstride test
       - run: pnpm --filter @workspace/calcstride build
       - name: Commit repaired production code
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add artifacts/calcstride/src/lib/phase-four.ts
+          git add artifacts/calcstride/src/lib/phase-four.ts artifacts/calcstride/src/lib/phase-four-routes.ts artifacts/calcstride/src/lib/phase-four.test.ts
           git diff --cached --quiet && exit 0
           git commit -m 'Add metric support to Mileage Calculator'
           git push origin HEAD:audit/mileage-metric-support
