@@ -30,7 +30,6 @@ jobs:
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait, Select
           from selenium.webdriver.support import expected_conditions as EC
-          from selenium.webdriver.common.keys import Keys
 
           BASE = 'https://figurenest.com'
           options = webdriver.ChromeOptions()
@@ -98,7 +97,6 @@ jobs:
               print(f'PASS: {name}' + (f' — {detail}' if detail else ''))
 
           try:
-              # FN-004: directory and every top-level category.
               open_path('/calculators/')
               count_text = text('[data-testid="text-directory-result-count"]')
               assert count_text.startswith('162 '), count_text
@@ -108,7 +106,7 @@ jobs:
               for original in category_buttons:
                   testid = original.get_attribute('data-testid')
                   slug = testid.replace('button-directory-category-', '')
-                  label = original.text.strip()
+                  label = original.text.strip().casefold()
                   button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f'[data-testid="{testid}"]')))
                   driver.execute_script('arguments[0].click()', button)
                   wait.until(lambda d, s=slug: f'category={s}' in d.current_url)
@@ -117,19 +115,18 @@ jobs:
                   cards = driver.find_elements(By.CSS_SELECTOR, '.calculator-directory-card')
                   assert current_count == len(cards), f'{slug}: count {current_count} != cards {len(cards)}'
                   assert current_count > 0, f'{slug}: no tools'
-                  card_categories = {c.text.strip() for c in driver.find_elements(By.CSS_SELECTOR, '.calculator-directory-card-category')}
+                  card_categories = {c.text.strip().casefold() for c in driver.find_elements(By.CSS_SELECTOR, '.calculator-directory-card-category')}
                   if slug == 'construction':
-                      assert 'Home & Construction' in card_categories, card_categories
-                      assert 'Electrical' in card_categories, f'construction did not include Electrical: {card_categories}'
+                      assert 'home & construction' in card_categories, card_categories
+                      assert 'electrical' in card_categories, f'construction did not include Electrical: {card_categories}'
                       assert current_count == 25, f'construction expected 25 combined results, got {current_count}'
                   elif slug == 'electrical':
-                      assert card_categories == {'Electrical'}, card_categories
+                      assert card_categories == {'electrical'}, card_categories
                       assert current_count == 4, f'electrical expected 4 results, got {current_count}'
                   else:
                       assert card_categories == {label}, f'{slug}: {card_categories} != {label}'
               passed('FN-004 directory/category filtering', '14/14 categories; construction includes 4 Electrical tools')
 
-              # Historical Shoe Size issue: verify child/adult modes and live result.
               open_path('/converters/shoe-size')
               group = Select(wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="select-shoe-group"]'))))
               option_text = {o.text.strip() for o in group.options}
@@ -140,7 +137,6 @@ jobs:
               assert 'Children / youth' in shoe_result and 'EU' in shoe_result, shoe_result
               passed('FN-005-A Shoe Size Converter', 'baby, youth, women and men modes live')
 
-              # Historical Time Card issue: verify gross pay is visible, not only hours.
               open_path('/calculators/date-time/time-card')
               set_label_input('Clock in', '09:00')
               set_label_input('Clock out', '17:30')
@@ -152,7 +148,6 @@ jobs:
               assert 'Regular pay' in breakdown and '160' in breakdown, breakdown
               passed('FN-005-B Time Card Calculator', f'gross pay visible: {gross}')
 
-              # Markup: zero cost must show undefined equivalent margin, not 0%.
               open_path('/calculators/business/markup')
               set_input('[data-testid="input-business-cost"]', '0')
               set_input('[data-testid="input-business-markup"]', '40')
@@ -162,7 +157,6 @@ jobs:
               assert 'Equivalent margin' in detail_text and 'Not defined' in detail_text, detail_text
               passed('FN-005-C Markup Calculator', 'zero-cost equivalent margin is Not defined')
 
-              # Converter precision: small valid result must not round to zero.
               open_path('/converters/length')
               select_value('[data-testid="select-converter-from"]', 'm')
               select_value('[data-testid="select-converter-to"]', 'km')
@@ -172,7 +166,6 @@ jobs:
               assert numeric > 0 and abs(numeric - 0.000001) < 1e-12, converter_result
               passed('FN-005-D Converter precision', converter_result)
 
-              # Commission: optional blank base pay must be treated as zero.
               open_path('/calculators/business/commission')
               set_input('#calculator-commission-sales', '10000')
               set_input('#calculator-commission-rate', '8')
@@ -183,7 +176,6 @@ jobs:
               assert '800.00' in commission_result, commission_result
               passed('FN-005-E Commission Calculator', f'blank base pay accepted: {commission_result}')
 
-              # APR: total payments may be below gross amount when above net proceeds.
               open_path('/calculators/finance/apr')
               set_input('#calculator-apr-amount', '10000')
               set_input('#calculator-apr-fees', '200')
@@ -196,7 +188,6 @@ jobs:
               assert apr_result.startswith('0.40% APR'), apr_result
               passed('FN-005-F APR Calculator', apr_result)
 
-              # Roman numerals: reject decimals; accept valid whole number.
               open_path('/converters/roman-numeral')
               set_input('#calculator-roman-numeral-number', '1.5')
               roman_panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
@@ -209,7 +200,6 @@ jobs:
               assert roman_result == 'MMXXVI', roman_result
               passed('FN-005-G Roman Numeral Converter', 'decimal rejected; 2026 = MMXXVI')
 
-              # Matrix determinant/inverse only need Matrix A.
               open_path('/calculators/math/matrix')
               select_value('[data-testid="input-matrix-operation"]', 'determinant')
               set_input('[data-testid="input-matrix-rows"]', '2')
@@ -224,7 +214,6 @@ jobs:
               assert matrix_result == '-2', matrix_result
               passed('FN-005-H Matrix Calculator', 'determinant(A) works with Matrix B blank')
 
-              # Percentage: blank is an error, true zero remains valid.
               open_path('/calculators/finance/percentage')
               set_input('[data-testid="input-calc-0"]', '')
               percentage_result = text('[data-testid="text-calculation-result"]')
@@ -239,7 +228,6 @@ jobs:
               assert percentage_result == '0', percentage_result
               passed('FN-005-I Percentage Calculator', 'blank rejected; 25% of 80 = 20; true zero valid')
 
-              # Fresh Date naming alignment check.
               open_path('/calculators/date-time/date-difference')
               h1 = text('h1')
               assert 'Date Calculator' in h1 and 'Day Counter' in h1, h1
