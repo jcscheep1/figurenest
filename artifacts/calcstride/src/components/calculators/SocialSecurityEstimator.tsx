@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import '@/styles/advanced-calculator-pages.css';
 import { Shell } from '@/components/FigureNestShell';
 import { Seo } from '@/pages/AppPages';
-import { estimateSocialSecurityBenefit, formatRetirementAge } from '@/lib/social-security';
+import { estimateSocialSecurityBenefit, formatRetirementAge, parseRequiredSocialSecurityNumber } from '@/lib/social-security';
 
 const money = (value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -11,7 +11,11 @@ export function SocialSecurityEstimator() {
   const [birthYear, setBirthYear] = useState('1960');
   const [claimingAge, setClaimingAge] = useState('67');
   const result = useMemo(
-    () => estimateSocialSecurityBenefit(Number(pia), Number(birthYear), Number(claimingAge)),
+    () => estimateSocialSecurityBenefit(
+      parseRequiredSocialSecurityNumber(pia),
+      parseRequiredSocialSecurityNumber(birthYear),
+      parseRequiredSocialSecurityNumber(claimingAge),
+    ),
     [pia, birthYear, claimingAge],
   );
   const factor = result ? `${(result.factor * 100).toFixed(1)}%` : '—';
