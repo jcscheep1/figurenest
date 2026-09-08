@@ -148,8 +148,10 @@ export const growthDecision = (start: number, monthly: number, annualRate: numbe
     || annualFee > MAX_FINANCE_RATE
     || inflation > MAX_FINANCE_RATE
   ) return undefined;
+  const rawMonths = years * 12;
+  const months = Math.round(rawMonths);
+  if (Math.abs(rawMonths - months) > 1e-9) return undefined;
   let balance = start, contribution = monthly, deposited = start;
-  const months = Math.round(years * 12);
   for (let month = 0; month < months; month += 1) {
     if (beginningOfMonth) balance += contribution;
     balance *= 1 + (annualRate - annualFee) / 1200;

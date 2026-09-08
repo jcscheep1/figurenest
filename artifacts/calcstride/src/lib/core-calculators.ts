@@ -148,9 +148,12 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
     };
   }
   if (slug === 'compound-interest') {
+    if (d <= 0) return invalid('Investment horizon must be greater than zero');
     const boundsError = financeBoundsError([a, b], c, d, currency);
     if (boundsError) return invalid(boundsError);
-    const months = d * 12;
+    const rawMonths = d * 12;
+    const months = Math.round(rawMonths);
+    if (Math.abs(rawMonths - months) > 1e-9) return invalid('Investment horizon must resolve to a whole number of months');
     const deposited = a + b * months;
     const balance = compoundBalance(a, b, c, months);
     const interest = balance - deposited;
