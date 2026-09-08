@@ -5,26 +5,21 @@ import { localCategories, publishedTools } from '../src/lib/catalog';
 import { publicRoutes, SITE_ORIGIN } from '../src/lib/seo';
 import { normalizeRoutePath, toCanonicalUrl } from '../src/lib/public-url';
 import { articles } from '../src/lib/articles';
+import { CATALOG_LAST_MODIFIED } from '../src/lib/catalog-metadata';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = path.join(root, 'public');
-const monthNumbers: Record<string, string> = {
-  January: '01', February: '02', March: '03', April: '04', May: '05', June: '06',
-  July: '07', August: '08', September: '09', October: '10', November: '11', December: '12',
-};
 
-const lastmodFor = (value: string) => {
-  const match = /^([A-Z][a-z]+) (\d{4})$/.exec(value);
-  if (!match || !monthNumbers[match[1]]) throw new Error(`Invalid catalog lastUpdated value: ${value}`);
-  return `${match[2]}-${monthNumbers[match[1]]}-01`;
-};
+if (!/^\d{4}-\d{2}-\d{2}$/.test(CATALOG_LAST_MODIFIED)) {
+  throw new Error(`Invalid CATALOG_LAST_MODIFIED value: ${CATALOG_LAST_MODIFIED}`);
+}
 
-const catalogLastmod = new Map(publishedTools.map((tool) => [tool.href, lastmodFor(tool.lastUpdated)]));
+const catalogLastmod = new Map(publishedTools.map((tool) => [tool.href, CATALOG_LAST_MODIFIED]));
 const latestArticleModified = articles.map((article) => article.modified).sort().at(-1);
 if (!latestArticleModified) throw new Error('Cannot assign an articles lastmod without published articles');
 const contentLastmod = new Map<string, string>([
-  ['/', '2026-09-01'],
-  ['/calculators', '2026-09-03'],
+  ['/', '2026-09-08'],
+  ['/calculators', '2026-09-08'],
   ['/articles', latestArticleModified],
   ['/about', '2026-09-01'],
   ['/contact', '2026-09-01'],
