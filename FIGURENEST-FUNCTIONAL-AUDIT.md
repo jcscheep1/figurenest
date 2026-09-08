@@ -30,12 +30,15 @@
 | Loan Calculator | `/calculators/finance/loan` | ✅ AUDITED + REPAIRED | Run `34268276394`: normal 24000 @ 7.2% / 5y remains $477.50; blank principal/rate/term rejected; zero rate remains valid; 5.01y rejected; 5.5y / 66 months accepted; UI step is one month; Advanced follows the same whole-month contract; FN-005-N and FN-005-O closed |
 | Investment Calculator | `/calculators/finance/investment` | ✅ AUDITED + REPAIRED | Run `34269010115`: normal 25000 @ 6.5% / 5y -> `$34,570.43`, zero return -> `$25,000.00`, blank/negative inputs rejected, fractional years explicitly supported, extreme finite overflow rejected without `$∞`, mobile/a11y/internal-link and SEO/content checks passed; repair `c9923462763dcdadc70a8322a24459bff53f8ec6`; FN-005-P closed |
 | Mortgage Calculator | `/calculators/finance/mortgage` | ✅ AUDITED + REPAIRED | Run `34269240781`: normal 360000/72000/6.5%/30y + tax/insurance -> `$2,345.36`; zero rate and invalid inputs passed; 30.01y rejected; 30.5y / 366 months accepted; UI step is one month; Advanced baseline matches Basic and rejects the same invalid term; repair `ac3d33a2cd58854d183c92daf36ee1ba7acc92fc`; FN-005-Q closed |
+| 401(k) Growth Calculator | `/calculators/finance/401k` | ✅ AUDITED + REPAIRED | Run `34270949462`: default 25000 balance + 10000 employee + 3000 employer + 6% / 20y -> `$558,391.07`; years step=1; 20.5y rejected; 0% / 20y -> `$285,000.00`; repair `c08c67cfefeccd81c4db541b8f5808e0655bfc76`; FN-005-R closed |
+| Bond Calculator | `/calculators/finance/bond` | ✅ AUDITED + REPAIRED | Run `34270949462`: 1000 face / 5% coupon / 4% yield / 10y -> `$1,081.11`; maturity min=1 and step=1; 10.5y rejected; repair `78069e95af50015ab1645743c902750d0dc908ec`; FN-005-S closed |
+| Compound Interest Calculator | `/calculators/finance/compound-interest` | ✅ AUDITED + REPAIRED | Run `34270949462`: default -> `$50,066.82`; horizon step is one month; 0y rejected; 10.01y rejected as fractional months; 10.5y accepted; Basic and Advanced monthly-horizon contract repaired in `9d333728283b642fc9a84bacacc3463fe5966f91`; FN-005-T closed |
 
 ## Audit cursor
 
 The **Business** category is fully covered in this ledger: ROI, Profit Margin, Markup, Break-Even, and Commission.
 
-The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, Investment, and Mortgage are complete and must not be retested unless fresh production evidence proves regression.
+The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, Investment, Mortgage, 401(k), Bond, and Compound Interest are complete and must not be retested unless fresh production evidence proves regression.
 
 Continue with genuinely unchecked published calculators. For each calculator, verify at minimum:
 
@@ -49,6 +52,6 @@ If a fresh production defect is found, add the next FN-005 child ID in `FIGURENE
 
 ### Next audit target
 
-**Compound Interest Calculator** — `/calculators/finance/compound-interest`
+**Savings Calculator** — `/calculators/finance/savings`
 
-A separate 401(k) repair is already active; do not duplicate that work. Continue the Money & Finance pass with Compound Interest while skipping completed rows above.
+Before starting, check current `main` and active work so any existing Savings repair is reused rather than duplicated.
