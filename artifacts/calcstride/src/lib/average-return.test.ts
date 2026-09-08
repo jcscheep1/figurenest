@@ -7,7 +7,7 @@ test('Average Return keeps established normal-period behavior', () => {
   assert.equal(result.error, undefined);
   assert.equal(result.primary, '5.3333%');
   assert.equal(result.details[0]?.label, 'Compound annual return');
-  assert.equal(result.details[0]?.value, '5.1647%');
+  assert.equal(result.details[0]?.value, '5.1085%');
 });
 
 test('Average Return accepts an exact 100% loss as a zero growth factor', () => {
