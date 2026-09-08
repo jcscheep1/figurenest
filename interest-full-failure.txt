@@ -1,0 +1,918 @@
+ok 282 - Bond exposes and enforces whole annual coupon periods
+  ---
+  duration_ms: 0.446715
+  type: 'test'
+  ...
+# Subtest: Other Phase Four calculators keep blank values and field constraints untouched
+ok 283 - Other Phase Four calculators keep blank values and field constraints untouched
+  ---
+  duration_ms: 0.274776
+  type: 'test'
+  ...
+# Subtest: phase four publishes 15 canonical definition-driven tools with API parity
+not ok 284 - phase four publishes 15 canonical definition-driven tools with API parity
+  ---
+  duration_ms: 4.399267
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-four.test.ts:1:389'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-four.test.ts:10:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: requested Phase Four priority pages have substantial unique and safe registry prose
+ok 285 - requested Phase Four priority pages have substantial unique and safe registry prose
+  ---
+  duration_ms: 1.832469
+  type: 'test'
+
+---
+
+# Subtest: phase four publishes 15 canonical definition-driven tools with API parity
+not ok 284 - phase four publishes 15 canonical definition-driven tools with API parity
+  ---
+  duration_ms: 4.399267
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-four.test.ts:1:389'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-four.test.ts:10:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: requested Phase Four priority pages have substantial unique and safe registry prose
+ok 285 - requested Phase Four priority pages have substantial unique and safe registry prose
+  ---
+  duration_ms: 1.832469
+  type: 'test'
+  ...
+# Subtest: phase four known outputs and invalid input handling are deterministic
+ok 286 - phase four known outputs and invalid input handling are deterministic
+  ---
+  duration_ms: 2.930407
+  type: 'test'
+  ...
+# Subtest: shoe size shared engine covers baby, youth, women and men without silent rounding
+ok 287 - shoe size shared engine covers baby, youth, women and men without silent rounding
+  ---
+  duration_ms: 1.210539
+
+---
+
+not ok 284 - phase four publishes 15 canonical definition-driven tools with API parity
+  ---
+  duration_ms: 4.399267
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-four.test.ts:1:389'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-four.test.ts:10:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: requested Phase Four priority pages have substantial unique and safe registry prose
+ok 285 - requested Phase Four priority pages have substantial unique and safe registry prose
+  ---
+  duration_ms: 1.832469
+  type: 'test'
+  ...
+# Subtest: phase four known outputs and invalid input handling are deterministic
+ok 286 - phase four known outputs and invalid input handling are deterministic
+  ---
+  duration_ms: 2.930407
+  type: 'test'
+  ...
+# Subtest: shoe size shared engine covers baby, youth, women and men without silent rounding
+ok 287 - shoe size shared engine covers baby, youth, women and men without silent rounding
+  ---
+  duration_ms: 1.210539
+  type: 'test'
+
+---
+
+ok 304 - matrix determinant and inverse enforce square A and reject singular matrices
+  ---
+  duration_ms: 1.325342
+  type: 'test'
+  ...
+# Subtest: every Probability Calculator mode has valid explanatory defaults
+ok 305 - every Probability Calculator mode has valid explanatory defaults
+  ---
+  duration_ms: 1.459975
+  type: 'test'
+  ...
+# Subtest: Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages
+not ok 306 - Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages
+  ---
+  duration_ms: 6.268481
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-three-c.test.ts:1:583'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-three-c.test.ts:17:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: all approved Phase 3C pages have useful content, sources, safety guidance, canonical metadata, and synchronized schemas
+ok 307 - all approved Phase 3C pages have useful content, sources, safety guidance, canonical metadata, and synchronized schemas
+  ---
+  duration_ms: 6.769483
+  type: 'test'
+
+---
+
+# Subtest: Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages
+not ok 306 - Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages
+  ---
+  duration_ms: 6.268481
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-three-c.test.ts:1:583'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-three-c.test.ts:17:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: all approved Phase 3C pages have useful content, sources, safety guidance, canonical metadata, and synchronized schemas
+ok 307 - all approved Phase 3C pages have useful content, sources, safety guidance, canonical metadata, and synchronized schemas
+  ---
+  duration_ms: 6.769483
+  type: 'test'
+  ...
+# Subtest: BAC and body surface area equations match known examples and reject unsafe ranges
+ok 308 - BAC and body surface area equations match known examples and reject unsafe ranges
+  ---
+  duration_ms: 1.593447
+  type: 'test'
+  ...
+# Subtest: BMI, reference weight, historical height formulas, and lean mass remain respectful and bounded
+ok 309 - BMI, reference weight, historical height formulas, and lean mass remain respectful and bounded
+  ---
+  duration_ms: 1.079992
+
+---
+
+not ok 306 - Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages
+  ---
+  duration_ms: 6.268481
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-three-c.test.ts:1:583'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-three-c.test.ts:17:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: all approved Phase 3C pages have useful content, sources, safety guidance, canonical metadata, and synchronized schemas
+ok 307 - all approved Phase 3C pages have useful content, sources, safety guidance, canonical metadata, and synchronized schemas
+  ---
+  duration_ms: 6.769483
+  type: 'test'
+  ...
+# Subtest: BAC and body surface area equations match known examples and reject unsafe ranges
+ok 308 - BAC and body surface area equations match known examples and reject unsafe ranges
+  ---
+  duration_ms: 1.593447
+  type: 'test'
+  ...
+# Subtest: BMI, reference weight, historical height formulas, and lean mass remain respectful and bounded
+ok 309 - BMI, reference weight, historical height formulas, and lean mass remain respectful and bounded
+  ---
+  duration_ms: 1.079992
+  type: 'test'
+
+---
+
+ok 362 - representative converter links use descriptive labels and canonical tool routes
+  ---
+  duration_ms: 0.467857
+  type: 'test'
+  ...
+# Subtest: shoe size catalog and SEO describe the dedicated child-capable converter
+ok 363 - shoe size catalog and SEO describe the dedicated child-capable converter
+  ---
+  duration_ms: 2.844228
+  type: 'test'
+  ...
+# Subtest: API and local fallback catalogs expose the same published tools
+not ok 364 - API and local fallback catalogs expose the same published tools
+  ---
+  duration_ms: 27.32851
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:2159'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+          category: 'Money & Finance',
+          categorySlug: 'finance',
+          description: 'US-only 401(k) estimate using a current balance and separate employee/employer annual amounts. The 2026 employee elective-deferral planning limit is stated as $24,500; verify IRS limits and catch-up eligibility.',
+    ...
+          categorySlug: 'finance',
+    -     description: 'Calculate simple interest on a fixed principal.',
+    -     featured: false,
+    -     href: '/calculators/finance/interest',
+    -     lastUpdated: 'August 2026',
+    -     name: 'Interest Calculator',
+    -     slug: 'interest'
+    -   },
+    -   {
+    -     category: 'Money & Finance',
+    -     categorySlug: 'finance',
+
+---
+
+    -     name: 'Interest Calculator',
+    -     slug: 'interest'
+    -   },
+    -   {
+    -     category: 'Money & Finance',
+    -     categorySlug: 'finance',
+          description: 'Estimate the annual rate implied by a fixed principal, payment, and term.',
+          featured: false,
+          href: '/calculators/finance/interest-rate',
+          lastUpdated: 'August 2026',
+          name: 'Interest Rate Calculator',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      slug: '401k'
+      name: '401(k) Growth Calculator'
+      description: 'US-only 401(k) estimate using a current balance and separate employee/employer annual amounts. The 2026 employee elective-deferral planning limit is stated as $24,500; verify IRS limits and catch-up eligibility.'
+      category: 'Money & Finance'
+      categorySlug: 'finance'
+      href: '/calculators/finance/401k'
+      featured: false
+      lastUpdated: 'August 2026'
+    1:
+      slug: 'age'
+      name: 'Age Calculator'
+      description: 'Calculate your exact age in years, months, and days.'
+      category: 'Date & Time'
+      categorySlug: 'date-time'
+      href: '/calculators/date-time/age'
+      featured: true
+      lastUpdated: 'August 2026'
+    2:
+      slug: 'annuity'
+      name: 'Annuity Calculator'
+      description: 'Estimate a level payout from a stated starting value, rate, term, and selected monthly or annual payout mode.'
+      category: 'Money & Finance'
+      categorySlug: 'finance'
+      href: '/calculators/finance/annuity'
+
+---
+
+    -     slug: 'interest'
+    -   },
+    -   {
+    -     category: 'Money & Finance',
+    -     categorySlug: 'finance',
+          description: 'Estimate the annual rate implied by a fixed principal, payment, and term.',
+          featured: false,
+          href: '/calculators/finance/interest-rate',
+          lastUpdated: 'August 2026',
+          name: 'Interest Rate Calculator',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      slug: '401k'
+      name: '401(k) Growth Calculator'
+      description: 'US-only 401(k) estimate using a current balance and separate employee/employer annual amounts. The 2026 employee elective-deferral planning limit is stated as $24,500; verify IRS limits and catch-up eligibility.'
+      category: 'Money & Finance'
+      categorySlug: 'finance'
+      href: '/calculators/finance/401k'
+      featured: false
+      lastUpdated: 'August 2026'
+    1:
+      slug: 'age'
+      name: 'Age Calculator'
+      description: 'Calculate your exact age in years, months, and days.'
+      category: 'Date & Time'
+      categorySlug: 'date-time'
+      href: '/calculators/date-time/age'
+      featured: true
+      lastUpdated: 'August 2026'
+    2:
+      slug: 'annuity'
+      name: 'Annuity Calculator'
+      description: 'Estimate a level payout from a stated starting value, rate, term, and selected monthly or annual payout mode.'
+      category: 'Money & Finance'
+      categorySlug: 'finance'
+      href: '/calculators/finance/annuity'
+      featured: false
+
+---
+
+      href: '/calculators/date-time/working-days'
+      featured: false
+      lastUpdated: 'August 2026'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:56:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: API and local fallback catalogs expose the same non-empty categories
+not ok 365 - API and local fallback catalogs expose the same non-empty categories
+  ---
+  duration_ms: 1.506295
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:2435'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+          accent: '#8d78bd',
+          description: 'Compare fuel, charging, power, and the real cost of getting around.',
+          name: 'Automotive & EV',
+    ...
+          slug: 'finance',
+    +     toolCount: 40
+    -     toolCount: 41
+        },
+        {
+          accent: '#5b9d83',
+          description: 'Use transparent health, fitness, pregnancy, and wellbeing estimates with clear safety limits.',
+          name: 'Health',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+
+---
+
+          description: 'Compare fuel, charging, power, and the real cost of getting around.',
+          name: 'Automotive & EV',
+    ...
+          slug: 'finance',
+    +     toolCount: 40
+    -     toolCount: 41
+        },
+        {
+          accent: '#5b9d83',
+          description: 'Use transparent health, fitness, pregnancy, and wellbeing estimates with clear safety limits.',
+          name: 'Health',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      slug: 'automotive'
+      name: 'Automotive & EV'
+      description: 'Compare fuel, charging, power, and the real cost of getting around.'
+      accent: '#8d78bd'
+      toolCount: 8
+    1:
+      slug: 'business'
+      name: 'Business'
+      description: 'Practical calculators for pricing, profitability, and planning.'
+      accent: '#d99a45'
+      toolCount: 5
+    2:
+      slug: 'construction'
+      name: 'Home & Construction'
+      description: 'Plan materials and measurements before you start the work.'
+      accent: '#c57745'
+      toolCount: 21
+    3:
+      slug: 'converters'
+      name: 'Converters'
+      description: 'Switch between the units you use every day.'
+      accent: '#4a93a8'
+      toolCount: 7
+    4:
+
+---
+
+          name: 'Automotive & EV',
+    ...
+          slug: 'finance',
+    +     toolCount: 40
+    -     toolCount: 41
+        },
+        {
+          accent: '#5b9d83',
+          description: 'Use transparent health, fitness, pregnancy, and wellbeing estimates with clear safety limits.',
+          name: 'Health',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      slug: 'automotive'
+      name: 'Automotive & EV'
+      description: 'Compare fuel, charging, power, and the real cost of getting around.'
+      accent: '#8d78bd'
+      toolCount: 8
+    1:
+      slug: 'business'
+      name: 'Business'
+      description: 'Practical calculators for pricing, profitability, and planning.'
+      accent: '#d99a45'
+      toolCount: 5
+    2:
+      slug: 'construction'
+      name: 'Home & Construction'
+      description: 'Plan materials and measurements before you start the work.'
+      accent: '#c57745'
+      toolCount: 21
+    3:
+      slug: 'converters'
+      name: 'Converters'
+      description: 'Switch between the units you use every day.'
+      accent: '#4a93a8'
+      toolCount: 7
+    4:
+      slug: 'date-time'
+
+---
+
+ok 369 - homepage and finance category metadata describe the current catalogue
+  ---
+  duration_ms: 0.572645
+  type: 'test'
+  ...
+# Subtest: every public meta description is complete, unique, and snippet-safe
+ok 370 - every public meta description is complete, unique, and snippet-safe
+  ---
+  duration_ms: 12.733298
+  type: 'test'
+  ...
+# Subtest: all site-wide tool and category counts derive from published tool pages
+not ok 371 - all site-wide tool and category counts derive from published tool pages
+  ---
+  duration_ms: 0.400745
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:6154'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    161 !== 162
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 162
+  actual: 161
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:132:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: every catalog category has one indexable discovery route in the sitemap
+ok 372 - every catalog category has one indexable discovery route in the sitemap
+  ---
+
+---
+
+# Subtest: all site-wide tool and category counts derive from published tool pages
+not ok 371 - all site-wide tool and category counts derive from published tool pages
+  ---
+  duration_ms: 0.400745
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:6154'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    161 !== 162
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 162
+  actual: 161
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:132:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: every catalog category has one indexable discovery route in the sitemap
+ok 372 - every catalog category has one indexable discovery route in the sitemap
+  ---
+  duration_ms: 0.494557
+  type: 'test'
+  ...
+# Subtest: homepage inventory metadata is dynamic and contains no stale legacy totals
+ok 373 - homepage inventory metadata is dynamic and contains no stale legacy totals
+  ---
+  duration_ms: 0.5492
+  type: 'test'
+  ...
+# Subtest: tool slugs, names, descriptions, and destinations are unique
+ok 374 - tool slugs, names, descriptions, and destinations are unique
+
+---
+
+not ok 371 - all site-wide tool and category counts derive from published tool pages
+  ---
+  duration_ms: 0.400745
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:6154'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    161 !== 162
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 162
+  actual: 161
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:132:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: every catalog category has one indexable discovery route in the sitemap
+ok 372 - every catalog category has one indexable discovery route in the sitemap
+  ---
+  duration_ms: 0.494557
+  type: 'test'
+  ...
+# Subtest: homepage inventory metadata is dynamic and contains no stale legacy totals
+ok 373 - homepage inventory metadata is dynamic and contains no stale legacy totals
+  ---
+  duration_ms: 0.5492
+  type: 'test'
+  ...
+# Subtest: tool slugs, names, descriptions, and destinations are unique
+ok 374 - tool slugs, names, descriptions, and destinations are unique
+  ---
+
+---
+
+ok 374 - tool slugs, names, descriptions, and destinations are unique
+  ---
+  duration_ms: 0.223418
+  type: 'test'
+  ...
+# Subtest: tool metadata has no malformed, generic, or duplicated descriptions
+ok 375 - tool metadata has no malformed, generic, or duplicated descriptions
+  ---
+  duration_ms: 10.351871
+  type: 'test'
+  ...
+# Subtest: canonical related-tool graph covers every published tool with reciprocal semantic links
+not ok 376 - canonical related-tool graph covers every published tool with reciprocal semantic links
+  ---
+  duration_ms: 0.561919
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:8718'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:177:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: voltage drop has one electrical canonical route and no unpublished math duplicate
+ok 377 - voltage drop has one electrical canonical route and no unpublished math duplicate
+  ---
+
+---
+
+# Subtest: canonical related-tool graph covers every published tool with reciprocal semantic links
+not ok 376 - canonical related-tool graph covers every published tool with reciprocal semantic links
+  ---
+  duration_ms: 0.561919
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:8718'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:177:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: voltage drop has one electrical canonical route and no unpublished math duplicate
+ok 377 - voltage drop has one electrical canonical route and no unpublished math duplicate
+  ---
+  duration_ms: 0.274514
+  type: 'test'
+  ...
+# Subtest: public URLs use a stable trailing-slash convention without changing route keys
+ok 378 - public URLs use a stable trailing-slash convention without changing route keys
+  ---
+  duration_ms: 0.133602
+  type: 'test'
+  ...
+# Subtest: only the canonical production hostname is indexable
+ok 379 - only the canonical production hostname is indexable
+
+---
+
+not ok 376 - canonical related-tool graph covers every published tool with reciprocal semantic links
+  ---
+  duration_ms: 0.561919
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:8718'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:177:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: voltage drop has one electrical canonical route and no unpublished math duplicate
+ok 377 - voltage drop has one electrical canonical route and no unpublished math duplicate
+  ---
+  duration_ms: 0.274514
+  type: 'test'
+  ...
+# Subtest: public URLs use a stable trailing-slash convention without changing route keys
+ok 378 - public URLs use a stable trailing-slash convention without changing route keys
+  ---
+  duration_ms: 0.133602
+  type: 'test'
+  ...
+# Subtest: only the canonical production hostname is indexable
+ok 379 - only the canonical production hostname is indexable
+  ---
+
+---
+
+ok 396 - every catalog destination matches its slug and route family
+  ---
+  duration_ms: 0.294886
+  type: 'test'
+  ...
+# Subtest: construction related links all resolve to published construction tools
+ok 397 - construction related links all resolve to published construction tools
+  ---
+  duration_ms: 0.292752
+  type: 'test'
+  ...
+# Subtest: sitemap exactly matches all indexable app pages
+not ok 398 - sitemap exactly matches all indexable app pages
+  ---
+  duration_ms: 3.340496
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:26062'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        '/',
+        '/about/',
+        '/articles/',
+        '/articles/business-pricing-profit-basics/',
+    ...
+        '/calculators/finance/interest-rate/',
+    +   '/calculators/finance/interest/',
+        '/calculators/finance/investment/',
+        '/calculators/finance/loan/',
+        '/calculators/finance/marriage-tax/',
+        '/calculators/finance/mortgage-amortization/',
+        '/calculators/finance/mortgage-payoff/',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+
+---
+
+        '/about/',
+        '/articles/',
+        '/articles/business-pricing-profit-basics/',
+    ...
+        '/calculators/finance/interest-rate/',
+    +   '/calculators/finance/interest/',
+        '/calculators/finance/investment/',
+        '/calculators/finance/loan/',
+        '/calculators/finance/marriage-tax/',
+        '/calculators/finance/mortgage-amortization/',
+        '/calculators/finance/mortgage-payoff/',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '/'
+    1: '/about/'
+    2: '/articles/'
+    3: '/articles/business-pricing-profit-basics/'
+    4: '/articles/compound-interest-guide/'
+    5: '/articles/construction-materials-estimating/'
+    6: '/articles/ev-charging-and-fuel-costs/'
+    7: '/articles/loan-payment-calculations/'
+    8: '/articles/mortgage-payment-basics/'
+    9: '/articles/refinancing-considerations/'
+    10: '/articles/salary-and-overtime-basics/'
+    11: '/articles/unit-conversion-basics/'
+    12: '/calculators/'
+    13: '/calculators/automotive/ev-charging-cost/'
+    14: '/calculators/automotive/ev-charging-time/'
+    15: '/calculators/automotive/fuel-cost/'
+    16: '/calculators/automotive/fuel-economy/'
+    17: '/calculators/automotive/gas-mileage/'
+    18: '/calculators/automotive/mileage/'
+    19: '/calculators/automotive/tire-size/'
+    20: '/calculators/business/break-even/'
+    21: '/calculators/business/commission/'
+    22: '/calculators/business/markup/'
+    23: '/calculators/business/profit-margin/'
+    24: '/calculators/business/roi/'
+
+---
+
+        '/articles/',
+        '/articles/business-pricing-profit-basics/',
+    ...
+        '/calculators/finance/interest-rate/',
+    +   '/calculators/finance/interest/',
+        '/calculators/finance/investment/',
+        '/calculators/finance/loan/',
+        '/calculators/finance/marriage-tax/',
+        '/calculators/finance/mortgage-amortization/',
+        '/calculators/finance/mortgage-payoff/',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '/'
+    1: '/about/'
+    2: '/articles/'
+    3: '/articles/business-pricing-profit-basics/'
+    4: '/articles/compound-interest-guide/'
+    5: '/articles/construction-materials-estimating/'
+    6: '/articles/ev-charging-and-fuel-costs/'
+    7: '/articles/loan-payment-calculations/'
+    8: '/articles/mortgage-payment-basics/'
+    9: '/articles/refinancing-considerations/'
+    10: '/articles/salary-and-overtime-basics/'
+    11: '/articles/unit-conversion-basics/'
+    12: '/calculators/'
+    13: '/calculators/automotive/ev-charging-cost/'
+    14: '/calculators/automotive/ev-charging-time/'
+    15: '/calculators/automotive/fuel-cost/'
+    16: '/calculators/automotive/fuel-economy/'
+    17: '/calculators/automotive/gas-mileage/'
+    18: '/calculators/automotive/mileage/'
+    19: '/calculators/automotive/tire-size/'
+    20: '/calculators/business/break-even/'
+    21: '/calculators/business/commission/'
+    22: '/calculators/business/markup/'
+    23: '/calculators/business/profit-margin/'
+    24: '/calculators/business/roi/'
+    25: '/calculators/construction/board-foot/'
+
+---
+
+  type: 'test'
+  ...
+1..447
+# tests 449
+# suites 0
+# pass 442
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8813.975851
+/home/runner/work/figurenest/figurenest/artifacts/calcstride:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/calcstride@0.0.0 test: `tsx --test src/lib/*.test.ts`
+Exit status 1
+exit_status=1
