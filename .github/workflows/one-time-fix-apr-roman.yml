@@ -1,0 +1,86 @@
+name: One-time APR and Roman numeral repair
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-fix-apr-roman.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply exact source repairs and regression tests
+        shell: python
+        run: |
+          from pathlib import Path
+
+          phase = Path('artifacts/calcstride/src/lib/phase-four.ts')
+          text = phase.read_text()
+
+          roman_old = "if(slug==='roman-numeral'){let z=x[0], out='';"
+          roman_new = "if(slug==='roman-numeral'){if(!Number.isInteger(x[0]))return err('Enter a whole number from 1 through 3999.');let z=x[0], out='';"
+          if roman_old not in text:
+              raise SystemExit('Roman numeral target not found; refusing unsafe edit')
+          text = text.replace(roman_old, roman_new, 1)
+
+          apr_old = "if(pay*months<=amount)return err('Total payments must exceed the loan amount for this fixed-payment schedule.');"
+          apr_new = "if(pay*months<=received)return err('Total payments must exceed the cash received for this fixed-payment schedule.');"
+          if apr_old not in text:
+              raise SystemExit('APR target not found; refusing unsafe edit')
+          text = text.replace(apr_old, apr_new, 1)
+          phase.write_text(text)
+
+          Path('artifacts/calcstride/src/lib/apr-net-proceeds-regression.test.ts').write_text("""import assert from 'node:assert/strict';
+          import test from 'node:test';
+          import { calculatePhaseFour } from './phase-four';
+
+          test('APR accepts a valid positive-cost schedule when total payments exceed net proceeds but not gross loan amount', () => {
+            const result = calculatePhaseFour('apr', ['10000', '200', '9800', '165', '60']);
+            assert.equal(result.error, undefined);
+            assert.match(result.primary, /^0\\.40% APR$/);
+            assert.equal(result.details.find((item) => item.label === 'Cash received')?.value, '$9,800.00');
+          });
+
+          test('APR still rejects a schedule that does not repay more than the net cash received', () => {
+            const result = calculatePhaseFour('apr', ['10000', '200', '9800', '163.33', '60']);
+            assert.ok(result.error);
+          });
+          """)
+
+          Path('artifacts/calcstride/src/lib/roman-numeral-boundary.test.ts').write_text("""import assert from 'node:assert/strict';
+          import test from 'node:test';
+          import { calculatePhaseFour } from './phase-four';
+
+          test('Roman numeral converter accepts only whole numbers from 1 through 3999', () => {
+            assert.equal(calculatePhaseFour('roman-numeral', ['1']).primary, 'I');
+            assert.equal(calculatePhaseFour('roman-numeral', ['3999']).primary, 'MMMCMXCIX');
+            assert.equal(calculatePhaseFour('roman-numeral', ['2026']).primary, 'MMXXVI');
+            for (const value of ['1.5', '2026.25', '3998.9']) assert.ok(calculatePhaseFour('roman-numeral', [value]).error);
+            for (const value of ['0', '4000', '', 'NaN', 'Infinity']) assert.ok(calculatePhaseFour('roman-numeral', [value]).error);
+          });
+          """)
+      - name: Run calculator regression suite
+        run: pnpm --filter @workspace/calcstride test
+      - name: Typecheck calculator app
+        run: pnpm --filter @workspace/calcstride typecheck
+      - name: Commit passing repair
+        run: |
+          git config user.name 'FigureNest Repair Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add artifacts/calcstride/src/lib/phase-four.ts artifacts/calcstride/src/lib/apr-net-proceeds-regression.test.ts artifacts/calcstride/src/lib/roman-numeral-boundary.test.ts
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix APR net proceeds and Roman numeral validation'
+          git push origin HEAD:main
