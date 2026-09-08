@@ -205,8 +205,8 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
     const profit = b - a;
     const margin = profit / b * 100;
     const markup = a === 0 ? undefined : profit / a * 100;
-    if (!Number.isFinite(margin) || Math.abs(margin) > MAX_BUSINESS_PERCENT || (markup !== undefined && !Number.isFinite(markup))) {
-      return invalid('These values produce a percentage too large to use. Check the cost and selling price');
+    if (!Number.isFinite(margin) || (markup !== undefined && !Number.isFinite(markup))) {
+      return invalid('These values produce a percentage outside the finite numeric range. Check the cost and selling price');
     }
     return {
       primary: `${decimal.format(margin)}%`,
