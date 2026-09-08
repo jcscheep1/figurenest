@@ -11,6 +11,9 @@ export function normalizePhaseFourInputs(slug: PhaseFourSlug, values: readonly s
   if (slug === 'auto-lease') {
     return values.map((value, index) => index === 2 && value.trim() !== '' && !Number.isInteger(Number(value)) ? '' : value);
   }
+  if (slug === 'debt-consolidation') {
+    return values.map((value, index) => index === 3 && value.trim() !== '' && !Number.isInteger(Number(value)) ? '' : value);
+  }
   if (slug === 'annuity') {
     const years = values[2];
     const mode = values[3];
@@ -33,6 +36,7 @@ export function normalizePhaseFourInputs(slug: PhaseFourSlug, values: readonly s
 
 export function phaseFourFieldStep(slug: PhaseFourSlug, fieldIndex: number, fallback: string | undefined): string | undefined {
   if (slug === 'auto-lease' && fieldIndex === 2) return '1';
+  if (slug === 'debt-consolidation' && fieldIndex === 3) return '1';
   if (slug === 'annuity' && fieldIndex === 2) return '0.08333333333333333';
   if (slug === 'bond' && fieldIndex === 3) return '1';
   return fallback;
