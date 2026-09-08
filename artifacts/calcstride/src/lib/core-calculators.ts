@@ -45,6 +45,7 @@ const MAX_HOURS_PER_WEEK = 168;
 const MAX_PAID_WEEKS = 53;
 const MAX_OVERTIME_HOURS = 168;
 const MAX_OVERTIME_MULTIPLIER = 100;
+const FINANCE_SLUGS = ['compound-interest', 'loan', 'mortgage', 'savings'];
 const BUSINESS_SLUGS = ['roi', 'profit-margin', 'markup', 'break-even'];
 const MAX_BUSINESS_AMOUNT = 1_000_000_000_000;
 const MAX_BUSINESS_PERCENT = 100_000;
@@ -118,6 +119,9 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
   const formatMoney = (value: number) => formatCurrency(value, currency);
   if (['age', 'working-days'].includes(slug)) return calculateDates(slug, inputs);
   if (slug === 'percentage' && inputs.some((value) => !value.trim())) return invalid('Complete every field with a valid non-negative value');
+  if (FINANCE_SLUGS.includes(slug) && inputs.some((value) => !value.trim())) {
+    return invalid('Complete every field with a valid non-negative value');
+  }
   if ([...BUSINESS_SLUGS, ...AUTOMOTIVE_CALCULATOR_SLUGS].includes(slug) && inputs.some((value) => !value.trim())) {
     return invalid('Complete every field with a valid non-negative value');
   }
@@ -173,7 +177,9 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
     if (c === 0) return invalid('Loan term must be greater than zero');
     const boundsError = financeBoundsError([a], b, c, currency);
     if (boundsError) return invalid(boundsError);
-    const months = c * 12;
+    const rawMonths = c * 12;
+    const months = Math.round(rawMonths);
+    if (Math.abs(rawMonths - months) > 1e-9) return invalid('Loan term must resolve to a whole number of months');
     const monthly = payment(a, b, months);
     const total = monthly * months;
     const interest = total - a;

@@ -14,7 +14,9 @@ const payment = (principal: number, annualRate: number, months: number, balloon 
 
 export const amortizationScenario = (principal: number, annualRate: number, years: number, extraMonthly = 0, fees = 0, balloon = 0) => {
   const financed = principal + fees;
-  const months = Math.round(years * 12);
+  const rawMonths = years * 12;
+  const months = Math.round(rawMonths);
+  if (!Number.isFinite(rawMonths) || Math.abs(rawMonths - months) > 1e-9) return undefined;
   const scheduled = payment(financed, annualRate, months, balloon);
   if (![financed, annualRate, years, extraMonthly, fees, balloon, scheduled].every(Number.isFinite) || scheduled < 0 || extraMonthly < 0) return undefined;
   const rate = annualRate / 1200;
