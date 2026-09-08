@@ -36,12 +36,13 @@
 | Savings Calculator | `/calculators/finance/savings` | ✅ AUDITED | Run `34271534495`: default -> `$12,912.92`; 0% -> `$12,000.00`; blank required field rejected; rate above 100% rejected; horizon above 100 years rejected; Advanced mode rendered the savings-target scenario. Existing hardening commits `d57abdae4b5344edb62cbce3eb16916dffc75069` and `8f91f774ce61e20915592b85c97ba51de3b8aea0` verified on production |
 | Budget Calculator | `/calculators/finance/budget` | ✅ AUDITED | Run `34271765170`: default income 5000 / expenses 3800 -> `$1,200.00` surplus; income 3000 / expenses 3800 showed an `$800.00` shortfall; equal income/expenses returned `$0.00`; blank income rejected; field maximum enforced |
 | Credit Card Payoff Calculator | `/calculators/finance/credit-card` | ✅ AUDITED | Run `34272100875`: default 5000 balance / 20% APR / 200 payment -> `33 months`; interest mode -> `$83.33`; payment below first-month interest rejected; blank balance rejected; APR above 100% rejected |
+| Debt Consolidation Calculator | `/calculators/finance/debt-consolidation` | ✅ AUDITED | Run `34272323109`: default 15000 debt / 22% current APR / 12% new APR / 48 months / 300 fees -> `$402.91/month` on `$15,300.00` new balance; payment-comparison mode passed; insufficient current payment rejected; blank debt rejected; APR maximum enforced |
 
 ## Audit cursor
 
 The **Business** category is fully covered in this ledger: ROI, Profit Margin, Markup, Break-Even, and Commission.
 
-The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, Investment, Mortgage, 401(k), Bond, Compound Interest, Savings, Budget, and Credit Card are complete and must not be retested unless fresh production evidence proves regression.
+The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, Investment, Mortgage, 401(k), Bond, Compound Interest, Savings, Budget, Credit Card, and Debt Consolidation are complete and must not be retested unless fresh production evidence proves regression.
 
 Continue with genuinely unchecked published calculators. For each calculator, verify at minimum:
 
@@ -55,6 +56,6 @@ If a fresh production defect is found, add the next FN-005 child ID in `FIGURENE
 
 ### Next audit target
 
-**Debt Consolidation Calculator** — `/calculators/finance/debt-consolidation`
+**Annuity Calculator** — `/calculators/finance/annuity`
 
-Before starting, check current `main` and active work so any existing Debt Consolidation repair is reused rather than duplicated.
+Before starting, check current `main` and active work so any existing Annuity repair is reused rather than duplicated.
