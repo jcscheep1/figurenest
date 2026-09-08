@@ -1,0 +1,142 @@
+name: One-time live audit Investment Calculator
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-live-audit-investment.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Selenium
+        run: pip install 'selenium==4.35.0'
+      - name: Audit production Investment behavior
+        shell: python
+        run: |
+          import time
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.common.keys import Keys
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          options = webdriver.ChromeOptions()
+          options.add_argument('--headless=new')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('--window-size=390,844')
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 20)
+          failures = []
+
+          def set_value(testid, value):
+              el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f'[data-testid="{testid}"]')))
+              driver.execute_script('arguments[0].scrollIntoView({block:"center"})', el)
+              el.click()
+              el.send_keys(Keys.CONTROL, 'a')
+              if value != '':
+                  el.send_keys(str(value))
+              el.send_keys(Keys.TAB)
+              time.sleep(0.25)
+
+          def result_text():
+              return driver.find_element(By.CSS_SELECTOR, '[data-testid="status-investment"]').text
+
+          def check(name, fn):
+              try:
+                  fn()
+                  print('PASS:', name)
+              except Exception as exc:
+                  failures.append(f'{name}: {exc}')
+                  print('FAIL:', name, exc)
+
+          try:
+              driver.get('https://figurenest.com/calculators/finance/investment')
+              wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="page-investment"]')))
+              for button in driver.find_elements(By.TAG_NAME, 'button'):
+                  if 'Reject analytics' in button.text:
+                      button.click(); time.sleep(0.35); break
+
+              def normal():
+                  set_value('input-investment-principal', '25000')
+                  set_value('input-investment-rate', '6.5')
+                  set_value('input-investment-years', '5')
+                  text = result_text()
+                  assert 'CHECK THE VALUES' not in text, text
+                  assert '$34,570.43' in text, text
+                  breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+                  assert '$9,570.43' in breakdown, breakdown
+              check('normal monthly-compounding case', normal)
+
+              def zero_rate():
+                  set_value('input-investment-rate', '0')
+                  text = result_text()
+                  assert 'CHECK THE VALUES' not in text, text
+                  assert '$25,000.00' in text, text
+                  breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+                  assert '$0.00' in breakdown, breakdown
+              check('zero-return boundary', zero_rate)
+
+              def blank_required():
+                  set_value('input-investment-principal', '')
+                  assert 'CHECK THE VALUES' in result_text(), result_text()
+              check('blank required input rejected', blank_required)
+
+              def negative_rate():
+                  set_value('input-investment-principal', '25000')
+                  set_value('input-investment-rate', '-1')
+                  assert 'CHECK THE VALUES' in result_text(), result_text()
+              check('negative annual return rejected', negative_rate)
+
+              def non_month_aligned_term():
+                  set_value('input-investment-rate', '6.5')
+                  set_value('input-investment-years', '5.01')
+                  el = driver.find_element(By.CSS_SELECTOR, '[data-testid="input-investment-years"]')
+                  assert el.get_attribute('step') == 'any', 'term UI is not explicitly fractional'
+                  text = result_text()
+                  assert 'CHECK THE VALUES' not in text, text
+              check('fractional-year behavior is explicit in UI', non_month_aligned_term)
+
+              def overflow_guard():
+                  set_value('input-investment-years', '100')
+                  set_value('input-investment-rate', '1000000')
+                  text = result_text()
+                  assert 'CHECK THE VALUES' in text, 'unsupported overflow produced: ' + text
+              check('extreme finite inputs do not display non-finite money', overflow_guard)
+
+              def mobile_and_a11y():
+                  driver.set_window_size(390, 844); time.sleep(0.2)
+                  overflow = driver.execute_script('return document.documentElement.scrollWidth - document.documentElement.clientWidth')
+                  assert overflow <= 2, f'horizontal overflow {overflow}px'
+                  for key in ('principal','rate','years'):
+                      el = driver.find_element(By.CSS_SELECTOR, f'[data-testid="input-investment-{key}"]')
+                      assert el.get_attribute('id'), key
+                      labels = driver.find_elements(By.CSS_SELECTOR, f'label[for="{el.get_attribute("id")}"]')
+                      assert labels, f'{key} missing associated label'
+                  assert len(driver.find_elements(By.CSS_SELECTOR, '[data-testid^="link-related-investment-"]')) >= 2
+              check('mobile width, labels, and internal links', mobile_and_a11y)
+
+              def seo_content():
+                  driver.get('https://figurenest.com/calculators/finance/investment'); time.sleep(0.4)
+                  canonical = driver.find_element(By.CSS_SELECTOR, 'link[rel="canonical"]').get_attribute('href')
+                  assert canonical.rstrip('/') == 'https://figurenest.com/calculators/finance/investment', canonical
+                  h1 = driver.find_element(By.TAG_NAME, 'h1').text
+                  assert 'Investment Calculator' in h1, h1
+                  words = driver.find_element(By.CSS_SELECTOR, '.advanced-content').text.split()
+                  assert len(words) >= 500, f'content only {len(words)} words'
+                  assert len(driver.find_elements(By.CSS_SELECTOR, '.advanced-faq details')) >= 4
+                  assert len(driver.find_elements(By.CSS_SELECTOR, '.advanced-content a[href^="http"]')) >= 1
+              check('SEO/content depth and sources', seo_content)
+
+              if failures:
+                  raise AssertionError('\n'.join(failures))
+          finally:
+              driver.quit()
