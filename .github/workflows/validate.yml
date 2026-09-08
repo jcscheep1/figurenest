@@ -46,3 +46,7 @@ jobs:
 
       - name: Build
         run: pnpm --filter @workspace/calcstride build
+
+      - name: Audit production robots and sitemap
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+        run: pnpm --filter @workspace/calcstride exec tsx scripts/audit-production-indexing.ts
