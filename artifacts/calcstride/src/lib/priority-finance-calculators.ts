@@ -300,6 +300,7 @@ export const priorityFinanceContent: Record<PriorityFinanceSlug, PriorityFinance
 
 const maximumAmount = 1_000_000_000_000;
 const decimal = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const smallPositiveRate = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 2 });
 
 const payment = (principal: number, annualRate: number, months: number) => {
   if (annualRate === 0) return principal / months;
@@ -393,8 +394,12 @@ export function calculatePriorityFinance(
       else high = middle;
     }
     const annualRate = ((low + high) / 2) * 12;
+    const standardRate = decimal.format(annualRate);
+    const displayedRate = annualRate > 0 && standardRate === '0'
+      ? smallPositiveRate.format(annualRate)
+      : standardRate;
     return {
-      primary: `${decimal.format(annualRate)}%`,
+      primary: `${displayedRate}%`,
       summary: 'Approximate nominal annual rate based on monthly amortization.',
       details: [
         { label: 'Total scheduled payments', value: money(monthlyPayment * months) },
