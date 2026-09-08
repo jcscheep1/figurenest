@@ -77,3 +77,18 @@ test('Priority One validation and known formula cases', () => {
     if (numeric >= 0) { const negative = [...defaults]; negative[numeric] = '-1'; assert(calculatePriorityOneExpansion(slug, negative).error); }
   }
 });
+
+test('Investment Calculator keeps normal growth and rejects non-finite projections', () => {
+  const normal = calculatePriorityOneExpansion('investment', ['25000', '6.5', '5']);
+  assert.equal(normal.error, undefined);
+  assert.equal(normal.primary, '$34,570.43');
+  assert.equal(normal.details.find(detail => detail.label === 'Growth')?.value, '$9,570.43');
+
+  const zeroRate = calculatePriorityOneExpansion('investment', ['25000', '0', '5']);
+  assert.equal(zeroRate.error, undefined);
+  assert.equal(zeroRate.primary, '$25,000.00');
+
+  const overflow = calculatePriorityOneExpansion('investment', ['25000', '1000000', '100']);
+  assert.match(overflow.error ?? '', /too large to calculate reliably/i);
+  assert.equal(overflow.details.length, 0);
+});
