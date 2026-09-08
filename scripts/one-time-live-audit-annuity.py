@@ -22,12 +22,11 @@ def setv(e,v):
     if v!='': e.send_keys(str(v))
     e.send_keys(Keys.TAB); time.sleep(.35)
 def out(): return d.find_element(By.CSS_SELECTOR,'.advanced-result-output').text.strip()
-def body(): return d.find_element(By.TAG_NAME,'body').text
 
 try:
     d.get(URL); wait.until(lambda x:x.execute_script('return document.readyState')=='complete'); time.sleep(.8); dismiss()
     fs=inputs(); assert len(fs)>=3, len(fs)
-    assert '$659.96 per monthly' in out() or '$659.96' in out(), out()
+    assert '$659.96' in out(), out()
     print('PASS Annuity default monthly payout $659.96')
 
     setv(fs[1],'0')
@@ -35,15 +34,15 @@ try:
     print('PASS Annuity zero-rate monthly payout $416.67')
 
     setv(fs[1],'5'); setv(fs[2],'20.01')
-    assert 'whole monthly' in body().lower() or 'whole number of monthly' in body().lower(), body()[-1200:]
+    assert 'valid range' in out().lower(), out()
     print('PASS Annuity fractional monthly payout period rejected')
 
     setv(fs[2],'20.5')
-    assert '$' in out() and 'CHECK' not in out().upper(), out()
+    assert '$' in out() and 'VALID RANGE' not in out().upper(), out()
     print('PASS Annuity 20.5 years accepted in monthly mode (246 periods)')
 
     Select(mode()).select_by_value('annual'); time.sleep(.35)
-    assert 'whole annual' in body().lower() or 'whole number' in body().lower(), body()[-1200:]
+    assert 'valid range' in out().lower(), out()
     print('PASS Annuity fractional year rejected in annual mode')
 
     setv(fs[2],'20')
