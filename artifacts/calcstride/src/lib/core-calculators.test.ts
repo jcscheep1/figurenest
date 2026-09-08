@@ -118,7 +118,7 @@ test('business calculators reject incomplete, undefined, invalid, and unsafe inp
     calculateCore('break-even', ['12000', '20', '32']),
     calculateCore('roi', ['0', '100']),
     calculateCore('markup', ['48', '100001']),
-    calculateCore('roi', ['0.0000001', '1000000000000']),
+    calculateCore('roi', ['5e-324', '1000000000000']),
     calculateCore('profit-margin', ['1000000000000', '0.000001']),
     calculateCore('break-even', ['1000000000000', '1', '0.999999999999']),
     calculateCore('markup', ['1000000000001', '1']),

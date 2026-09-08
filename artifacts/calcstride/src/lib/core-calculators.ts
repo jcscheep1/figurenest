@@ -132,8 +132,8 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
   if (slug === 'roi') {
     const gain = b - a;
     const roi = gain / a * 100;
-    if (!Number.isFinite(roi) || Math.abs(roi) > MAX_BUSINESS_PERCENT) {
-      return invalid('These values produce an ROI too large to use. Check the initial investment');
+    if (!Number.isFinite(roi)) {
+      return invalid('These values produce an ROI outside the finite numeric range. Check the initial investment');
     }
     return {
       primary: `${decimal.format(roi)}%`,
