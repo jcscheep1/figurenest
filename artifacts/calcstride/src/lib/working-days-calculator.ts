@@ -1,5 +1,6 @@
 const DAY_MS = 86_400_000;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const BASIC_WORKDAYS = '1,2,3,4,5';
 
 const parseIsoDate = (value: string) => {
   if (!ISO_DATE.test(value)) return null;
@@ -29,7 +30,8 @@ export function calculateWorkingDays({
   const secondInput = parseIsoDate(end);
   if (!firstInput || !secondInput) return { ok: false, error: 'Enter valid dates' };
 
-  const activeDays = workdays.split(',').map((value) => Number(value));
+  const selectedWorkdays = advanced ? workdays : BASIC_WORKDAYS;
+  const activeDays = selectedWorkdays.split(',').map((value) => Number(value));
   if (!activeDays.length || activeDays.some((value) => !Number.isInteger(value) || value < 0 || value > 6)) {
     return { ok: false, error: 'Choose a valid working-week schedule' };
   }
