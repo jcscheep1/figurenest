@@ -48,18 +48,6 @@ const utcDaySerial = ({ year, month, day }: CalendarDate) => {
 
 const compareDates = (a: CalendarDate, b: CalendarDate) => utcDaySerial(a) - utcDaySerial(b);
 
-const addYearsClamped = (date: CalendarDate, years: number): CalendarDate => {
-  const year = date.year + years;
-  return { year, month: date.month, day: Math.min(date.day, daysInMonth(year, date.month)) };
-};
-
-const addMonthsClamped = (date: CalendarDate, months: number): CalendarDate => {
-  const monthIndex = date.year * 12 + date.month - 1 + months;
-  const year = Math.floor(monthIndex / 12);
-  const month = monthIndex - year * 12 + 1;
-  return { year, month, day: Math.min(date.day, daysInMonth(year, month)) };
-};
-
 const weekdayName = (date: CalendarDate) => {
   const value = new Date(0);
   value.setUTCHours(0, 0, 0, 0);
@@ -73,20 +61,31 @@ const birthdayInYear = (birth: CalendarDate, year: number): CalendarDate => ({
   day: Math.min(birth.day, daysInMonth(year, birth.month)),
 });
 
+const plural = (value: number, unit: string) => `${value} ${unit}${value === 1 ? '' : 's'}`;
+
 export function calculateAge(birthDate: string, asOfDate: string): AgeCalculationResult {
   const birth = parseCalendarDate(birthDate);
   const asOf = parseCalendarDate(asOfDate);
   if (!birth || !asOf) return { ok: false, error: 'Enter real dates in YYYY-MM-DD format.' };
   if (compareDates(birth, asOf) > 0) return { ok: false, error: 'Date of birth must not be after the age-as-of date.' };
 
-  let years = asOf.year - birth.year;
-  if (compareDates(addYearsClamped(birth, years), asOf) > 0) years--;
-  const afterYears = addYearsClamped(birth, years);
+  const leapDayBirth = birth.month === 2 && birth.day === 29;
+  const effectiveBirthDay = leapDayBirth && !isLeapYear(asOf.year) && asOf.month >= 2 ? 28 : birth.day;
 
-  let months = (asOf.year - afterYears.year) * 12 + asOf.month - afterYears.month;
-  if (compareDates(addMonthsClamped(afterYears, months), asOf) > 0) months--;
-  const afterMonths = addMonthsClamped(afterYears, months);
-  const days = utcDaySerial(asOf) - utcDaySerial(afterMonths);
+  let years = asOf.year - birth.year;
+  let months = asOf.month - birth.month;
+  let days = asOf.day - effectiveBirthDay;
+
+  if (days < 0) {
+    months--;
+    const previousMonth = asOf.month === 1 ? 12 : asOf.month - 1;
+    const previousMonthYear = asOf.month === 1 ? asOf.year - 1 : asOf.year;
+    days += daysInMonth(previousMonthYear, previousMonth);
+  }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
 
   const totalDays = utcDaySerial(asOf) - utcDaySerial(birth);
   const totalWeeks = Math.floor(totalDays / 7);
@@ -98,7 +97,7 @@ export function calculateAge(birthDate: string, asOfDate: string): AgeCalculatio
 
   return {
     ok: true,
-    primary: `${years} years, ${months} months, ${days} days`,
+    primary: `${plural(years, 'year')}, ${plural(months, 'month')}, ${plural(days, 'day')}`,
     years,
     months,
     days,
