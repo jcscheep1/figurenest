@@ -1,5 +1,9 @@
 export type MoneyScenario = { label: string; value: number };
 
+const MAX_FINANCE_AMOUNT = 1_000_000_000_000;
+const MAX_FINANCE_RATE = 100;
+const MAX_FINANCE_YEARS = 100;
+
 const payment = (principal: number, annualRate: number, months: number, balloon = 0) => {
   if (months <= 0 || principal < 0 || annualRate < 0 || balloon < 0 || balloon > principal) return NaN;
   if (annualRate === 0) return (principal - balloon) / months;
@@ -145,8 +149,22 @@ export const growthDecision = (start: number, monthly: number, annualRate: numbe
 };
 
 export const savingsTargetDecision = (start: number, monthly: number, annualRate: number, years: number, target: number, annualIncrease: number, beginningOfMonth: boolean) => {
+  if (
+    ![start, monthly, annualRate, years, target, annualIncrease].every(Number.isFinite)
+    || start < 0
+    || monthly < 0
+    || annualRate < 0
+    || years <= 0
+    || target < 0
+    || annualIncrease < 0
+    || start > MAX_FINANCE_AMOUNT
+    || monthly > MAX_FINANCE_AMOUNT
+    || target > MAX_FINANCE_AMOUNT
+    || annualRate > MAX_FINANCE_RATE
+    || years > MAX_FINANCE_YEARS
+  ) return undefined;
   const scenario = growthDecision(start, monthly, annualRate, years, annualIncrease, 0, 0, beginningOfMonth);
-  if (!scenario || !Number.isFinite(target) || target < 0) return undefined;
+  if (!scenario) return undefined;
   const months = Math.round(years * 12);
   const rate = annualRate / 1200;
   const startFuture = start * (1 + rate) ** months;
