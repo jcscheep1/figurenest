@@ -37,7 +37,10 @@ for (const category of localCategories) {
   catalogLastmod.set(category.slug === 'construction' ? '/home-construction' : `/category/${category.slug}`, latest);
 }
 
-const urls = publicRoutes.map((route) => {
+// Sitemap entries must be unique by canonical route. Catalog aliases can point to the
+// same public destination, but Google should only receive one <url> entry per route.
+const sitemapRoutes = [...new Set(publicRoutes.map(normalizeRoutePath))];
+const urls = sitemapRoutes.map((route) => {
   const routeKey = normalizeRoutePath(route);
   const lastmod = contentLastmod.get(routeKey) ?? catalogLastmod.get(routeKey);
   if (!lastmod) throw new Error(`No source-owned lastmod is defined for public route: ${routeKey}`);
@@ -48,4 +51,4 @@ const robots = `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\nDis
 
 await fs.writeFile(path.join(publicDir, 'sitemap.xml'), sitemap);
 await fs.writeFile(path.join(publicDir, 'robots.txt'), robots);
-console.log(`Generated sitemap.xml and robots.txt for ${publicRoutes.length} routes`);
+console.log(`Generated sitemap.xml and robots.txt for ${sitemapRoutes.length} unique routes`);
