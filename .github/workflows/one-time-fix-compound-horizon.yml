@@ -43,6 +43,8 @@ jobs:
           git add artifacts/calcstride/src/lib/core-calculators.ts artifacts/calcstride/src/lib/decision-calculators.ts artifacts/calcstride/src/pages/FinanceCalculatorPage.tsx artifacts/calcstride/src/lib/compound-interest-horizon-regression.test.ts
           git diff --cached --quiet && exit 0
           git commit -m 'Align Compound Interest with monthly horizon periods'
+          git reset --hard HEAD
+          git clean -fd
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
