@@ -12,6 +12,7 @@ import {
   type PhaseThreeAResult,
   type PhaseThreeASlug,
 } from '@/lib/phase-three-a';
+import { phaseThreeAFieldStep } from '@/lib/phase-three-a-field-contracts';
 import { useUnitsPreferences } from '@/lib/units-preferences';
 import { publishedTools } from '@/lib/catalog';
 import { getCalculatorSeoCapability } from '@/lib/seo-capabilities';
@@ -99,7 +100,7 @@ export function PhaseThreeACalculatorPage({ slug }: { slug: PhaseThreeASlug }) {
                 ? <select {...a11y.field(field.key)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
                 : field.type === 'textarea'
                 ? <textarea {...a11y.field(field.key)} rows={5} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />
-                : <input {...a11y.field(field.key)} type={field.type} min={field.min} max={field.max} step={field.step} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
+                : <input {...a11y.field(field.key)} type={field.type} min={field.min} max={field.max} step={phaseThreeAFieldStep(slug, field.key, field.step)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
               </div>
             </label>)}
           </div>
