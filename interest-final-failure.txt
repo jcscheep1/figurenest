@@ -1,0 +1,103 @@
+  ...
+# Subtest: every public meta description is complete, unique, and snippet-safe
+ok 370 - every public meta description is complete, unique, and snippet-safe
+  ---
+  duration_ms: 14.190384
+  type: 'test'
+  ...
+# Subtest: all site-wide tool and category counts derive from published tool pages
+not ok 371 - all site-wide tool and category counts derive from published tool pages
+  ---
+  duration_ms: 6.468447
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:6154'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    161 !== 162
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 162
+  actual: 161
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:132:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+
+---
+
+  ...
+# Subtest: tool metadata has no malformed, generic, or duplicated descriptions
+ok 375 - tool metadata has no malformed, generic, or duplicated descriptions
+  ---
+  duration_ms: 9.179793
+  type: 'test'
+  ...
+# Subtest: canonical related-tool graph covers every published tool with reciprocal semantic links
+not ok 376 - canonical related-tool graph covers every published tool with reciprocal semantic links
+  ---
+  duration_ms: 0.714875
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:8718'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    162 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 163
+  actual: 162
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:177:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+
+---
+
+  ...
+# Subtest: construction related links all resolve to published construction tools
+ok 397 - construction related links all resolve to published construction tools
+  ---
+  duration_ms: 0.286104
+  type: 'test'
+  ...
+# Subtest: sitemap exactly matches all indexable app pages
+not ok 398 - sitemap exactly matches all indexable app pages
+  ---
+  duration_ms: 2.908731
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:26062'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        '/',
+        '/about/',
+        '/articles/',
+        '/articles/business-pricing-profit-basics/',
+    ...
+        '/calculators/finance/interest-rate/',
+    +   '/calculators/finance/interest/',
+        '/calculators/finance/investment/',
+        '/calculators/finance/loan/',
+        '/calculators/finance/marriage-tax/',
+        '/calculators/finance/mortgage-amortization/',
+        '/calculators/finance/mortgage-payoff/',
+exit_status=1
