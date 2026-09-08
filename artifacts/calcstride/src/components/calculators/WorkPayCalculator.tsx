@@ -6,6 +6,7 @@ import { CurrencySelector } from '@/components/UnitsPreferencesSelectors';
 import { currencyPrefix, formatCurrency, useUnitsPreferences } from '@/lib/units-preferences';
 import { CalculatorModeSwitch } from '@/components/calculators/CalculatorDecisionExpansion';
 import { workDateCalculatorContent } from '@/lib/work-date-calculators';
+import { calculateOvertimePay } from '@/lib/work-pay-math';
 
 type WorkPaySlug = 'salary' | 'overtime';
 const num = (value: string) => Number(value);
@@ -42,15 +43,27 @@ function SalaryCalculator({ currency, symbol, setCurrency }: any) {
 }
 
 function OvertimeCalculator({ currency, symbol, setCurrency }: any) {
-  const [advanced,setAdvanced]=useState(false); const [rate,setRate]=useState('24'); const [otHours,setOtHours]=useState('8'); const [mult,setMult]=useState('1.5'); const [regularHours,setRegularHours]=useState('40'); const [threshold,setThreshold]=useState('40');
-  const result=useMemo(()=>{const r=num(rate),o=num(otHours),m=num(mult),rh=num(regularHours),t=num(threshold);if(!valid(r,o,m,rh,t)||m<=0||rh>168||o>168||t>168)return undefined;const overtimeRate=r*m, overtimePay=o*overtimeRate, regularPay=r*rh,total=regularPay+overtimePay;return{regularPay,overtimeRate,overtimePay,total,totalHours:rh+o,threshold:t};},[rate,otHours,mult,regularHours,threshold]);
+  const [advanced,setAdvanced]=useState(false);
+  const [rate,setRate]=useState('24');
+  const [otHours,setOtHours]=useState('8');
+  const [mult,setMult]=useState('1.5');
+  const [totalHours,setTotalHours]=useState('48');
+  const [threshold,setThreshold]=useState('40');
+  const result=useMemo(()=>calculateOvertimePay({
+    hourlyRate:num(rate),
+    overtimeHours:num(otHours),
+    multiplier:num(mult),
+    totalHours:num(totalHours),
+    threshold:num(threshold),
+    advanced,
+  }),[rate,otHours,mult,totalHours,threshold,advanced]);
   const money=(v:number)=>formatCurrency(v,currency);
-  return <Shell><Seo path="/calculators/salary-work/overtime"/><div className="advanced-calc-page"><div className="advanced-calc-layout"><header className="advanced-calc-copy"><div className="eyebrow"><span className="eyebrow-dot"/> SALARY & WORK</div><h1>Overtime Calculator<span>.</span></h1><p>Calculate overtime rate and overtime pay. Advanced mode also combines regular hours and overtime into an estimated gross pay total.</p></header><section className="advanced-calculator-card"><div className="advanced-calc-head"><span className="mono">OVERTIME — CALCULATE</span><div className="live-dot"><i/> LIVE RESULT</div></div><CalculatorModeSwitch advanced={advanced} onChange={setAdvanced}/><label className="advanced-field"><span>Currency</span><CurrencySelector value={currency} onChange={setCurrency}/></label><div className="advanced-fields"><MoneyField label="Regular hourly rate" value={rate} set={setRate} symbol={symbol}/><NumberField label="Overtime hours" value={otHours} set={setOtHours}/><NumberField label="Overtime multiplier" value={mult} set={setMult} suffix="×"/>{advanced&&<><NumberField label="Regular hours" value={regularHours} set={setRegularHours}/><NumberField label="Overtime threshold (reference)" value={threshold} set={setThreshold} suffix="hours"/></>}</div><Result title={advanced?'ESTIMATED TOTAL GROSS PAY':'OVERTIME PAY'} primary={result?money(advanced?result.total:result.overtimePay):'Check the values'} error={!result} details={result?[['Overtime rate',money(result.overtimeRate)],['Overtime pay',money(result.overtimePay)],...(advanced?[['Regular pay',money(result.regularPay)],['Total hours',`${result.totalHours} hours`],['Entered overtime threshold',`${result.threshold} hours`]]:[])]:[]}/><button className="reset-button mt-6" onClick={()=>{setRate('24');setOtHours('8');setMult('1.5');setRegularHours('40');setThreshold('40');setAdvanced(false);}}>Reset values</button></section></div><FullWorkContent slug="overtime"/></div></Shell>;
+  return <Shell><Seo path="/calculators/salary-work/overtime"/><div className="advanced-calc-page"><div className="advanced-calc-layout"><header className="advanced-calc-copy"><div className="eyebrow"><span className="eyebrow-dot"/> SALARY & WORK</div><h1>Overtime Calculator<span>.</span></h1><p>Calculate overtime rate and overtime pay. Advanced mode derives regular and overtime hours from total hours worked and the overtime threshold, then combines both into estimated gross pay.</p></header><section className="advanced-calculator-card"><div className="advanced-calc-head"><span className="mono">OVERTIME — CALCULATE</span><div className="live-dot"><i/> LIVE RESULT</div></div><CalculatorModeSwitch advanced={advanced} onChange={setAdvanced}/><label className="advanced-field"><span>Currency</span><CurrencySelector value={currency} onChange={setCurrency}/></label><div className="advanced-fields"><MoneyField label="Regular hourly rate" value={rate} set={setRate} symbol={symbol}/><NumberField label="Overtime multiplier" value={mult} set={setMult} suffix="×"/>{advanced?<><NumberField label="Total hours worked" value={totalHours} set={setTotalHours} suffix="hours"/><NumberField label="Overtime threshold" value={threshold} set={setThreshold} suffix="hours"/></>:<NumberField label="Overtime hours" value={otHours} set={setOtHours}/>}</div><Result title={advanced?'ESTIMATED TOTAL GROSS PAY':'OVERTIME PAY'} primary={result?money(advanced?result.totalPay:result.overtimePay):'Check the values'} error={!result} details={result?[['Overtime rate',money(result.overtimeRate)],['Overtime pay',money(result.overtimePay)],...(advanced?[['Regular hours',`${result.regularHours} hours`],['Overtime hours',`${result.overtimeHours} hours`],['Regular pay',money(result.regularPay)],['Total hours',`${result.totalHours} hours`],['Overtime threshold',`${result.threshold} hours`]]:[])]:[]}/><button className="reset-button mt-6" onClick={()=>{setRate('24');setOtHours('8');setMult('1.5');setTotalHours('48');setThreshold('40');setAdvanced(false);}}>Reset values</button></section></div><FullWorkContent slug="overtime"/></div></Shell>;
 }
 
 function MoneyField({label,value,set,symbol}:{label:string;value:string;set:(v:string)=>void;symbol:string}){return <label className="advanced-field"><span>{label}</span><div><b>{symbol}</b><input type="number" min="0" step="any" value={value} onChange={e=>set(e.target.value)}/></div></label>}
 function NumberField({label,value,set,suffix}:{label:string;value:string;set:(v:string)=>void;suffix?:string}){return <label className="advanced-field"><span>{label}</span><div><input type="number" min="0" step="any" value={value} onChange={e=>set(e.target.value)}/>{suffix&&<small>{suffix}</small>}</div></label>}
-function Result({title,primary,error,details}:{title:string;primary:string;error:boolean;details:(string[])[]}){return <><div className={`advanced-result${error?' has-error':''}`}><span className="mono">{error?'CHECK THE VALUES':title}</span><strong>{primary}</strong><p>{error?'Enter valid non-negative values within a realistic working schedule.':'Gross estimate before taxes, deductions and benefits.'}</p></div>{!error&&<div className="advanced-breakdown">{details.map(([label,value])=><div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>}</>}
+function Result({title,primary,error,details}:{title:string;primary:string;error:boolean;details:(string[])[]}){return <><div className={`advanced-result${error?' has-error':''}`} aria-live="polite"><span className="mono">{error?'CHECK THE VALUES':title}</span><strong>{primary}</strong><p>{error?'Enter valid non-negative values within a realistic working schedule.':'Gross estimate before taxes, deductions and benefits.'}</p></div>{!error&&<div className="advanced-breakdown">{details.map(([label,value])=><div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>}</>}
 
 function FullWorkContent({slug}:{slug:WorkPaySlug}) {
   const c=workDateCalculatorContent[slug];
