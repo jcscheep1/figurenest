@@ -12,6 +12,14 @@ test('auto loan includes tax and fees before amortizing the financed amount', ()
   ]);
 });
 
+test('auto loan requires a whole-number monthly term', () => {
+  const fractional = calculatePriorityFinance('auto-loan', ['32000', '4000', '3000', '6.5', '60.5', '6', '500']);
+  assert.ok(fractional.error);
+  assert.match(fractional.error, /whole-number term/);
+  assert.equal(calculatePriorityFinance('auto-loan', ['32000', '4000', '3000', '6.5', '1', '6', '500']).error, undefined);
+  assert.equal(calculatePriorityFinance('auto-loan', ['32000', '4000', '3000', '6.5', '120', '6', '500']).error, undefined);
+});
+
 test('simple interest follows I = P r t and supports fractional years', () => {
   const result = calculatePriorityFinance('simple-interest', ['5000', '6', '3']);
   assert.equal(result.primary, '$900.00');
@@ -24,6 +32,14 @@ test('interest rate solver recovers a known amortizing rate', () => {
   assert.equal(result.primary, '7.2%');
   assert.equal(result.error, undefined);
   assert.ok(calculatePriorityFinance('interest-rate', ['24000', '300', '60']).error);
+});
+
+test('interest rate requires a whole number of monthly payments', () => {
+  const fractional = calculatePriorityFinance('interest-rate', ['24000', '477.50', '60.5']);
+  assert.ok(fractional.error);
+  assert.match(fractional.error, /whole number/);
+  assert.equal(calculatePriorityFinance('interest-rate', ['24000', '24000', '1']).error, undefined);
+  assert.equal(calculatePriorityFinance('interest-rate', ['24000', '20', '1200']).error, undefined);
 });
 
 test('mortgage amortization returns an independently checked payment snapshot', () => {
