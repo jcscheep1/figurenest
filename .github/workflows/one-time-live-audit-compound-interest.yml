@@ -1,0 +1,108 @@
+name: One-time live audit Compound Interest Calculator
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-live-audit-compound-interest.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Selenium
+        run: pip install 'selenium==4.35.0'
+      - name: Audit production Compound Interest behavior
+        shell: python
+        run: |
+          import time
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.common.keys import Keys
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          options = webdriver.ChromeOptions()
+          options.add_argument('--headless=new')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('--window-size=1440,1600')
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 20)
+          failures=[]
+
+          def type_input(key,value):
+              css=f'[data-testid="input-finance-{key}"]'
+              el=wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,css)))
+              driver.execute_script('arguments[0].scrollIntoView({block:"center"})',el)
+              driver.execute_script('arguments[0].focus()',el)
+              el=driver.find_element(By.CSS_SELECTOR,css)
+              el.send_keys(Keys.CONTROL,'a'); el.send_keys(Keys.BACKSPACE)
+              if value!='': el.send_keys(value)
+              el.send_keys(Keys.TAB); time.sleep(.35)
+
+          def defaults():
+              for k,v in [('principal','5000'),('contribution','250'),('rate','6'),('years','10')]: type_input(k,v)
+
+          def check(name,fn):
+              try: fn(); print('PASS:',name)
+              except Exception as exc: failures.append(f'{name}: {exc}'); print('FAIL:',name,exc)
+
+          try:
+              driver.get('https://figurenest.com/calculators/finance/compound-interest')
+              wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,'[data-testid="input-finance-principal"]')))
+              consent=driver.find_elements(By.CSS_SELECTOR,'.consent-panel .consent-choice')
+              if consent:
+                  consent[0].click(); wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR,'.consent-panel')))
+
+              def normal():
+                  defaults(); panel=driver.find_element(By.CSS_SELECTOR,'.advanced-result')
+                  assert 'has-error' not in panel.get_attribute('class'),panel.text
+                  assert '$50,066.82' in panel.text,panel.text
+                  b=driver.find_element(By.CSS_SELECTOR,'.advanced-breakdown').text
+                  assert '$35,000.00' in b and '$15,066.82' in b,b
+              check('normal monthly compounding case',normal)
+
+              def zero_rate():
+                  for k,v in [('principal','1000'),('contribution','100'),('rate','0'),('years','1')]: type_input(k,v)
+                  panel=driver.find_element(By.CSS_SELECTOR,'.advanced-result')
+                  assert 'has-error' not in panel.get_attribute('class'),panel.text
+                  assert '$2,200.00' in panel.text,panel.text
+                  b=driver.find_element(By.CSS_SELECTOR,'.advanced-breakdown').text
+                  assert '$2,200.00' in b and '$0.00' in b,b
+              check('zero-rate boundary',zero_rate)
+
+              def blank_required():
+                  defaults(); type_input('rate','')
+                  panel=driver.find_element(By.CSS_SELECTOR,'.advanced-result')
+                  assert 'has-error' in panel.get_attribute('class'),'blank rate produced '+panel.text
+              check('blank required input rejected',blank_required)
+
+              def zero_years_consistency():
+                  defaults(); type_input('years','0')
+                  panel=driver.find_element(By.CSS_SELECTOR,'.advanced-result')
+                  assert 'has-error' in panel.get_attribute('class'),'CONFIRMED DEFECT: Basic accepts zero-year investment horizon: '+panel.text
+              check('zero-year horizon rejected consistently',zero_years_consistency)
+
+              def fractional_month_consistency():
+                  defaults(); type_input('years','10.01')
+                  panel=driver.find_element(By.CSS_SELECTOR,'.advanced-result')
+                  assert 'has-error' in panel.get_attribute('class'),'CONFIRMED DEFECT: Basic accepts fractional-month horizon: '+panel.text
+              check('non-month-aligned horizon rejected',fractional_month_consistency)
+
+              def advanced_baseline():
+                  defaults(); buttons=driver.find_elements(By.CSS_SELECTOR,'.calculator-mode-options button'); assert len(buttons)==2
+                  driver.execute_script('arguments[0].click()',buttons[1]); time.sleep(.35)
+                  body=driver.find_element(By.CSS_SELECTOR,'.decision-expansion-body')
+                  assert 'Projected balance after fees' in body.text and '$50,066.82' in body.text,body.text
+                  assert '$35,000.00' in body.text and '$15,066.82' in body.text and '$39,112.12' in body.text,body.text
+              check('advanced baseline matches Basic',advanced_baseline)
+
+              if failures: raise AssertionError('\n'.join(failures))
+          finally: driver.quit()
