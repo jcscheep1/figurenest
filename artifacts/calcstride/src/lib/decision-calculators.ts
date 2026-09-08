@@ -50,19 +50,35 @@ export const mortgageDecision = (price: number, down: number, annualRate: number
 };
 
 export const retirementDecision = (start: number, monthly: number, annualReturn: number, years: number, employerMonthly: number, annualIncrease: number, inflation: number) => {
-  if ([start, monthly, annualReturn, years, employerMonthly, annualIncrease, inflation].some((value) => !Number.isFinite(value) || value < 0) || years <= 0) return undefined;
+  if (
+    [start, monthly, annualReturn, years, employerMonthly, annualIncrease, inflation].some((value) => !Number.isFinite(value) || value < 0)
+    || years <= 0
+    || start > MAX_FINANCE_AMOUNT
+    || monthly > MAX_FINANCE_AMOUNT
+    || employerMonthly > MAX_FINANCE_AMOUNT
+    || annualReturn > MAX_FINANCE_RATE
+    || years > MAX_FINANCE_YEARS
+    || annualIncrease > MAX_FINANCE_RATE
+    || inflation > MAX_FINANCE_RATE
+  ) return undefined;
+  const rawMonths = years * 12;
+  const months = Math.round(rawMonths);
+  if (Math.abs(rawMonths - months) > 1e-9) return undefined;
   let balance = start;
   let employee = monthly;
   let contributions = start;
-  const months = Math.round(years * 12);
   for (let month = 0; month < months; month += 1) {
     balance *= 1 + annualReturn / 1200;
     balance += employee + employerMonthly;
     contributions += employee + employerMonthly;
     if ((month + 1) % 12 === 0) employee *= 1 + annualIncrease / 100;
+    if (![balance, employee, contributions].every(Number.isFinite)) return undefined;
   }
   const todayValue = balance / ((1 + inflation / 100) ** years);
-  return { balance, todayValue, contributions, growth: balance - contributions, monthlyIncome4Percent: balance * 0.04 / 12 };
+  const growth = balance - contributions;
+  const monthlyIncome4Percent = balance * 0.04 / 12;
+  if (![balance, todayValue, contributions, growth, monthlyIncome4Percent].every(Number.isFinite)) return undefined;
+  return { balance, todayValue, contributions, growth, monthlyIncome4Percent };
 };
 
 export const budgetDecision = (income: number, categories: readonly number[], emergencyMonths: number) => {
