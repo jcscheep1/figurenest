@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calculatePriorityFinance } from './priority-finance-calculators';
+import { calculatePriorityFinance, priorityFinanceContent } from './priority-finance-calculators';
 
 test('auto loan includes tax and fees before amortizing the financed amount', () => {
   const result = calculatePriorityFinance('auto-loan', ['32000', '4000', '3000', '6.5', '60', '6', '500']);
@@ -50,6 +50,21 @@ test('mortgage amortization returns an independently checked payment snapshot', 
     { label: 'Interest in payment 12', value: '$1,483.16' },
     { label: 'Balance after payment 12', value: '$296,315.96' },
   ]);
+});
+
+test('mortgage amortization requires a whole-number payment snapshot', () => {
+  const paymentField = priorityFinanceContent['mortgage-amortization'].fields.find((field) => field.key === 'paymentNumber');
+  assert.equal(paymentField?.step, '1');
+
+  const fractional = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30', '12.7']);
+  assert.ok(fractional.error);
+  assert.match(fractional.error, /whole-number payment/);
+
+  const first = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30', '1']);
+  const final = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30', '360']);
+  assert.equal(first.error, undefined);
+  assert.equal(final.error, undefined);
+  assert.equal(final.details.find((detail) => detail.label === 'Balance after payment 360')?.value, '$0.00');
 });
 
 test('mortgage payoff compares recurring extra principal with the baseline', () => {
