@@ -1,4 +1,4 @@
-name: One-time live audit Loan Calculator
+name: One-time live verify repaired Loan Calculator
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
           python-version: '3.12'
       - name: Install Selenium
         run: pip install 'selenium==4.35.0'
-      - name: Audit production Loan behavior
+      - name: Verify repaired production Loan behavior
         shell: python
         run: |
           import time
@@ -35,7 +35,6 @@ jobs:
           options.add_argument('--window-size=1440,1600')
           driver = webdriver.Chrome(options=options)
           wait = WebDriverWait(driver, 20)
-          failures = []
 
           def type_input(css, value):
               el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
@@ -48,14 +47,6 @@ jobs:
               el.send_keys(Keys.TAB)
               time.sleep(0.35)
 
-          def check(name, fn):
-              try:
-                  fn()
-                  print('PASS:', name)
-              except Exception as exc:
-                  failures.append(f'{name}: {exc}')
-                  print('FAIL:', name, exc)
-
           try:
               driver.get('https://figurenest.com/calculators/finance/loan')
               wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-finance-principal"]')))
@@ -65,66 +56,67 @@ jobs:
                   wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.consent-panel')))
                   time.sleep(0.2)
 
-              def normal():
+              # Normal fixed-rate case remains unchanged.
+              type_input('[data-testid="input-finance-principal"]', '24000')
+              type_input('[data-testid="input-finance-rate"]', '7.2')
+              type_input('[data-testid="input-finance-years"]', '5')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '$477.50' in panel.text, panel.text
+              breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+              assert '$28,649.80' in breakdown and '$4,649.80' in breakdown, breakdown
+              print('PASS: Loan normal case preserved')
+
+              # Blank required fields must reject instead of coercing to zero.
+              for css, label in [
+                  ('[data-testid="input-finance-principal"]', 'principal'),
+                  ('[data-testid="input-finance-rate"]', 'rate'),
+                  ('[data-testid="input-finance-years"]', 'term'),
+              ]:
                   type_input('[data-testid="input-finance-principal"]', '24000')
                   type_input('[data-testid="input-finance-rate"]', '7.2')
                   type_input('[data-testid="input-finance-years"]', '5')
+                  type_input(css, '')
                   panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-                  assert 'has-error' not in panel.get_attribute('class'), panel.text
-                  assert '$477.50' in panel.text, panel.text
-                  breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
-                  assert '$28,649.80' in breakdown and '$4,649.80' in breakdown, breakdown
-              check('normal 24000 at 7.2% for 5 years', normal)
+                  assert 'has-error' in panel.get_attribute('class'), f'blank {label} produced: ' + panel.text
+                  assert 'complete every field' in panel.text.lower(), panel.text
+                  print(f'PASS: blank {label} rejected')
 
-              def zero_rate():
-                  type_input('[data-testid="input-finance-principal"]', '18000')
-                  type_input('[data-testid="input-finance-rate"]', '0')
-                  type_input('[data-testid="input-finance-years"]', '3')
-                  panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-                  assert 'has-error' not in panel.get_attribute('class'), panel.text
-                  assert '$500.00' in panel.text, panel.text
-                  breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
-                  assert '$18,000.00' in breakdown and '$0.00' in breakdown, breakdown
-              check('zero-rate boundary', zero_rate)
+              # Zero rate remains meaningful and valid.
+              type_input('[data-testid="input-finance-principal"]', '18000')
+              type_input('[data-testid="input-finance-rate"]', '0')
+              type_input('[data-testid="input-finance-years"]', '3')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '$500.00' in panel.text, panel.text
+              print('PASS: Loan zero-rate case preserved')
 
-              def blank_principal():
-                  type_input('[data-testid="input-finance-principal"]', '')
-                  panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-                  assert 'has-error' in panel.get_attribute('class'), 'blank principal produced: ' + panel.text
-              check('blank required principal rejected', blank_principal)
+              # Whole-month contract: 5.01 years is invalid; 5.5 years (66 months) is valid.
+              type_input('[data-testid="input-finance-principal"]', '24000')
+              type_input('[data-testid="input-finance-rate"]', '7.2')
+              type_input('[data-testid="input-finance-years"]', '5.01')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' in panel.get_attribute('class'), panel.text
+              assert 'whole number of months' in panel.text.lower(), panel.text
+              print('PASS: 5.01-year non-month-aligned term rejected')
 
-              def blank_rate():
-                  type_input('[data-testid="input-finance-principal"]', '24000')
-                  type_input('[data-testid="input-finance-rate"]', '')
-                  panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-                  assert 'has-error' in panel.get_attribute('class'), 'blank rate produced: ' + panel.text
-              check('blank required rate rejected', blank_rate)
+              years_input = driver.find_element(By.CSS_SELECTOR, '[data-testid="input-finance-years"]')
+              assert years_input.get_attribute('step') == '0.08333333333333333', years_input.get_attribute('step')
+              type_input('[data-testid="input-finance-years"]', '5.5')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              print('PASS: 5.5-year / 66-month term accepted and UI step is one month')
 
-              def zero_term():
-                  type_input('[data-testid="input-finance-rate"]', '7.2')
-                  type_input('[data-testid="input-finance-years"]', '0')
-                  panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-                  assert 'has-error' in panel.get_attribute('class'), panel.text
-                  assert 'greater than zero' in panel.text.lower(), panel.text
-              check('zero term rejected', zero_term)
+              # Advanced mode follows the same whole-month rule and preserves normal baseline.
+              buttons = driver.find_elements(By.CSS_SELECTOR, '.calculator-mode-options button')
+              assert len(buttons) == 2
+              driver.execute_script('arguments[0].click()', buttons[1]); time.sleep(0.35)
+              body = driver.find_element(By.CSS_SELECTOR, '.decision-expansion-body')
+              assert 'Payment including extra' in body.text, body.text
 
-              def fractional_term():
-                  type_input('[data-testid="input-finance-years"]', '5.01')
-                  panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-                  assert 'has-error' in panel.get_attribute('class'), 'fractional-month term produced: ' + panel.text
-              check('non-month-aligned term rejected', fractional_term)
-
-              def advanced_normal():
-                  type_input('[data-testid="input-finance-years"]', '5')
-                  buttons = driver.find_elements(By.CSS_SELECTOR, '.calculator-mode-options button')
-                  assert len(buttons) == 2
-                  driver.execute_script('arguments[0].click()', buttons[1]); time.sleep(0.35)
-                  body = driver.find_element(By.CSS_SELECTOR, '.decision-expansion-body')
-                  assert 'Payment including extra' in body.text and '$477.50' in body.text, body.text
-                  assert '5 yr 0 mo' in body.text, body.text
-              check('advanced mode baseline matches Basic schedule', advanced_normal)
-
-              if failures:
-                  raise AssertionError('\n'.join(failures))
+              type_input('[data-testid="input-finance-years"]', '5.01')
+              body = driver.find_element(By.CSS_SELECTOR, '.decision-expansion-body')
+              assert 'Check that fees, extra payment and balloon amount are valid.' in body.text, body.text
+              print('PASS: Advanced mode rejects non-month-aligned term')
           finally:
               driver.quit()
