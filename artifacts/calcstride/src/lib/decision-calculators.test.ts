@@ -47,6 +47,21 @@ test('auto loan advanced scenario includes rebate, balloon and ownership costs',
   assert.ok(result.interestSaved > 0);
 });
 
+test('auto loan advanced mode rejects invalid base values and fractional terms', () => {
+  assert.equal(autoLoanDecision(32000, -1, 3000, 6.5, 60, 6, 500, 1000, 2500, 100, 350), undefined);
+  assert.equal(autoLoanDecision(32000, 4000, -1, 6.5, 60, 6, 500, 1000, 2500, 100, 350), undefined);
+  assert.equal(autoLoanDecision(32000, 4000, 3000, 6.5, 60.5, 6, 500, 1000, 2500, 100, 350), undefined);
+  assert.equal(autoLoanDecision(32000, 4000, 3000, 6.5, 0, 6, 500, 1000, 2500, 100, 350), undefined);
+  assert.equal(autoLoanDecision(32000, 4000, 3000, 6.5, 1201, 6, 500, 1000, 2500, 100, 350), undefined);
+  assert.equal(autoLoanDecision(32000, 4000, 3000, 6.5, 60, -1, 500, 1000, 2500, 100, 350), undefined);
+  assert.equal(autoLoanDecision(32000, 4000, 3000, 6.5, 60, 6, -1, 1000, 2500, 100, 350), undefined);
+});
+
+test('auto loan advanced mode rejects impossible financed amounts and balloons', () => {
+  assert.equal(autoLoanDecision(10000, 8000, 2000, 6.5, 60, 0, 0, 0, 0, 0, 0), undefined);
+  assert.equal(autoLoanDecision(32000, 4000, 3000, 6.5, 60, 6, 500, 1000, 30000, 100, 350), undefined);
+});
+
 test('mortgage payoff scenario applies a lump sum and delayed extra payments', () => {
   const result = mortgagePayoffDecision(240000, 5.5, 1600, 200, 10000, 150, 7);
   assert.ok(result);
