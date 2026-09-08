@@ -1,0 +1,44 @@
+name: One-time Heat Index NOAA repair v2
+
+on:
+  push:
+    branches: [audit/heat-index-noaa-dry-air]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/heat-index-noaa-dry-air
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply focused repair and regression
+        run: python .github/scripts/heat-index-repair.py
+      - run: pnpm exec tsc -b lib/api-client-react
+      - run: pnpm --filter @workspace/calcstride typecheck
+      - run: pnpm --filter @workspace/calcstride generate:seo
+      - run: pnpm --filter @workspace/calcstride test
+      - run: pnpm --filter @workspace/calcstride build
+      - name: Commit repaired implementation
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add artifacts/calcstride/src/lib/phase-three-a.ts artifacts/calcstride/src/lib/heat-index-noaa-regression.test.ts
+          git commit -m 'Fix NOAA Heat Index dry-air handling'
+          git push origin HEAD:audit/heat-index-noaa-dry-air
