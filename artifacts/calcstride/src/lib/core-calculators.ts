@@ -117,6 +117,7 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
   const currency = options.currency ?? 'USD';
   const formatMoney = (value: number) => formatCurrency(value, currency);
   if (['age', 'working-days'].includes(slug)) return calculateDates(slug, inputs);
+  if (slug === 'percentage' && inputs.some((value) => !value.trim())) return invalid('Complete every field with a valid non-negative value');
   if ([...BUSINESS_SLUGS, ...AUTOMOTIVE_CALCULATOR_SLUGS].includes(slug) && inputs.some((value) => !value.trim())) {
     return invalid('Complete every field with a valid non-negative value');
   }

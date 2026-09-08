@@ -419,7 +419,10 @@ const longDivision = (numerator: bigint, denominator: bigint, places: number) =>
 
 export function calculatePhaseThreeB(slug: PhaseThreeBSlug, values: readonly string[]): PhaseThreeBResult {
   const definition = phaseThreeBDefinitions[slug];
-  if (values.length !== definition.fields.length || values.some((value) => !value.trim())) return bad('Complete every field before calculating.');
+  if (values.length !== definition.fields.length) return bad('Complete every field before calculating.');
+  const matrixSingleInput = slug === 'matrix' && (values[0] === 'determinant' || values[0] === 'inverse');
+  const requiredValues = matrixSingleInput ? [values[0], values[1], values[2], values[5]] : values;
+  if (requiredValues.some((value) => !value.trim())) return bad('Complete every field before calculating.');
   const at = (index: number) => finite(values[index]);
   try {
     if (slug === 'binary' || slug === 'hex') {
@@ -509,11 +512,10 @@ export function calculatePhaseThreeB(slug: PhaseThreeBSlug, values: readonly str
       return result(divided.display, 'Integer quotient, remainder, and bounded decimal expansion.', [{ label: 'Integer quotient', value: divided.quotient }, { label: 'Remainder', value: divided.remainder }]);
     }
     if (slug === 'matrix') {
-      const rows = at(1), columns = at(2), bRows = at(3), bColumns = at(4);
-      if ([rows, columns, bRows, bColumns].some((dimension) => dimension === null || !Number.isInteger(dimension) || dimension! < 1 || dimension! > 6)) return bad('Every matrix dimension must be a whole number from 1 through 6.');
+      const rows = at(1), columns = at(2);
+      if ([rows, columns].some((dimension) => dimension === null || !Number.isInteger(dimension) || dimension! < 1 || dimension! > 6)) return bad('Matrix A dimensions must be whole numbers from 1 through 6.');
       const matrixA = parseMatrix(values[5], rows!, columns!);
-      const matrixB = parseMatrix(values[6], bRows!, bColumns!);
-      if (!matrixA || !matrixB) return bad('Enter rectangular matrices with exactly their selected rows and columns.');
+      if (!matrixA) return bad('Enter Matrix A with exactly its selected rows and columns.');
       if (values[0] === 'determinant' || values[0] === 'inverse') {
         if (rows !== columns) return bad('Determinants and inverses require a square matrix.');
         if (values[0] === 'determinant') {
@@ -524,6 +526,10 @@ export function calculatePhaseThreeB(slug: PhaseThreeBSlug, values: readonly str
         if (!inverse) return bad('Matrix A is singular and has no inverse.');
         return result(formatMatrix(inverse), 'Inverse of Matrix A.', [{ label: 'Dimensions', value: `${rows} × ${columns}` }]);
       }
+      const bRows = at(3), bColumns = at(4);
+      if ([bRows, bColumns].some((dimension) => dimension === null || !Number.isInteger(dimension) || dimension! < 1 || dimension! > 6)) return bad('Matrix B dimensions must be whole numbers from 1 through 6.');
+      const matrixB = parseMatrix(values[6], bRows!, bColumns!);
+      if (!matrixB) return bad('Enter Matrix B with exactly its selected rows and columns.');
       if (values[0] === 'add' || values[0] === 'subtract') {
         if (rows !== bRows || columns !== bColumns) return bad('Matrix addition and subtraction require equal dimensions.');
         const output = matrixA.map((row, rowIndex) => row.map((cell, columnIndex) => values[0] === 'add' ? cell + matrixB[rowIndex][columnIndex] : cell - matrixB[rowIndex][columnIndex]));
