@@ -39,6 +39,20 @@ export function matchesDirectoryCategory(toolCategorySlug: string, selectedCateg
   return (directoryCategoryMembers[selectedCategory] ?? [selectedCategory]).includes(toolCategorySlug);
 }
 
+/**
+ * Keeps exactly one public directory card per canonical destination.
+ * The catalogue can contain metadata aliases that resolve to the same public URL;
+ * those are not separate published tools and must never inflate directory totals.
+ */
+export function dedupeDirectoryTools(tools: readonly DirectoryTool[]): DirectoryTool[] {
+  const seenHrefs = new Set<string>();
+  return tools.filter((tool) => {
+    if (seenHrefs.has(tool.href)) return false;
+    seenHrefs.add(tool.href);
+    return true;
+  });
+}
+
 /** Returns only published tools matching all active directory filters. */
 export function filterDirectoryTools(
   tools: readonly DirectoryTool[],
@@ -122,9 +136,10 @@ export function CalculatorDirectoryPage() {
     }
   }, [filters]);
 
+  const directoryTools = useMemo(() => dedupeDirectoryTools(localTools), []);
   const visibleTools = useMemo(
-    () => sortDirectoryTools(filterDirectoryTools(localTools, filters)),
-    [filters],
+    () => sortDirectoryTools(filterDirectoryTools(directoryTools, filters)),
+    [directoryTools, filters],
   );
   const groupedTools = useMemo(() => groupDirectoryTools(visibleTools, localCategories), [visibleTools]);
   const activeCategory = localCategories.find((category) => category.slug === filters.category);
