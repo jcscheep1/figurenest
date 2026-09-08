@@ -23,6 +23,16 @@ test('Auto Lease requires a whole-number monthly term', () => {
   assert.equal(phaseFourFieldStep('auto-lease', 2, 'any'), '1');
 });
 
+test('Debt Consolidation requires a whole-number monthly payoff term', () => {
+  const valid = normalizePhaseFourInputs('debt-consolidation', ['15000', '22', '12', '48', 'payoff', '300', '500']);
+  const fractional = normalizePhaseFourInputs('debt-consolidation', ['15000', '22', '12', '48.5', 'payoff', '300', '500']);
+  assert.deepEqual(valid, ['15000', '22', '12', '48', 'payoff', '300', '500']);
+  assert.deepEqual(fractional, ['15000', '22', '12', '', 'payoff', '300', '500']);
+  assert.equal(calculatePhaseFour('debt-consolidation', valid).primary, '$402.91/month');
+  assert.ok(calculatePhaseFour('debt-consolidation', fractional).error);
+  assert.equal(phaseFourFieldStep('debt-consolidation', 3, 'any'), '1');
+});
+
 test('Bond exposes and enforces whole annual coupon periods', () => {
   const valid = normalizePhaseFourInputs('bond', ['1000', '5', '4', '10']);
   const fractional = normalizePhaseFourInputs('bond', ['1000', '5', '4', '10.5']);
