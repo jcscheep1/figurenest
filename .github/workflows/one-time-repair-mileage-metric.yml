@@ -26,23 +26,12 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc -b lib/api-client-react
       - run: python scripts/one-time-repair-mileage-metric.py
-      - name: Typecheck
-        id: typecheck
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          pnpm --filter calcstride typecheck 2>&1 | tee mileage-typecheck.log
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: mileage-typecheck-log
-          path: mileage-typecheck.log
-      - name: Stop on typecheck failure
-        if: steps.typecheck.outcome == 'failure'
-        run: exit 1
-      - run: pnpm --filter calcstride test
-      - run: pnpm --filter calcstride build
+      - run: pnpm --filter @workspace/calcstride typecheck
+      - run: pnpm --filter @workspace/calcstride generate:seo
+      - run: pnpm --filter @workspace/calcstride test
+      - run: pnpm --filter @workspace/calcstride build
       - name: Commit repaired production code
         run: |
           git config user.name 'github-actions[bot]'
