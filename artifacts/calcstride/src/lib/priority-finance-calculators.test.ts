@@ -52,6 +52,17 @@ test('mortgage amortization returns an independently checked payment snapshot', 
   ]);
 });
 
+test('mortgage amortization remains stable near the end of supported high-rate schedules', () => {
+  const result = calculatePriorityFinance('mortgage-amortization', ['1000000000000', '100', '50', '599']);
+  assert.equal(result.error, undefined);
+  assert.equal(result.primary, '$83,333,333,333.33');
+  assert.deepEqual(result.details.slice(0, 3), [
+    { label: 'Principal in payment 599', value: '$71,005,917,159.76' },
+    { label: 'Interest in payment 599', value: '$12,327,416,173.57' },
+    { label: 'Balance after payment 599', value: '$76,923,076,923.08' },
+  ]);
+});
+
 test('mortgage amortization requires discrete monthly schedule periods', () => {
   const fractionalPayment = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30', '12.4']);
   assert.ok(fractionalPayment.error);
