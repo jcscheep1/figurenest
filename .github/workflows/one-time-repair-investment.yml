@@ -1,0 +1,99 @@
+name: One-time repair Investment Calculator
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-repair-investment.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch Investment finite-result guard and regression
+        shell: python
+        run: |
+          from pathlib import Path
+
+          src = Path('artifacts/calcstride/src/lib/priority-one-expansion.ts')
+          text = src.read_text()
+          old = "if(slug==='investment'){const end=n[0]*Math.pow(1+n[1]/1200,n[2]*12);return {primary:money(end),summary:'Compound-growth projection.',details:[{label:'Growth',value:money(end-n[0])}]};}"
+          new = "if(slug==='investment'){const end=n[0]*Math.pow(1+n[1]/1200,n[2]*12);if(!Number.isFinite(end))return bad('The entered investment scenario is too large to calculate reliably.');return {primary:money(end),summary:'Compound-growth projection.',details:[{label:'Growth',value:money(end-n[0])}]};}"
+          if new not in text:
+              if old not in text:
+                  raise SystemExit('Investment calculation pattern changed; refusing an unsafe patch.')
+              text = text.replace(old, new, 1)
+              src.write_text(text)
+
+          tests = Path('artifacts/calcstride/src/lib/priority-one-expansion.test.ts')
+          test_text = tests.read_text()
+          marker = "test('Investment Calculator keeps normal growth and rejects non-finite projections'"
+          if marker not in test_text:
+              test_text += """
+
+test('Investment Calculator keeps normal growth and rejects non-finite projections', () => {
+  const normal = calculatePriorityOneExpansion('investment', ['25000', '6.5', '5']);
+  assert.equal(normal.error, undefined);
+  assert.equal(normal.primary, '$34,570.43');
+  assert.equal(normal.details.find(detail => detail.label === 'Growth')?.value, '$9,570.43');
+
+  const zeroRate = calculatePriorityOneExpansion('investment', ['25000', '0', '5']);
+  assert.equal(zeroRate.error, undefined);
+  assert.equal(zeroRate.primary, '$25,000.00');
+
+  const overflow = calculatePriorityOneExpansion('investment', ['25000', '1000000', '100']);
+  assert.match(overflow.error ?? '', /too large to calculate reliably/i);
+  assert.equal(overflow.details.length, 0);
+});
+"""
+              tests.write_text(test_text)
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+
+      - name: Typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
+
+      - name: Generate SEO files
+        run: pnpm --filter @workspace/calcstride generate:seo
+
+      - name: Unit tests
+        run: pnpm --filter @workspace/calcstride test
+
+      - name: Production build
+        run: pnpm --filter @workspace/calcstride build
+
+      - name: Commit validated repair
+        run: |
+          if git diff --quiet; then
+            echo 'No repair diff to commit.'
+            exit 0
+          fi
+          git config user.name 'FigureNest Repair Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add artifacts/calcstride/src/lib/priority-one-expansion.ts artifacts/calcstride/src/lib/priority-one-expansion.test.ts
+          git commit -m 'Fix Investment non-finite growth output'
+          git pull --rebase origin main
+          git push origin HEAD:main
