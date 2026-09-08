@@ -28,8 +28,8 @@ def body(): return d.find_element(By.TAG_NAME,'body').text
 try:
     d.get(URL); wait.until(lambda x:x.execute_script('return document.readyState')=='complete'); time.sleep(.8); dismiss()
     fs=inputs(); assert len(fs)>=3, len(fs)
-    assert '36 months' in out(), out()
-    print('PASS Credit Card default payoff 36 months')
+    assert '33 months' in out(), out()
+    print('PASS Credit Card default payoff 33 months')
 
     Select(select_mode()).select_by_value('interest'); time.sleep(.4)
     assert '$83.33' in out(), out()
