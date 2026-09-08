@@ -29,8 +29,8 @@ An item is not complete just because code was changed or deployed. It is only **
 | FN-001 | P0 | `robots.txt` production correctness | ✅ CLOSED | Live `/robots.txt` returned 200 text/plain; public crawl allowed; 9 private paths blocked; no sitewide block; canonical `https://figurenest.com/sitemap.xml` declared | Live verified by production indexing audit 2026-09-08; reusable audit added in commit `9217b5dc948d2e989bfd6c6ae1f19f778471772e` |
 | FN-002 | P0 | Production sitemap correctness | ✅ CLOSED | Live `/sitemap.xml` returned 200 application/xml; 196 canonical unique URLs exactly matched the published route inventory; no duplicates/private routes; valid `lastmod` values; robots declaration matched | Canonical route dedupe fixed in commit `8acdfda5368d6751fca6297ed5f8edd872ba1e59`; live verified 2026-09-08 |
 | FN-003 | P1 | Calculator/tool inventory count | ✅ CLOSED | Homepage and `/calculators/` both show 162 published tools/results on production | Fixed by deduplicating directory entries by canonical destination; commit `3be640768d4e868997202d72c89423944271dab7`; live verified 2026-09-08 |
-| FN-004 | P1 | Directory/category filtering | 🟡 VERIFY | Test every top-level category on production, including Home & Construction -> Electrical; verify correct tools appear and counts update | Electrical discoverability code/tests advanced in commits through `1c7b504e93c1f33a2346727b546573b8cfad48bb`; still requires production interaction verification before closing |
-| FN-005 | P1 | Calculator functional audit | 🟠 ACTIVE | One-by-one production test of every calculator: inputs, units, validation, formulas, result rendering, mobile usability | Track individual failures as child IDs, never duplicate them |
+| FN-004 | P1 | Directory/category filtering | ✅ CLOSED | Live Chrome test exercised all 14 category buttons; each count matched rendered cards; Home & Construction returned 25 combined results including Electrical; Electrical alone returned 4 | Production browser run `34265387711` passed 2026-09-08 |
+| FN-005 | P1 | Calculator functional audit | 🟠 ACTIVE | One-by-one production test of every calculator: inputs, units, validation, formulas, result rendering, mobile usability | Current issue register A-I is fully closed; continue only from genuinely unaudited calculators and add child IDs only for new confirmed failures |
 | FN-006 | P2 | Calculator content depth & advanced/basic UX | ⬜ WAITING | Verify each calculator has sufficient useful explanation, assumptions, examples, advanced/basic controls where applicable, and no hidden inputs | Starts after P0/P1 core correctness |
 | FN-007 | P2 | SEO/indexability/schema/internal linking | ⬜ WAITING | Production crawl/check: title/meta/canonical/H1/schema/breadcrumbs/internal links/indexability for key templates and representative calculators | Do not run as a full reset while repair work is active |
 | FN-008 | P2 | Mobile/performance/accessibility | ⬜ WAITING | Fresh production PageSpeed/Lighthouse plus manual mobile UX check after functional/SEO changes are stable | Avoid optimizing against stale builds |
@@ -42,15 +42,15 @@ Create a child ID under FN-005 for every specific calculator problem. Never add 
 
 | ID | Calculator | Issue | Status | Last evidence |
 |---|---|---|---|---|
-| FN-005-A | Shoe Size Converter | Previous reports included inaccurate conversion and adult-only coverage | 🟡 VERIFY | Historical report only; do not classify as outstanding again unless current production test fails |
-| FN-005-B | Time Card Calculator | Previous report: result showed time worked but not pay | 🟡 VERIFY | Historical report only; verify current production behavior before reopening |
-| FN-005-C | Markup Calculator | Zero-cost selling price previously displayed equivalent margin as `0%` instead of mathematically undefined | 🟡 VERIFY | Source fix + regression tests merged in `f01fde5c20cc35ed124ff772a6d0fbdef2419b66`; Vercel production deployment green; needs fresh live calculator verification before closing |
-| FN-005-D | Unit/measurement converters | Small valid converted values could display as zero due to two-decimal result formatting | 🟡 VERIFY | Precision-aware formatter + regression tests merged in `309122842f9df68d89f43074e671ec45aaf36966`; needs fresh live converter verification before closing |
-| FN-005-E | Commission Calculator | Blank optional base-pay field was rejected by shared required-number validation | 🟡 VERIFY | Optional-input normalization + regression tests merged in `4a421360a1ce35eb8000c41847fd759e9b8ec5c9`; all three Vercel deployments green; needs fresh live verification |
-| FN-005-F | APR Calculator | Repayment validation compared scheduled payments with gross loan amount instead of net cash received | 🟡 VERIFY | Fixed on current main in `518e16add2859d16e026c88d1c1c78d872a7c0ff`; focused regression, full calcstride tests, and typecheck passed; all three Vercel deployments green; needs fresh live calculator verification |
-| FN-005-G | Roman Numeral Converter | Decimal inputs within 1–3999 were accepted and silently truncated by conversion loop | 🟡 VERIFY | Whole-number guard + regression merged in `518e16add2859d16e026c88d1c1c78d872a7c0ff`; full calcstride tests/typecheck passed; all three Vercel deployments green; needs fresh live verification |
-| FN-005-H | Matrix Calculator | Determinant/inverse incorrectly required Matrix B fields although those operations only use Matrix A | 🟡 VERIFY | Operation-aware validation + regression merged in `aef8d028d256a8553ec51892e2ebae913a6c19d5`; full calcstride tests and typecheck passed; production deployment in progress/verification required |
-| FN-005-I | Percentage Calculator | Blank required numeric inputs could be coerced to zero and return plausible results | 🟡 VERIFY | Blank-input validation + regression merged in `aef8d028d256a8553ec51892e2ebae913a6c19d5`; full calcstride tests and typecheck passed; production deployment in progress/verification required |
+| FN-005-A | Shoe Size Converter | Previous reports included inaccurate conversion and adult-only coverage | ✅ CLOSED | Live Chrome verification 2026-09-08 confirmed Baby / toddler, Children / youth, Women and Men modes and a working youth conversion |
+| FN-005-B | Time Card Calculator | Previous report: result showed time worked but not pay | ✅ CLOSED | Live Chrome verification 2026-09-08 showed $160.00 gross pay for 09:00–17:30, 30-minute break, hourly rate 20, plus Regular pay breakdown |
+| FN-005-C | Markup Calculator | Zero-cost selling price previously displayed equivalent margin as `0%` instead of mathematically undefined | ✅ CLOSED | Source fix `f01fde5c20cc35ed124ff772a6d0fbdef2419b66`; live Chrome verification 2026-09-08 confirmed zero-cost equivalent margin displays `Not defined` |
+| FN-005-D | Unit/measurement converters | Small valid converted values could display as zero due to two-decimal result formatting | ✅ CLOSED | Precision fix `309122842f9df68d89f43074e671ec45aaf36966`; live Chrome verification 2026-09-08 returned `0.000001 km` for 0.001 m |
+| FN-005-E | Commission Calculator | Blank optional base-pay field was rejected by shared required-number validation | ✅ CLOSED | Fix `4a421360a1ce35eb8000c41847fd759e9b8ec5c9`; live Chrome verification 2026-09-08 accepted blank base pay and returned $800.00 for 10,000 sales at 8% |
+| FN-005-F | APR Calculator | Repayment validation compared scheduled payments with gross loan amount instead of net cash received | ✅ CLOSED | Fix `518e16add2859d16e026c88d1c1c78d872a7c0ff`; live Chrome verification 2026-09-08 returned `0.40% APR` for 10000 amount, 200 fees, 9800 received, 165 × 60 |
+| FN-005-G | Roman Numeral Converter | Decimal inputs within 1–3999 were accepted and silently truncated by conversion loop | ✅ CLOSED | Fix `518e16add2859d16e026c88d1c1c78d872a7c0ff`; live Chrome verification 2026-09-08 rejected 1.5 as non-whole and returned `MMXXVI` for 2026 |
+| FN-005-H | Matrix Calculator | Determinant/inverse incorrectly required Matrix B fields although those operations only use Matrix A | ✅ CLOSED | Fix `aef8d028d256a8553ec51892e2ebae913a6c19d5`; live Chrome verification 2026-09-08 returned determinant `-2` with Matrix B fields blank |
+| FN-005-I | Percentage Calculator | Blank required numeric inputs could be coerced to zero and return plausible results | ✅ CLOSED | Fix `aef8d028d256a8553ec51892e2ebae913a6c19d5`; live Chrome verification 2026-09-08 rejected blank input, returned 20 for 25% of 80, and preserved true zero as valid |
 
 ## Closed-item protection
 
@@ -110,9 +110,9 @@ Do not repeat the full closed history unless specifically requested.
 
 ## Current next three actions
 
-1. **FN-004:** Live-verify directory/category filtering across production, including Home & Construction -> Electrical.
-2. **FN-005-C through FN-005-I:** Fresh-live verify the deployed calculator repairs and close only the ones that pass production behavior checks.
-3. **FN-005:** Continue the one-pass audit from the next genuinely unaudited calculator after the current VERIFY batch is resolved.
+1. **FN-005:** Continue the one-pass production calculator audit from the next genuinely unaudited calculator; add a new child ID only when a fresh production failure is confirmed.
+2. **FN-005:** For each newly confirmed defect, repair -> test -> deploy -> live verify -> close before moving on.
+3. **FN-006:** Once the calculator functional pass is complete, begin calculator content-depth and Basic/Advanced UX verification without reopening closed functional issues.
 
 ---
 
