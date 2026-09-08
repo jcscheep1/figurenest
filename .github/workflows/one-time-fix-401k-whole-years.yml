@@ -1,5 +1,6 @@
 name: One-time 401k whole-year repair
 
+# Re-run against the refreshed isolated branch base after concurrent main updates.
 on:
   push:
     paths:
