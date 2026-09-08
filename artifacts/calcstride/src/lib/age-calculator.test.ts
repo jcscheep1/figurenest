@@ -6,7 +6,7 @@ test('clamps a leap-day anniversary to February 28 in a non-leap year', () => {
   const result = calculateAge('2020-02-29', '2021-02-28');
   assert.equal(result.ok, true);
   if (!result.ok) return;
-  assert.equal(result.primary, '1 years, 0 months, 0 days');
+  assert.equal(result.primary, '1 year, 0 months, 0 days');
   assert.equal(result.nextBirthday, '2021-02-28');
   assert.equal(result.daysUntilNextBirthday, 0);
 });
@@ -15,6 +15,7 @@ test('uses February 29 again when the next birthday year is a leap year', () => 
   const result = calculateAge('2020-02-29', '2024-02-28');
   assert.equal(result.ok, true);
   if (!result.ok) return;
+  assert.equal(result.primary, '3 years, 11 months, 30 days');
   assert.equal(result.nextBirthday, '2024-02-29');
   assert.equal(result.daysUntilNextBirthday, 1);
 });
