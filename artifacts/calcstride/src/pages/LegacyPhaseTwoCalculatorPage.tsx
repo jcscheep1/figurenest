@@ -7,6 +7,7 @@ import { Link } from '@/components/PublicLink';
 import { CurrencySelector } from '@/components/UnitsPreferencesSelectors';
 import { toCanonicalUrl } from '@/lib/public-url';
 import { calculatePhaseTwo, phaseTwoDefinitions, type PhaseTwoResult, type PhaseTwoSlug } from '@/lib/phase-two-expansion';
+import { calculateAverageReturn } from '@/lib/average-return';
 import { validateWholeMinuteDuration } from '@/lib/time-calculator-validation';
 import { useUnitsPreferences } from '@/lib/units-preferences';
 import { publishedTools } from '@/lib/catalog';
@@ -28,7 +29,9 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
   const timePrecisionError = slug === 'time' ? validateWholeMinuteDuration(values[1] ?? '', values[2] ?? '') : undefined;
   const result: PhaseTwoResult = timePrecisionError
     ? { primary: timePrecisionError, summary: timePrecisionError, details: [], error: timePrecisionError }
-    : calculatePhaseTwo(slug, values, isMonetary ? currency : undefined);
+    : slug === 'average-return'
+      ? calculateAverageReturn(values)
+      : calculatePhaseTwo(slug, values, isMonetary ? currency : undefined);
   const a11y = calculatorFieldA11y(slug, result.error);
   const update = (index: number, value: string) => {
     setValues((current) => current.map((old, itemIndex) => itemIndex === index ? value : old));
