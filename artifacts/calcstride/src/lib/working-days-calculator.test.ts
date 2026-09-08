@@ -25,6 +25,23 @@ test('reversed endpoints produce the same result', () => {
   assert.deepEqual(basic('2026-09-30', '2026-09-01'), basic('2026-09-01', '2026-09-30'));
 });
 
+test('basic mode always restores the standard Monday-Friday schedule', () => {
+  const result = calculateWorkingDays({
+    start: '2026-09-06',
+    end: '2026-09-10',
+    advanced: false,
+    holidays: '',
+    workdays: '0,1,2,3,4',
+  });
+  assert.deepEqual(result, {
+    ok: true,
+    workingDays: 4,
+    calendarDays: 5,
+    nonWorkingScheduleDays: 1,
+    excludedDates: 0,
+  });
+});
+
 test('advanced mode excludes each valid active date once', () => {
   const result = calculateWorkingDays({
     start: '2026-09-01',
@@ -40,6 +57,17 @@ test('advanced mode excludes each valid active date once', () => {
     nonWorkingScheduleDays: 8,
     excludedDates: 1,
   });
+});
+
+test('malformed advanced workweek schedules are rejected instead of coercing blank tokens to Sunday', () => {
+  const result = calculateWorkingDays({
+    start: '2026-09-01',
+    end: '2026-09-30',
+    advanced: true,
+    holidays: '',
+    workdays: '1,,2,3,4,5',
+  });
+  assert.deepEqual(result, { ok: false, error: 'Choose a valid working-week schedule' });
 });
 
 test('invalid manually excluded dates are rejected instead of silently ignored', () => {
