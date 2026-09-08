@@ -54,6 +54,16 @@ test('mortgage payoff scenario applies a lump sum and delayed extra payments', (
   assert.ok(result.interestSaved > 0);
 });
 
+test('mortgage payoff advanced mode validates start month and lump-sum boundaries', () => {
+  assert.equal(mortgagePayoffDecision(240000, 5.5, 1600, 200, 10000, 150, 7.5), undefined);
+  assert.equal(mortgagePayoffDecision(240000, 5.5, 1600, 200, 240001, 150, 1), undefined);
+
+  const paidNow = mortgagePayoffDecision(240000, 5.5, 1600, 200, 240000, 150, 1);
+  assert.ok(paidNow);
+  assert.equal(paidNow.months, 0);
+  assert.equal(paidNow.interest, 0);
+});
+
 test('compound growth accounts for fees, inflation and increasing contributions', () => {
   const result = growthDecision(5000, 250, 6, 10, 3, 0.5, 2.5, true);
   assert.ok(result);

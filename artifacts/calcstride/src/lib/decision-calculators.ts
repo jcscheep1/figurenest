@@ -97,8 +97,20 @@ export const autoLoanDecision = (price: number, down: number, trade: number, ann
 };
 
 const payoffSchedule = (balance: number, annualRate: number, paymentAmount: number, extraMonthly: number, lumpSum: number, extraStartMonth: number) => {
-  if (![balance, annualRate, paymentAmount, extraMonthly, lumpSum, extraStartMonth].every(Number.isFinite) || balance <= 0 || annualRate < 0 || paymentAmount <= 0 || extraMonthly < 0 || lumpSum < 0 || extraStartMonth < 1) return undefined;
-  let remaining = Math.max(0, balance - lumpSum), interest = 0;
+  if (
+    ![balance, annualRate, paymentAmount, extraMonthly, lumpSum, extraStartMonth].every(Number.isFinite)
+    || balance <= 0
+    || annualRate < 0
+    || paymentAmount <= 0
+    || extraMonthly < 0
+    || lumpSum < 0
+    || lumpSum > balance
+    || !Number.isInteger(extraStartMonth)
+    || extraStartMonth < 1
+  ) return undefined;
+  let remaining = balance - lumpSum;
+  let interest = 0;
+  if (remaining <= 0.005) return { months: 0, interest: 0, totalPaid: lumpSum };
   for (let month = 1; month <= 1200; month += 1) {
     const charge = remaining * annualRate / 1200;
     const paid = paymentAmount + (month >= extraStartMonth ? extraMonthly : 0);
