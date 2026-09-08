@@ -30,31 +30,14 @@ jobs:
           if new not in text:
               if old not in text:
                   raise SystemExit('Investment calculation pattern changed; refusing an unsafe patch.')
-              text = text.replace(old, new, 1)
-              src.write_text(text)
+              src.write_text(text.replace(old, new, 1))
 
           tests = Path('artifacts/calcstride/src/lib/priority-one-expansion.test.ts')
           test_text = tests.read_text()
           marker = "test('Investment Calculator keeps normal growth and rejects non-finite projections'"
           if marker not in test_text:
-              test_text += """
-
-test('Investment Calculator keeps normal growth and rejects non-finite projections', () => {
-  const normal = calculatePriorityOneExpansion('investment', ['25000', '6.5', '5']);
-  assert.equal(normal.error, undefined);
-  assert.equal(normal.primary, '$34,570.43');
-  assert.equal(normal.details.find(detail => detail.label === 'Growth')?.value, '$9,570.43');
-
-  const zeroRate = calculatePriorityOneExpansion('investment', ['25000', '0', '5']);
-  assert.equal(zeroRate.error, undefined);
-  assert.equal(zeroRate.primary, '$25,000.00');
-
-  const overflow = calculatePriorityOneExpansion('investment', ['25000', '1000000', '100']);
-  assert.match(overflow.error ?? '', /too large to calculate reliably/i);
-  assert.equal(overflow.details.length, 0);
-});
-"""
-              tests.write_text(test_text)
+              regression = "\n\ntest('Investment Calculator keeps normal growth and rejects non-finite projections', () => {\n  const normal = calculatePriorityOneExpansion('investment', ['25000', '6.5', '5']);\n  assert.equal(normal.error, undefined);\n  assert.equal(normal.primary, '$34,570.43');\n  assert.equal(normal.details.find(detail => detail.label === 'Growth')?.value, '$9,570.43');\n\n  const zeroRate = calculatePriorityOneExpansion('investment', ['25000', '0', '5']);\n  assert.equal(zeroRate.error, undefined);\n  assert.equal(zeroRate.primary, '$25,000.00');\n\n  const overflow = calculatePriorityOneExpansion('investment', ['25000', '1000000', '100']);\n  assert.match(overflow.error ?? '', /too large to calculate reliably/i);\n  assert.equal(overflow.details.length, 0);\n});\n"
+              tests.write_text(test_text + regression)
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
