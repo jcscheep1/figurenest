@@ -6,6 +6,7 @@ import { Shell } from '@/components/FigureNestShell';
 import { Link } from '@/components/PublicLink';
 import { publishedTools } from '@/lib/catalog';
 import { calculatePhaseFour, phaseFourDefinitions, type PhaseFourSlug } from '@/lib/phase-four';
+import { normalizePhaseFourInputs } from '@/lib/phase-four-inputs';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 import { CalculatorDecisionExpansion, CalculatorModeSwitch, useCalculatorMode } from '@/components/calculators/CalculatorDecisionExpansion';
 import { ShoeSizeConverter } from '@/components/calculators/ShoeSizeConverter';
@@ -27,7 +28,7 @@ function StandardPhaseFourCalculatorPage({ slug }: { slug: PhaseFourSlug }) {
     const tool = publishedTools.find((candidate) => candidate.href === href);
     return tool ? [tool] : [];
   });
-  const result = calculatePhaseFour(slug, values);
+  const result = calculatePhaseFour(slug, normalizePhaseFourInputs(slug, values));
   const a11y = calculatorFieldA11y(slug, result.error);
   const update = (index: number, value: string) => { setValues((old) => old.map((item, i) => i === index ? value : item)); setCopied(false); };
   const copy = async () => { if (!result.error && navigator.clipboard) { await navigator.clipboard.writeText(result.primary); setCopied(true); window.setTimeout(() => setCopied(false), 1800); } };
