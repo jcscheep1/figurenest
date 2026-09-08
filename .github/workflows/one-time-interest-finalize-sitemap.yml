@@ -1,0 +1,65 @@
+name: One-time Interest finalize sitemap
+
+on:
+  push:
+    branches:
+      - fix/interest-intent-consolidation
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, '[interest-final-sitemap]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/interest-intent-consolidation
+          fetch-depth: 0
+      - name: Align sitemap and site-wide count contracts
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          audit = Path('artifacts/calcstride/src/lib/site-audit.test.ts')
+          text = audit.read_text()
+          replacements = {
+              'assert.equal(publishedToolCount, 162);': 'assert.equal(publishedToolCount, 161);',
+              'assert.equal(localTools.length, 162);': 'assert.equal(localTools.length, 161);',
+              'assert.equal(publishedTools.length, 163);': 'assert.equal(publishedTools.length, 162);',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Expected site-audit contract not found: {old}')
+              text = text.replace(old, new, 1)
+          audit.write_text(text)
+
+          seo_gen = Path('artifacts/calcstride/scripts/generate-seo-files.ts')
+          text = seo_gen.read_text()
+          old_import = "import { articles } from '../src/lib/articles';\n"
+          new_import = old_import + "import { legacyRedirectPaths } from '../src/lib/redirects';\n"
+          if old_import not in text:
+              raise SystemExit('SEO generator import insertion point not found')
+          text = text.replace(old_import, new_import, 1)
+          old_routes = "const sitemapRoutes = [...new Set(publicRoutes.map(normalizeRoutePath))];"
+          new_routes = """const legacyPaths = new Set(legacyRedirectPaths.map(normalizeRoutePath));
+const sitemapRoutes = [...new Set(publicRoutes.map(normalizeRoutePath))]
+  .filter((route) => !legacyPaths.has(route));"""
+          if old_routes not in text:
+              raise SystemExit('SEO generator sitemap route expression not found')
+          seo_gen.write_text(text.replace(old_routes, new_routes, 1))
+
+          for diagnostic in ['interest-final-failure.txt', 'interest-focused-output.txt', 'interest-full-failure.txt', 'interest-test-output-2.txt', 'interest-test-output.txt']:
+              path = Path(diagnostic)
+              if path.exists():
+                  path.unlink()
+          Path('.github/workflows/one-time-interest-finalize-sitemap.yml').unlink()
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalize Interest sitemap and registry contracts [interest-final-sitemap]"
+          git push origin HEAD:fix/interest-intent-consolidation
