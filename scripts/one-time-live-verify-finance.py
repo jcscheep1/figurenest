@@ -54,7 +54,7 @@ def body_text(): return driver.find_element(By.TAG_NAME,'body').text
 try:
     open_page('/calculators/finance/compound-interest')
     assert '$50,066.82' in output_text(), ('compound normal', output_text())
-    years=field('Years')
+    years=driver.find_element(By.CSS_SELECTOR,'[data-testid="input-finance-years"]')
     assert years.get_attribute('step')=='0.08333333333333333', years.get_attribute('step')
     set_value(years,'0')
     assert 'greater than zero' in body_text().lower(), body_text()[-1200:]
