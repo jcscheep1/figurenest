@@ -21,6 +21,23 @@ test('counts an inclusive Monday-Friday range', () => {
   });
 });
 
+test('basic mode always uses Monday-Friday even after an advanced schedule was selected', () => {
+  const result = calculateWorkingDays({
+    start: '2026-09-01',
+    end: '2026-09-30',
+    advanced: false,
+    holidays: '',
+    workdays: '1,2,3,4,5,6',
+  });
+  assert.deepEqual(result, {
+    ok: true,
+    workingDays: 22,
+    calendarDays: 30,
+    nonWorkingScheduleDays: 8,
+    excludedDates: 0,
+  });
+});
+
 test('reversed endpoints produce the same result', () => {
   assert.deepEqual(basic('2026-09-30', '2026-09-01'), basic('2026-09-01', '2026-09-30'));
 });
