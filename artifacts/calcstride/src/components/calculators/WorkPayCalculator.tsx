@@ -7,10 +7,10 @@ import { currencyPrefix, formatCurrency, useUnitsPreferences } from '@/lib/units
 import { CalculatorModeSwitch } from '@/components/calculators/CalculatorDecisionExpansion';
 import { workDateCalculatorContent } from '@/lib/work-date-calculators';
 import { calculateOvertimePay } from '@/lib/work-pay-math';
+import { calculateSalary } from '@/lib/salary-math';
 
 type WorkPaySlug = 'salary' | 'overtime';
 const num = (value: string) => Number(value);
-const valid = (...values: number[]) => values.every((value) => Number.isFinite(value) && value >= 0);
 
 export function WorkPayCalculator({ slug }: { slug: WorkPaySlug }) {
   const { forCalculator, setCurrency, setCalculatorOverride } = useUnitsPreferences();
@@ -32,12 +32,13 @@ function SalaryCalculator({ currency, symbol, setCurrency }: any) {
   const [weeks, setWeeks] = useState('52');
   const [bonus, setBonus] = useState('0');
   const [unpaidWeeks, setUnpaidWeeks] = useState('0');
-  const result = useMemo(() => {
-    const a=num(annual), h=num(hours), w=num(weeks), b=num(bonus), u=num(unpaidWeeks);
-    if (!valid(a,h,w,b,u) || h<=0 || w<=0 || w>53 || h>168 || u>=w) return undefined;
-    const paidWeeks=w-u, base=a*(paidWeeks/w), total=base+b, hourly=total/(h*paidWeeks);
-    return { total, monthly:total/12, weekly:total/paidWeeks, daily:total/(paidWeeks*5), hourly, paidWeeks };
-  },[annual,hours,weeks,bonus,unpaidWeeks]);
+  const result = useMemo(() => calculateSalary({
+    annual: num(annual),
+    hoursPerWeek: num(hours),
+    weeksPerYear: num(weeks),
+    bonus: advanced ? num(bonus) : 0,
+    unpaidWeeks: advanced ? num(unpaidWeeks) : 0,
+  }), [annual, hours, weeks, bonus, unpaidWeeks, advanced]);
   const money=(v:number)=>formatCurrency(v,currency);
   return <Shell><Seo path="/calculators/salary-work/salary"/><div className="advanced-calc-page"><div className="advanced-calc-layout"><header className="advanced-calc-copy"><div className="eyebrow"><span className="eyebrow-dot"/> SALARY & WORK</div><h1>Salary Converter<span>.</span></h1><p>Convert annual pay into monthly, weekly, daily and hourly equivalents. Advanced mode can include bonus pay and unpaid weeks.</p></header><section className="advanced-calculator-card"><div className="advanced-calc-head"><span className="mono">SALARY — CALCULATE</span><div className="live-dot"><i/> LIVE RESULT</div></div><CalculatorModeSwitch advanced={advanced} onChange={setAdvanced}/><label className="advanced-field"><span>Currency</span><CurrencySelector value={currency} onChange={setCurrency}/></label><div className="advanced-fields"><MoneyField label="Annual salary" value={annual} set={setAnnual} symbol={symbol}/><NumberField label="Hours per week" value={hours} set={setHours}/><NumberField label="Working weeks per year" value={weeks} set={setWeeks}/>{advanced&&<><MoneyField label="Annual bonus / extra gross pay" value={bonus} set={setBonus} symbol={symbol}/><NumberField label="Unpaid weeks per year" value={unpaidWeeks} set={setUnpaidWeeks}/></>}</div><Result title="ESTIMATED GROSS ANNUAL PAY" primary={result?money(result.total):'Check the values'} error={!result} details={result?[['Monthly pay',money(result.monthly)],['Weekly pay',money(result.weekly)],['Daily pay (5-day week)',money(result.daily)],['Hourly pay',money(result.hourly)],['Paid weeks',String(result.paidWeeks)]]:[]}/><button className="reset-button mt-6" onClick={()=>{setAnnual('60000');setHours('40');setWeeks('52');setBonus('0');setUnpaidWeeks('0');setAdvanced(false);}}>Reset values</button></section></div><FullWorkContent slug="salary"/></div></Shell>;
 }
