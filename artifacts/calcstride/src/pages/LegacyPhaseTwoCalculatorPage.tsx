@@ -6,7 +6,8 @@ import { Shell } from '@/components/FigureNestShell';
 import { Link } from '@/components/PublicLink';
 import { CurrencySelector } from '@/components/UnitsPreferencesSelectors';
 import { toCanonicalUrl } from '@/lib/public-url';
-import { calculatePhaseTwo, phaseTwoDefinitions, type PhaseTwoSlug } from '@/lib/phase-two-expansion';
+import { calculatePhaseTwo, phaseTwoDefinitions, type PhaseTwoResult, type PhaseTwoSlug } from '@/lib/phase-two-expansion';
+import { validateWholeMinuteDuration } from '@/lib/time-calculator-validation';
 import { useUnitsPreferences } from '@/lib/units-preferences';
 import { publishedTools } from '@/lib/catalog';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
@@ -24,7 +25,10 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
     const tool = publishedTools.find((candidate) => candidate.href === href);
     return tool ? [tool] : [];
   });
-  const result = calculatePhaseTwo(slug, values, isMonetary ? currency : undefined);
+  const timePrecisionError = slug === 'time' ? validateWholeMinuteDuration(values[1] ?? '', values[2] ?? '') : undefined;
+  const result: PhaseTwoResult = timePrecisionError
+    ? { primary: timePrecisionError, summary: timePrecisionError, details: [], error: timePrecisionError }
+    : calculatePhaseTwo(slug, values, isMonetary ? currency : undefined);
   const a11y = calculatorFieldA11y(slug, result.error);
   const update = (index: number, value: string) => {
     setValues((current) => current.map((old, itemIndex) => itemIndex === index ? value : old));
@@ -73,7 +77,7 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
               <span>{field.label}</span>
               <div>{field.type === 'select'
                 ? <select {...a11y.field(field.key)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-                : <input {...a11y.field(field.key)} type={field.type || 'number'} min={field.min} step={field.step || (field.type === 'number' ? 'any' : undefined)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
+                : <input {...a11y.field(field.key)} type={field.type || 'number'} min={field.min} step={slug === 'time' && field.key === 'minutes' ? '1' : field.step || (field.type === 'number' ? 'any' : undefined)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
               </div>
             </label>)}
           </div>
