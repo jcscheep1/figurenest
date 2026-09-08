@@ -32,15 +32,16 @@ jobs:
           options.add_argument('--headless=new')
           options.add_argument('--no-sandbox')
           options.add_argument('--disable-dev-shm-usage')
-          options.add_argument('--window-size=390,844')
+          options.add_argument('--window-size=1440,1600')
           driver = webdriver.Chrome(options=options)
           wait = WebDriverWait(driver, 20)
           failures = []
 
           def type_input(css, value):
-              el = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, css)))
+              el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
               driver.execute_script('arguments[0].scrollIntoView({block:"center"})', el)
-              el.click()
+              driver.execute_script('arguments[0].focus()', el)
+              el = driver.find_element(By.CSS_SELECTOR, css)
               el.send_keys(Keys.CONTROL, 'a')
               el.send_keys(Keys.BACKSPACE)
               if value != '': el.send_keys(value)
@@ -58,8 +59,11 @@ jobs:
           try:
               driver.get('https://figurenest.com/calculators/finance/loan')
               wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-finance-principal"]')))
-              driver.execute_script("document.querySelector('.consent-panel')?.remove(); document.querySelector('.consent-backdrop')?.remove();")
-              time.sleep(0.2)
+              consent = driver.find_elements(By.CSS_SELECTOR, '.consent-panel .consent-choice')
+              if consent:
+                  consent[0].click()
+                  wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '.consent-panel')))
+                  time.sleep(0.2)
 
               def normal():
                   type_input('[data-testid="input-finance-principal"]', '24000')
@@ -114,7 +118,7 @@ jobs:
                   type_input('[data-testid="input-finance-years"]', '5')
                   buttons = driver.find_elements(By.CSS_SELECTOR, '.calculator-mode-options button')
                   assert len(buttons) == 2
-                  buttons[1].click(); time.sleep(0.35)
+                  driver.execute_script('arguments[0].click()', buttons[1]); time.sleep(0.35)
                   body = driver.find_element(By.CSS_SELECTOR, '.decision-expansion-body')
                   assert 'Payment including extra' in body.text and '$477.50' in body.text, body.text
                   assert '5 yr 0 mo' in body.text, body.text
