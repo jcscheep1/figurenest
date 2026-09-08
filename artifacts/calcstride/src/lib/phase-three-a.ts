@@ -174,7 +174,7 @@ const contentFacts: Record<PhaseThreeASlug, ContentFact> = {
     example: 'At 90 °F and 70% relative humidity, the NOAA Rothfusz regression gives a heat index of approximately 105.9 °F.',
     meaning: 'Heat index estimates how hot shaded conditions feel when air temperature and relative humidity are considered together.',
     units: 'Temperature may be entered in Celsius or Fahrenheit but the NOAA regression operates in Fahrenheit; relative humidity is a percentage.',
-    edge: 'The regression is intended for temperatures of at least 80 °F and humidity of at least 40%; inputs outside that range receive an explicit applicability error.',
+    edge: 'For temperatures of at least 80 °F, NOAA first screens conditions with a simpler Steadman approximation; when that heat-index estimate reaches 80 °F, the Rothfusz regression and its low- or high-humidity adjustments apply. Relative humidity may range from 0% through 100%.',
     limit: 'Direct sun, wind, clothing, exertion, age, health, hydration, and local warnings can change risk substantially; use official alerts for safety decisions.',
     check: 'Normalize temperature to Fahrenheit, apply the Rothfusz polynomial and NOAA humidity adjustments, then convert the result back for a Celsius display.',
   },
@@ -566,11 +566,17 @@ export function calculatePhaseThreeA(slug: PhaseThreeASlug, values: readonly str
       const temperature = numberAt(0), humidity = numberAt(2);
       if (temperature === null || humidity === null || humidity < 0 || humidity > 100) return bad('Use a valid temperature and relative humidity from 0% to 100%.');
       const t = toFahrenheit(temperature, values[1]);
-      if (t < 80 || humidity < 40) return bad('The NOAA regression applies at 80 °F or warmer and at least 40% relative humidity.');
-      let heat = -42.379 + 2.04901523*t + 10.14333127*humidity - 0.22475541*t*humidity - 0.00683783*t*t - 0.05481717*humidity*humidity + 0.00122874*t*t*humidity + 0.00085282*t*humidity*humidity - 0.00000199*t*t*humidity*humidity;
-      if (humidity < 13 && t >= 80 && t <= 112) heat -= ((13-humidity)/4)*Math.sqrt((17-Math.abs(t-95))/17);
-      if (humidity > 85 && t >= 80 && t <= 87) heat += ((humidity-85)/10)*((87-t)/5);
-      return result(`${format(heat, 1)} °F`, 'NOAA Rothfusz-regression heat index.', [{ label: 'Heat index Celsius', value: `${format((heat - 32) * 5 / 9, 1)} °C` }]);
+      if (t < 80) return bad('Use an air temperature of at least 80 °F for this heat-index estimate.');
+      const simple = 0.5 * (t + 61 + (t - 68) * 1.2 + humidity * 0.094);
+      let heat = (simple + t) / 2;
+      let method = 'NOAA Steadman-approximation heat index.';
+      if (heat >= 80) {
+        heat = -42.379 + 2.04901523*t + 10.14333127*humidity - 0.22475541*t*humidity - 0.00683783*t*t - 0.05481717*humidity*humidity + 0.00122874*t*t*humidity + 0.00085282*t*humidity*humidity - 0.00000199*t*t*humidity*humidity;
+        if (humidity < 13 && t >= 80 && t <= 112) heat -= ((13-humidity)/4)*Math.sqrt((17-Math.abs(t-95))/17);
+        if (humidity > 85 && t >= 80 && t <= 87) heat += ((humidity-85)/10)*((87-t)/5);
+        method = 'NOAA Rothfusz-regression heat index.';
+      }
+      return result(`${format(heat, 1)} °F`, method, [{ label: 'Heat index Celsius', value: `${format((heat - 32) * 5 / 9, 1)} °C` }]);
     }
     if (slug === 'mass') {
       const density = numberAt(0), volume = numberAt(1);
