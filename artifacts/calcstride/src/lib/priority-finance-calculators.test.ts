@@ -52,6 +52,18 @@ test('mortgage amortization returns an independently checked payment snapshot', 
   ]);
 });
 
+test('mortgage amortization rejects silently rounded term and payment inputs', () => {
+  const fractionalPayment = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30', '12.5']);
+  assert.ok(fractionalPayment.error);
+  assert.match(fractionalPayment.error, /whole-number payment/);
+
+  const nonMonthlyTerm = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30.01', '12']);
+  assert.ok(nonMonthlyTerm.error);
+  assert.match(nonMonthlyTerm.error, /whole number of months/);
+
+  assert.equal(calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30.5', '12']).error, undefined);
+});
+
 test('mortgage payoff compares recurring extra principal with the baseline', () => {
   const result = calculatePriorityFinance('mortgage-payoff', ['240000', '5.5', '1600', '200']);
   assert.equal(result.error, undefined);
