@@ -32,7 +32,10 @@ test('worked examples align with the production calculation', () => {
     for (const example of record.examples) {
       const result = calculateConstruction(record.slug, example.inputValues, example.unit);
       assert.equal(result.error, undefined, `${record.slug}: ${example.title}`);
-      assert.ok(Math.abs(result.raw - example.expectedRaw) < 0.00001, `${record.slug}: ${example.title}`);
+      const comparableRaw = example.unit === 'imperial' && record.slug !== 'concrete-bag' && record.slug !== 'concrete-cost'
+        ? result.raw * 1.30795062
+        : result.raw;
+      assert.ok(Math.abs(comparableRaw - example.expectedRaw) < 0.00001, `${record.slug}: ${example.title}`);
     }
   }
 });

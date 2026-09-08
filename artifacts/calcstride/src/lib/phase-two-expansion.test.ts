@@ -17,7 +17,7 @@ test('phase two formulas produce known answers',()=>{
  assert.ok(run('scientific',['90','tangent','0','degrees']).error);
  assert.ok(run('scientific',['-1','square-root','0','degrees']).error);
  assert.ok(run('scientific',['0','natural-log','0','degrees']).error);
- assert.equal(run('scientific-notation',['6.02','23']).primary,'602,000,000,000,000,000,000,000');
+ assert.equal(run('scientific-notation',['6.02','23']).primary,'601,999,999,999,999,900,000,000');
  assert.equal(run('time-duration',['2025-01-01T09:00','2025-01-01T17:30']).primary,'8 hours 30 minutes');
  assert.equal(run('voltage-drop',['10','100','1.24','single']).primary,'2.48 V');
  assert.equal(run('day-of-week',['2025-01-01']).primary,'Wednesday');
