@@ -135,7 +135,17 @@ export const mortgagePayoffDecision = (balance: number, annualRate: number, paym
 };
 
 export const growthDecision = (start: number, monthly: number, annualRate: number, years: number, annualIncrease: number, annualFee: number, inflation: number, beginningOfMonth: boolean) => {
-  if ([start, monthly, annualRate, years, annualIncrease, annualFee, inflation].some((value) => !Number.isFinite(value) || value < 0) || years <= 0) return undefined;
+  if (
+    [start, monthly, annualRate, years, annualIncrease, annualFee, inflation].some((value) => !Number.isFinite(value) || value < 0)
+    || years <= 0
+    || start > MAX_FINANCE_AMOUNT
+    || monthly > MAX_FINANCE_AMOUNT
+    || annualRate > MAX_FINANCE_RATE
+    || years > MAX_FINANCE_YEARS
+    || annualIncrease > MAX_FINANCE_RATE
+    || annualFee > MAX_FINANCE_RATE
+    || inflation > MAX_FINANCE_RATE
+  ) return undefined;
   let balance = start, contribution = monthly, deposited = start;
   const months = Math.round(years * 12);
   for (let month = 0; month < months; month += 1) {
@@ -144,8 +154,12 @@ export const growthDecision = (start: number, monthly: number, annualRate: numbe
     if (!beginningOfMonth) balance += contribution;
     deposited += contribution;
     if ((month + 1) % 12 === 0) contribution *= 1 + annualIncrease / 100;
+    if (![balance, contribution, deposited].every(Number.isFinite)) return undefined;
   }
-  return { balance, deposited, growth: balance - deposited, todayValue: balance / ((1 + inflation / 100) ** years) };
+  const todayValue = balance / ((1 + inflation / 100) ** years);
+  const growth = balance - deposited;
+  if (![balance, deposited, growth, todayValue].every(Number.isFinite)) return undefined;
+  return { balance, deposited, growth, todayValue };
 };
 
 export const savingsTargetDecision = (start: number, monthly: number, annualRate: number, years: number, target: number, annualIncrease: number, beginningOfMonth: boolean) => {
