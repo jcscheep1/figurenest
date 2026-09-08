@@ -42,6 +42,23 @@ test('interest rate requires a whole number of monthly payments', () => {
   assert.equal(calculatePriorityFinance('interest-rate', ['24000', '20', '1200']).error, undefined);
 });
 
+test('interest rate solver handles zero, supported maximum, and above-range rates', () => {
+  const zeroRate = calculatePriorityFinance('interest-rate', ['12000', '1000', '12']);
+  assert.equal(zeroRate.primary, '0%');
+  assert.equal(zeroRate.error, undefined);
+  assert.deepEqual(zeroRate.details, [{ label: 'Total paid', value: '$12,000.00' }]);
+
+  // A $1,000 balance at exactly 100% nominal annual interest over 12 months
+  // requires about $134.9957698828 per month under the calculator's monthly convention.
+  const maximumRate = calculatePriorityFinance('interest-rate', ['1000', '134.9957698828312', '12']);
+  assert.equal(maximumRate.primary, '100%');
+  assert.equal(maximumRate.error, undefined);
+
+  const aboveRange = calculatePriorityFinance('interest-rate', ['1000', '135', '12']);
+  assert.ok(aboveRange.error);
+  assert.match(aboveRange.error, /above the supported 100% nominal annual range/);
+});
+
 test('mortgage amortization returns an independently checked payment snapshot', () => {
   const result = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30', '12']);
   assert.equal(result.primary, '$1,798.65');
