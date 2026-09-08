@@ -1,0 +1,72 @@
+name: One-time record Investment audit closure
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-record-investment-audit.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Record durable Investment closure
+        shell: python
+        run: |
+          import re
+          from pathlib import Path
+
+          status_path = Path('FIGURENEST-STATUS.md')
+          ledger_path = Path('FIGURENEST-FUNCTIONAL-AUDIT.md')
+          status = status_path.read_text()
+          ledger = ledger_path.read_text()
+
+          if '| Investment Calculator | Extreme finite investment inputs' not in status:
+              used = set(re.findall(r'FN-005-([A-Z])\b', status))
+              issue_letter = next(letter for letter in 'PQRSTUVWXYZ' if letter not in used)
+              issue_id = f'FN-005-{issue_letter}'
+              row = (
+                  f'| {issue_id} | Investment Calculator | Extreme finite investment inputs could overflow compound-growth arithmetic and render `$∞` instead of an error | ✅ CLOSED | '
+                  'Finite-result guard and regression merged in `c9923462763dcdadc70a8322a24459bff53f8ec6`; typecheck, SEO generation, 409/409 unit tests and production build passed; all Vercel deployment statuses green; live Chrome run `34269010115` on 2026-09-08 confirmed normal `$34,570.43`, zero-return `$25,000.00`, blank/negative validation, fractional-year support, overflow rejection, mobile/a11y, internal links and SEO/content checks |'
+              )
+              marker = '\n\n## Closed-item protection'
+              if marker not in status:
+                  raise SystemExit('Status insertion marker changed; refusing unsafe write.')
+              status = status.replace(marker, '\n' + row + marker, 1)
+              status_path.write_text(status)
+          else:
+              match = re.search(r'\| (FN-005-[A-Z]) \| Investment Calculator \| Extreme finite investment inputs', status)
+              issue_id = match.group(1) if match else 'FN-005'
+
+          if '| Investment Calculator | `/calculators/finance/investment` |' not in ledger:
+              row = (
+                  f'| Investment Calculator | `/calculators/finance/investment` | ✅ AUDITED + REPAIRED | '
+                  f'Run `34269010115`: normal 25000 @ 6.5% / 5y -> `$34,570.43`, zero return -> `$25,000.00`, blank/negative inputs rejected, fractional years explicitly supported, extreme finite overflow rejected without `$∞`, mobile/a11y/internal-link and SEO/content checks passed; repair `c9923462763dcdadc70a8322a24459bff53f8ec6`; {issue_id} closed |'
+              )
+              marker = '\n\n## Audit cursor'
+              if marker not in ledger:
+                  raise SystemExit('Ledger insertion marker changed; refusing unsafe write.')
+              ledger = ledger.replace(marker, '\n' + row + marker, 1)
+              ledger = ledger.replace(
+                  'Percentage, APR, Auto Lease, and Loan are complete and must not be retested unless fresh production evidence proves regression.',
+                  'Percentage, APR, Auto Lease, Loan, and Investment are complete and must not be retested unless fresh production evidence proves regression.'
+              )
+              ledger_path.write_text(ledger)
+
+      - name: Commit closure evidence
+        run: |
+          if git diff --quiet; then
+            echo 'Closure already recorded.'
+            exit 0
+          fi
+          git config user.name 'FigureNest Audit Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add FIGURENEST-STATUS.md FIGURENEST-FUNCTIONAL-AUDIT.md
+          git commit -m 'Record Investment Calculator audit closure'
+          git pull --rebase origin main
+          git push origin HEAD:main
