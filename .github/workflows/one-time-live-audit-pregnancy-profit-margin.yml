@@ -1,4 +1,4 @@
-name: One-time live audit pregnancy and Profit Margin
+name: One-time live verify Profit Margin and audit Break-Even
 
 on:
   push:
@@ -44,54 +44,50 @@ jobs:
               el.send_keys(value)
               el.send_keys(Keys.TAB)
               time.sleep(0.35)
-              return el
 
           try:
-              # PR #40 production verification: browser exposes a real date field and leap day remains valid.
-              driver.get('https://figurenest.com/calculators/health/pregnancy-conception')
-              last_period = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-testid="input-pregnancy-conception-lastPeriod"]')))
-              assert last_period.get_attribute('type') == 'date', last_period.get_attribute('type')
-              last_period.click()
-              last_period.send_keys(Keys.CONTROL, 'a')
-              last_period.send_keys('02/29/2024')
-              last_period.send_keys(Keys.TAB)
-              time.sleep(0.5)
-              assert last_period.get_attribute('value') == '2024-02-29', 'date entry did not take: ' + str(last_period.get_attribute('value'))
-              pregnancy = driver.find_element(By.CSS_SELECTOR, '[data-testid="status-pregnancy-conception"]')
-              assert 'has-error' not in pregnancy.get_attribute('class'), pregnancy.text
-              assert '2024-03-28' in pregnancy.text, pregnancy.text
-              details = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
-              assert '2024-03-14' in details, details
-              print('PASS: pregnancy estimator leap-day production behavior; impossible-date regression remains covered by merged strict-date tests')
-
-              # Profit Margin normal case.
+              # Live closure gate for repaired Profit Margin high-loss case.
               driver.get('https://figurenest.com/calculators/business/profit-margin')
               wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-business-cost"]')))
-              type_input('[data-testid="input-business-cost"]', '48')
-              type_input('[data-testid="input-business-price"]', '80')
-              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-              assert 'has-error' not in panel.get_attribute('class'), panel.text
-              assert '40%' in panel.text, panel.text
-              breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
-              assert '$32.00' in breakdown and '66.67%' in breakdown, breakdown
-              print('PASS: Profit Margin normal case = 40%, $32 gross profit, 66.67% markup')
-
-              # Documented edge: zero cost is a valid 100% margin and markup is undefined.
-              type_input('[data-testid="input-business-cost"]', '0')
-              type_input('[data-testid="input-business-price"]', '80')
-              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-              assert 'has-error' not in panel.get_attribute('class'), panel.text
-              assert '100%' in panel.text, panel.text
-              breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
-              assert 'Not defined' in breakdown, breakdown
-              print('PASS: Profit Margin zero-cost edge = 100%, markup Not defined')
-
-              # Documented contract says selling below cost is valid negative margin. This finite case must not be rejected arbitrarily.
               type_input('[data-testid="input-business-cost"]', '2000')
               type_input('[data-testid="input-business-price"]', '1')
               panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
-              assert 'has-error' not in panel.get_attribute('class'), 'CONFIRMED DEFECT: finite below-cost margin rejected: ' + panel.text
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
               assert '-199,900%' in panel.text, panel.text
-              print('PASS: Profit Margin finite high-loss case = -199,900%')
+              breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+              assert 'Gross loss' in breakdown and '$1,999.00' in breakdown and '-99.95%' in breakdown, breakdown
+              print('PASS: FN-005-M Profit Margin repaired high-loss case = -199,900%')
+
+              # Next audit target: Break-Even normal case.
+              driver.get('https://figurenest.com/calculators/business/break-even')
+              wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-business-fixed"]')))
+              type_input('[data-testid="input-business-fixed"]', '12000')
+              type_input('[data-testid="input-business-price"]', '80')
+              type_input('[data-testid="input-business-variable"]', '32')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '250 units' in panel.text, panel.text
+              breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+              assert '$48.00' in breakdown and '$20,000.00' in breakdown, breakdown
+              print('PASS: Break-Even normal case = 250 units')
+
+              # Invalid contribution margin must reject price <= variable cost.
+              type_input('[data-testid="input-business-price"]', '32')
+              type_input('[data-testid="input-business-variable"]', '32')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' in panel.get_attribute('class'), panel.text
+              assert 'must exceed variable cost' in panel.text.lower(), panel.text
+              print('PASS: Break-Even rejects non-positive contribution margin')
+
+              # Fractional exact break-even must round required sellable units up.
+              type_input('[data-testid="input-business-fixed"]', '100')
+              type_input('[data-testid="input-business-price"]', '10')
+              type_input('[data-testid="input-business-variable"]', '4')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '17 units' in panel.text, panel.text
+              breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+              assert '$6.00' in breakdown and '$166.67' in breakdown and '$170.00' in breakdown, breakdown
+              print('PASS: Break-Even rounds 16.666... exact units up to 17')
           finally:
               driver.quit()
