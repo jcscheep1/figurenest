@@ -38,6 +38,9 @@ jobs:
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
 
+      - name: Generate SEO files
+        run: pnpm --filter @workspace/calcstride generate:seo
+
       - name: Unit tests
         run: pnpm --filter @workspace/calcstride test
 
