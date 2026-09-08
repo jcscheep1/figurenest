@@ -1,0 +1,64 @@
+name: One-time finalize Mileage metric parity
+
+on:
+  push:
+    branches:
+      - audit/mileage-metric-support
+    paths:
+      - '.github/workflows/one-time-finalize-mileage.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/mileage-metric-support
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc -b lib/api-client-react
+      - name: Update Mileage route and legacy tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          routes = Path('artifacts/calcstride/src/lib/phase-four-routes.ts')
+          text = routes.read_text()
+          old = "description: 'Calculate fuel economy from a trip distance you enter yourself and fuel consumed; this page does not route, map, or geocode travel.'"
+          new = "description: 'Calculate fuel economy from trip distance and fuel consumed in either miles + US gallons or kilometres + litres; this page does not route, map, or geocode travel.'"
+          if old not in text:
+              raise SystemExit('Mileage route target not found')
+          routes.write_text(text.replace(old, new, 1))
+
+          tests = Path('artifacts/calcstride/src/lib/phase-four.test.ts')
+          text = tests.read_text()
+          replacements = {
+              "assert.equal(calculatePhaseFour('mileage', ['120', '4']).primary, '30.00 MPG');": "assert.equal(calculatePhaseFour('mileage', ['imperial', '120', '4']).primary, '30.00 MPG');",
+              "assert.ok(calculatePhaseFour('mileage', ['0', '4']).error);": "assert.ok(calculatePhaseFour('mileage', ['imperial', '0', '4']).error);",
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Mileage legacy test target not found: {old}')
+              text = text.replace(old, new, 1)
+          tests.write_text(text)
+          PY
+      - run: pnpm --filter @workspace/calcstride typecheck
+      - run: pnpm --filter @workspace/calcstride generate:seo
+      - run: pnpm --filter @workspace/calcstride test
+      - run: pnpm --filter @workspace/calcstride build
+      - name: Commit parity updates
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add artifacts/calcstride/src/lib/phase-four-routes.ts artifacts/calcstride/src/lib/phase-four.test.ts
+          git diff --cached --quiet && exit 0
+          git commit -m 'Align Mileage route and legacy tests'
+          git push origin HEAD:audit/mileage-metric-support
