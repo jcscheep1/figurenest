@@ -52,6 +52,20 @@ test('mortgage amortization returns an independently checked payment snapshot', 
   ]);
 });
 
+test('mortgage amortization requires discrete monthly schedule periods', () => {
+  const fractionalPayment = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30', '12.4']);
+  assert.ok(fractionalPayment.error);
+  assert.match(fractionalPayment.error, /whole-number payment/);
+
+  const fractionalMonthTerm = calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30.1', '12']);
+  assert.ok(fractionalMonthTerm.error);
+  assert.match(fractionalMonthTerm.error, /resolves to whole months/);
+
+  assert.equal(calculatePriorityFinance('mortgage-amortization', ['300000', '6', '1', '12']).error, undefined);
+  assert.equal(calculatePriorityFinance('mortgage-amortization', ['300000', '6', '50', '600']).error, undefined);
+  assert.equal(calculatePriorityFinance('mortgage-amortization', ['300000', '6', '30.5', '366']).error, undefined);
+});
+
 test('mortgage payoff compares recurring extra principal with the baseline', () => {
   const result = calculatePriorityFinance('mortgage-payoff', ['240000', '5.5', '1600', '200']);
   assert.equal(result.error, undefined);
