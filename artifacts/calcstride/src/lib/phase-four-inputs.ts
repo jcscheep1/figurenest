@@ -22,11 +22,23 @@ export function normalizePhaseFourInputs(slug: PhaseFourSlug, values: readonly s
       }
     }
   }
+  if (slug === 'bond') {
+    const years = values[3];
+    if (years?.trim() !== '' && !Number.isInteger(Number(years))) {
+      return values.map((value, index) => index === 3 ? '' : value);
+    }
+  }
   return [...values];
 }
 
 export function phaseFourFieldStep(slug: PhaseFourSlug, fieldIndex: number, fallback: string | undefined): string | undefined {
   if (slug === 'auto-lease' && fieldIndex === 2) return '1';
   if (slug === 'annuity' && fieldIndex === 2) return '0.08333333333333333';
+  if (slug === 'bond' && fieldIndex === 3) return '1';
+  return fallback;
+}
+
+export function phaseFourFieldMin(slug: PhaseFourSlug, fieldIndex: number, fallback: number | undefined): number | undefined {
+  if (slug === 'bond' && fieldIndex === 3) return 1;
   return fallback;
 }
