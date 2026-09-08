@@ -27,10 +27,13 @@
 | Ovulation, Period & Conception Date Estimator | `/calculators/health/pregnancy-conception` | ✅ AUDITED + REPAIRED | Run `34266807463`: valid leap day 2024-02-29 -> next period 2024-03-28, ovulation 2024-03-14; strict impossible-date regressions merged in PR #40; FN-005-L closed |
 | Profit Margin Calculator | `/calculators/business/profit-margin` | ✅ AUDITED + REPAIRED | Run `34267127384`: cost 2000 / price 1 -> -199,900%, $1,999 gross loss, -99.95% markup; FN-005-M closed |
 | Break-Even Calculator | `/calculators/business/break-even` | ✅ AUDITED | Run `34267127384`: 12000/80/32 -> 250 units; price=variable rejected; 100/10/4 rounds 16.666... up to 17 units with $166.67 exact and $170.00 whole-unit revenue |
+| Loan Calculator | `/calculators/finance/loan` | ✅ AUDITED + REPAIRED | Run `34268276394`: normal 24000 @ 7.2% / 5y remains $477.50; blank principal/rate/term rejected; zero rate remains valid; 5.01y rejected; 5.5y / 66 months accepted; UI step is one month; Advanced follows the same whole-month contract; FN-005-N and FN-005-O closed |
 
 ## Audit cursor
 
-The **Business** category is now fully covered in this ledger: ROI, Profit Margin, Markup, Break-Even, and Commission.
+The **Business** category is fully covered in this ledger: ROI, Profit Margin, Markup, Break-Even, and Commission.
+
+The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, and Loan are complete and must not be retested unless fresh production evidence proves regression.
 
 Continue with genuinely unchecked published calculators. For each calculator, verify at minimum:
 
@@ -44,6 +47,6 @@ If a fresh production defect is found, add the next FN-005 child ID in `FIGURENE
 
 ### Next audit target
 
-**Loan Calculator** — `/calculators/finance/loan`
+**Mortgage Calculator** — `/calculators/finance/mortgage`
 
-This starts the next systematic Money & Finance pass while skipping finance calculators already completed above (Percentage, APR, Auto Lease).
+Continue the Money & Finance pass while skipping completed rows above.
