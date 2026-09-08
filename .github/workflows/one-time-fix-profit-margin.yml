@@ -1,0 +1,44 @@
+name: One-time Profit Margin repair
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-fix-profit-margin.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply guarded Profit Margin repair
+        run: python scripts/one-time-fix-profit-margin.py
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+      - name: Run calculator regression suite
+        run: pnpm --filter @workspace/calcstride test
+      - name: Typecheck calculator app
+        run: pnpm --filter @workspace/calcstride typecheck
+      - name: Commit passing Profit Margin repair
+        run: |
+          git config user.name 'FigureNest Repair Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add artifacts/calcstride/src/lib/core-calculators.ts artifacts/calcstride/src/lib/core-calculators.test.ts artifacts/calcstride/src/lib/profit-margin-high-loss-regression.test.ts
+          git diff --cached --quiet && exit 0
+          git commit -m 'Allow valid high-loss Profit Margin calculations'
+          git push origin HEAD:main
