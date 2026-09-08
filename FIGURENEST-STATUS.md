@@ -47,10 +47,10 @@ Create a child ID under FN-005 for every specific calculator problem. Never add 
 | FN-005-C | Markup Calculator | Zero-cost selling price previously displayed equivalent margin as `0%` instead of mathematically undefined | 🟡 VERIFY | Source fix + regression tests merged in `f01fde5c20cc35ed124ff772a6d0fbdef2419b66`; Vercel production deployment green; needs fresh live calculator verification before closing |
 | FN-005-D | Unit/measurement converters | Small valid converted values could display as zero due to two-decimal result formatting | 🟡 VERIFY | Precision-aware formatter + regression tests merged in `309122842f9df68d89f43074e671ec45aaf36966`; needs fresh live converter verification before closing |
 | FN-005-E | Commission Calculator | Blank optional base-pay field was rejected by shared required-number validation | 🟡 VERIFY | Optional-input normalization + regression tests merged in `4a421360a1ce35eb8000c41847fd759e9b8ec5c9`; all three Vercel deployments green; needs fresh live verification |
-| FN-005-F | APR Calculator | Repayment validation compares scheduled payments with gross loan amount instead of net cash received | 🟠 ACTIVE | Confirmed on current shared engine; PR #37 contains focused red regression. Example: 10000 amount, 200 withheld fees, 9800 received, 60 × 165 should be valid because 9900 > 9800 net proceeds |
-| FN-005-G | Roman Numeral Converter | Decimal inputs within 1–3999 are accepted and silently truncated by conversion loop | 🟠 ACTIVE | PR #38 contains focused red regression; source needs a whole-number guard before conversion |
-| FN-005-H | Matrix Calculator | Determinant/inverse incorrectly require Matrix B fields although those operations only use Matrix A | 🟠 ACTIVE | PR #41 contains focused red regression; source needs operation-aware validation and UI cleanup |
-| FN-005-I | Percentage Calculator | Blank required numeric inputs can be coerced to zero and return plausible results | 🟠 ACTIVE | PR #32 contains focused red regression; source requires safe blank-input validation |
+| FN-005-F | APR Calculator | Repayment validation compared scheduled payments with gross loan amount instead of net cash received | 🟡 VERIFY | Fixed on current main in `518e16add2859d16e026c88d1c1c78d872a7c0ff`; focused regression, full calcstride tests, and typecheck passed; all three Vercel deployments green; needs fresh live calculator verification |
+| FN-005-G | Roman Numeral Converter | Decimal inputs within 1–3999 were accepted and silently truncated by conversion loop | 🟡 VERIFY | Whole-number guard + regression merged in `518e16add2859d16e026c88d1c1c78d872a7c0ff`; full calcstride tests/typecheck passed; all three Vercel deployments green; needs fresh live verification |
+| FN-005-H | Matrix Calculator | Determinant/inverse incorrectly required Matrix B fields although those operations only use Matrix A | 🟡 VERIFY | Operation-aware validation + regression merged in `aef8d028d256a8553ec51892e2ebae913a6c19d5`; full calcstride tests and typecheck passed; production deployment in progress/verification required |
+| FN-005-I | Percentage Calculator | Blank required numeric inputs could be coerced to zero and return plausible results | 🟡 VERIFY | Blank-input validation + regression merged in `aef8d028d256a8553ec51892e2ebae913a6c19d5`; full calcstride tests and typecheck passed; production deployment in progress/verification required |
 
 ## Closed-item protection
 
@@ -111,8 +111,8 @@ Do not repeat the full closed history unless specifically requested.
 ## Current next three actions
 
 1. **FN-004:** Live-verify directory/category filtering across production, including Home & Construction -> Electrical.
-2. **FN-005-F/G/H/I:** Repair the confirmed APR, Roman Numeral, Matrix, and Percentage defects one-by-one; never merge test-only red branches.
-3. **FN-005-C/D/E:** Fresh-live verify the newly deployed Markup, converter-precision, and Commission repairs, then close each only if production passes.
+2. **FN-005-C through FN-005-I:** Fresh-live verify the deployed calculator repairs and close only the ones that pass production behavior checks.
+3. **FN-005:** Continue the one-pass audit from the next genuinely unaudited calculator after the current VERIFY batch is resolved.
 
 ---
 
