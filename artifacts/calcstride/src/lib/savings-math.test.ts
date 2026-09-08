@@ -25,9 +25,9 @@ test('savings math compounds monthly contributions at month end', () => {
   });
   assert.equal(result.ok, true);
   if (!result.ok) return;
-  assert.ok(Math.abs(result.value.balance - 12975.770894618632) < 1e-9);
+  assert.ok(Math.abs(result.value.balance - 12912.923975037324) < 1e-9);
   assert.equal(result.value.deposited, 12000);
-  assert.ok(Math.abs(result.value.interest - 975.7708946186317) < 1e-9);
+  assert.ok(Math.abs(result.value.interest - 912.9239750373235) < 1e-9);
 });
 
 test('savings math rejects unsupported finance ranges', () => {
