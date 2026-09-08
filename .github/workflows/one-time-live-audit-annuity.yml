@@ -16,3 +16,4 @@ jobs:
           python-version: '3.12'
       - run: pip install selenium
       - run: python scripts/one-time-live-audit-annuity.py
+      # rerun with exact valid-range result contract
