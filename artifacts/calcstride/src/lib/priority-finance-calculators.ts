@@ -169,7 +169,7 @@ export const priorityFinanceContent: Record<PriorityFinanceSlug, PriorityFinance
       { key: 'principal', label: 'Mortgage principal', value: '300000', prefix: '$', min: 0 },
       { key: 'rate', label: 'Annual interest rate', value: '6', suffix: '%', min: 0, max: 100 },
       { key: 'years', label: 'Amortization term', value: '30', suffix: 'years', min: 1, max: 50 },
-      { key: 'paymentNumber', label: 'Inspect payment number', value: '12', min: 1, max: 600 },
+      { key: 'paymentNumber', label: 'Inspect payment number', value: '12', min: 1, max: 600, step: '1' },
     ],
     whenUseful: ['See how a level payment is divided between interest and principal.', 'Estimate the remaining scheduled balance after a chosen number of payments.', 'Compare the early and later stages of a fixed-rate mortgage.'],
     examples: [{
@@ -189,7 +189,7 @@ export const priorityFinanceContent: Record<PriorityFinanceSlug, PriorityFinance
     edgeCases: [
       { title: 'Zero-rate mortgage', explanation: 'Every payment reduces principal by an equal amount.' },
       { title: 'Final payment', explanation: 'The remaining balance is constrained to zero after the last scheduled payment.' },
-      { title: 'Payment outside the term', explanation: 'The calculator asks for a payment number no greater than the total number of payments.' },
+      { title: 'Payment outside the term', explanation: 'The calculator asks for a whole-number payment no greater than the total number of scheduled monthly payments.' },
     ],
     faqs: [
       { question: 'Why is so much of an early mortgage payment interest?', answer: 'Monthly interest is calculated on the outstanding balance. The balance is largest near the beginning, so the interest amount is also largest then.' },
@@ -405,9 +405,18 @@ export function calculatePriorityFinance(
 
   if (slug === 'mortgage-amortization') {
     const [principal, rate, years, selectedPayment] = n;
-    const months = Math.round(years * 12);
-    const k = Math.round(selectedPayment);
-    if (!principal || !months || years > 50 || rate > 100 || !k || k > months) return invalid('Use a term of 1–50 years and a payment number within that term');
+    const months = years * 12;
+    if (
+      !principal
+      || years < 1
+      || years > 50
+      || rate > 100
+      || !Number.isInteger(months)
+      || !Number.isInteger(selectedPayment)
+      || selectedPayment < 1
+      || selectedPayment > months
+    ) return invalid('Use a 1–50 year term that resolves to whole months and a whole-number payment within that term');
+    const k = selectedPayment;
     const monthly = payment(principal, rate, months);
     const monthlyRate = rate / 1200;
     const balanceBefore = monthlyRate === 0
