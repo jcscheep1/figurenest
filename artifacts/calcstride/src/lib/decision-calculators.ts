@@ -88,11 +88,29 @@ export const creditCardDecision = (balance: number, annualRate: number, basePaym
 };
 
 export const autoLoanDecision = (price: number, down: number, trade: number, annualRate: number, months: number, taxRate: number, fees: number, rebate: number, balloon: number, extraMonthly: number, ownershipMonthly: number) => {
+  const inputs = [price, down, trade, annualRate, months, taxRate, fees, rebate, balloon, extraMonthly, ownershipMonthly];
+  if (
+    !inputs.every(Number.isFinite)
+    || price <= 0
+    || down < 0
+    || trade < 0
+    || annualRate < 0
+    || !Number.isInteger(months)
+    || months < 1
+    || months > 1200
+    || taxRate < 0
+    || fees < 0
+    || rebate < 0
+    || balloon < 0
+    || extraMonthly < 0
+    || ownershipMonthly < 0
+  ) return undefined;
   const financed = price * (1 + taxRate / 100) + fees - down - trade - rebate;
+  if (financed <= 0 || balloon > financed) return undefined;
   const years = months / 12;
   const base = amortizationScenario(financed, annualRate, years, 0, 0, balloon);
   const accelerated = amortizationScenario(financed, annualRate, years, extraMonthly, 0, balloon);
-  if (!base || !accelerated || [rebate, balloon, extraMonthly, ownershipMonthly].some((value) => !Number.isFinite(value) || value < 0) || financed <= 0 || balloon > financed) return undefined;
+  if (!base || !accelerated) return undefined;
   return { financed, payment: accelerated.paymentWithExtra, ownershipMonthly: accelerated.paymentWithExtra + ownershipMonthly, payoffMonths: accelerated.months, interest: accelerated.interest, interestSaved: Math.max(0, base.interest - accelerated.interest), balloon: accelerated.balloon };
 };
 
