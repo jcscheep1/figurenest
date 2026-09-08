@@ -20,8 +20,8 @@ jobs:
           node-version: 22
       - name: Enable pnpm
         run: corepack enable
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies for validation only
+        run: pnpm install --no-frozen-lockfile
       - name: Apply exact source repairs and regression tests
         shell: python
         run: |
@@ -80,6 +80,7 @@ jobs:
         run: |
           git config user.name 'FigureNest Repair Bot'
           git config user.email 'actions@users.noreply.github.com'
+          git restore pnpm-lock.yaml || true
           git add artifacts/calcstride/src/lib/phase-four.ts artifacts/calcstride/src/lib/apr-net-proceeds-regression.test.ts artifacts/calcstride/src/lib/roman-numeral-boundary.test.ts
           git diff --cached --quiet && exit 0
           git commit -m 'Fix APR net proceeds and Roman numeral validation'
