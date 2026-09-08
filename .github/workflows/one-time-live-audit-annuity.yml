@@ -16,4 +16,4 @@ jobs:
           python-version: '3.12'
       - run: pip install selenium
       - run: python scripts/one-time-live-audit-annuity.py
-      # production closure rerun after whole-period repair
+      # production closure rerun with current rejection wording
