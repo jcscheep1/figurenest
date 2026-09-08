@@ -28,7 +28,7 @@ An item is not complete just because code was changed or deployed. It is only **
 |---|---:|---|---|---|---|
 | FN-001 | P0 | `robots.txt` production correctness | 🔴 CRITICAL | Fetch live `/robots.txt`; confirm 200, correct directives, no accidental blocking, and sitemap declaration points to the canonical production sitemap | User explicitly set this as top priority |
 | FN-002 | P0 | Production sitemap correctness | 🔴 CRITICAL | Fetch live sitemap; confirm 200, valid XML, canonical `https://figurenest.com` URLs, no draft/non-canonical routes, expected calculator coverage, and robots reference | Must be checked together with FN-001 |
-| FN-003 | P1 | Calculator/tool inventory count | 🟡 VERIFY | Reconcile source registry/tool definitions against the live directory count; document exact expected and live totals | Do not rely on old audit counts |
+| FN-003 | P1 | Calculator/tool inventory count | ✅ CLOSED | Homepage and `/calculators/` both show 162 published tools/results on production | Fixed by deduplicating directory entries by canonical destination; commit `3be640768d4e868997202d72c89423944271dab7`; live verified 2026-09-08 |
 | FN-004 | P1 | Directory/category filtering | 🟡 VERIFY | Test every top-level category on production, including Home & Construction -> Electrical; verify correct tools appear and counts update | Previous issue reported around category filtering |
 | FN-005 | P1 | Calculator functional audit | 🟠 ACTIVE | One-by-one production test of every calculator: inputs, units, validation, formulas, result rendering, mobile usability | Track individual failures as child IDs, never duplicate them |
 | FN-006 | P2 | Calculator content depth & advanced/basic UX | ⬜ WAITING | Verify each calculator has sufficient useful explanation, assumptions, examples, advanced/basic controls where applicable, and no hidden inputs | Starts after P0/P1 core correctness |
@@ -105,7 +105,7 @@ Do not repeat the full closed history unless specifically requested.
 
 1. **FN-001:** Verify and, if necessary, repair production `robots.txt`.
 2. **FN-002:** Verify and, if necessary, repair production sitemap and its robots declaration.
-3. **FN-003:** Reconcile the calculator registry/source count with the live directory count.
+3. **FN-004:** Verify directory/category filtering across production.
 
 ---
 
