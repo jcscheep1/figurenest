@@ -222,12 +222,12 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
     if (!Number.isFinite(price) || price > MAX_BUSINESS_AMOUNT) {
       return invalid(`These values produce a selling price above ${trillionLabel(currency)}. Reduce the cost or markup`);
     }
-    const margin = price === 0 ? 0 : markupAmount / price * 100;
+    const margin = price === 0 ? undefined : markupAmount / price * 100;
     return {
       primary: formatMoney(price),
       details: [
         { label: 'Markup amount', value: formatMoney(markupAmount) },
-        { label: 'Equivalent margin', value: `${decimal.format(margin)}%` },
+        { label: 'Equivalent margin', value: margin === undefined ? 'Not defined' : `${decimal.format(margin)}%` },
       ],
     };
   }
