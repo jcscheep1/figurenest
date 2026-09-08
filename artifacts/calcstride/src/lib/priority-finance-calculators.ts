@@ -299,7 +299,7 @@ export const priorityFinanceContent: Record<PriorityFinanceSlug, PriorityFinance
 };
 
 const maximumAmount = 1_000_000_000_000;
-const decimal = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const decimal = new Intl.NumberFormat('en-US', { maximumFractionDigits: 4 });
 
 const payment = (principal: number, annualRate: number, months: number) => {
   if (annualRate === 0) return principal / months;
