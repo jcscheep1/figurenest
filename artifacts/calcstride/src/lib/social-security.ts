@@ -6,6 +6,14 @@ export type SocialSecurityEstimate = {
 };
 
 /**
+ * Convert a required numeric form value without treating an empty field as zero.
+ * A deliberately entered zero remains valid for fields whose numeric contract allows it.
+ */
+export function parseRequiredSocialSecurityNumber(value: string): number {
+  return value.trim() === '' ? Number.NaN : Number(value);
+}
+
+/**
  * Full retirement age for workers born in 1943 or later.
  * FigureNest deliberately limits this helper to cohorts whose delayed-retirement
  * credit is 8% per year, avoiding older cohort rules with different credit rates.
