@@ -76,7 +76,7 @@ export const priorityFinanceContent: Record<PriorityFinanceSlug, PriorityFinance
       { key: 'down', label: 'Cash down payment', value: '4000', prefix: '$', min: 0 },
       { key: 'trade', label: 'Trade-in credit', value: '3000', prefix: '$', min: 0 },
       { key: 'rate', label: 'Annual interest rate', value: '6.5', suffix: '%', min: 0, max: 100 },
-      { key: 'months', label: 'Loan term', value: '60', suffix: 'months', min: 1, max: 120 },
+      { key: 'months', label: 'Loan term', value: '60', suffix: 'months', min: 1, max: 120, step: '1' },
       { key: 'tax', label: 'Sales tax rate', value: '6', suffix: '%', min: 0, max: 100 },
       { key: 'fees', label: 'Financed fees', value: '500', prefix: '$', min: 0 },
     ],
@@ -125,7 +125,7 @@ export const priorityFinanceContent: Record<PriorityFinanceSlug, PriorityFinance
     fields: [
       { key: 'principal', label: 'Loan principal', value: '24000', prefix: '$', min: 0 },
       { key: 'payment', label: 'Monthly payment', value: '477.50', prefix: '$', min: 0 },
-      { key: 'months', label: 'Number of payments', value: '60', suffix: 'months', min: 1, max: 1200 },
+      { key: 'months', label: 'Number of payments', value: '60', suffix: 'months', min: 1, max: 1200, step: '1' },
     ],
     whenUseful: ['Check the approximate rate implied by a fixed payment quote.', 'Compare payment-based offers on a common term.', 'Identify when a payment is too low to repay the entered principal within the stated term.'],
     examples: [{
@@ -349,7 +349,7 @@ export function calculatePriorityFinance(
 
   if (slug === 'auto-loan') {
     const [price, down, trade, rate, months, taxRate, fees] = n;
-    if (!months || months > 120 || rate > 100 || taxRate > 100) return invalid('Use 1–120 months and percentage rates no greater than 100%');
+    if (!Number.isInteger(months) || months < 1 || months > 120 || rate > 100 || taxRate > 100) return invalid('Use a whole-number term of 1–120 months and percentage rates no greater than 100%');
     const financed = price * (1 + taxRate / 100) + fees - down - trade;
     if (financed < 0) return invalid('Down payment and trade-in cannot exceed the estimated purchase cost');
     const monthly = financed === 0 ? 0 : payment(financed, rate, months);
@@ -378,7 +378,7 @@ export function calculatePriorityFinance(
 
   if (slug === 'interest-rate') {
     const [principal, monthlyPayment, months] = n;
-    if (!principal || !months || months > 1200) return invalid('Principal and payments must be greater than zero; use no more than 1,200 payments');
+    if (!principal || !Number.isInteger(months) || months < 1 || months > 1200) return invalid('Principal must be greater than zero; use a whole number of 1–1,200 monthly payments');
     const zeroRatePayment = principal / months;
     if (monthlyPayment + 0.0000001 < zeroRatePayment) return invalid('The payment is too low to repay this principal within the entered term');
     if (Math.abs(monthlyPayment - zeroRatePayment) < 0.0000001) {
