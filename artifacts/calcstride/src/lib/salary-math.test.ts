@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calculateSalary, MAX_SALARY_AMOUNT } from './salary-math';
+import { annualizeSalary, calculateSalary, MAX_SALARY_AMOUNT } from './salary-math';
 
 test('salary calculation preserves the standard full-time example', () => {
   const result = calculateSalary({ annual: 60000, hoursPerWeek: 40, weeksPerYear: 52, bonus: 0, unpaidWeeks: 0 });
@@ -8,6 +8,19 @@ test('salary calculation preserves the standard full-time example', () => {
   assert.equal(result?.monthly, 5000);
   assert.ok(Math.abs((result?.weekly ?? 0) - 1153.8461538461538) < 1e-9);
   assert.ok(Math.abs((result?.hourly ?? 0) - 28.846153846153847) < 1e-9);
+});
+
+test('salary converter annualizes common source pay periods', () => {
+  assert.equal(annualizeSalary(60000, 'annual', 40, 52), 60000);
+  assert.equal(annualizeSalary(5000, 'monthly', 40, 52), 60000);
+  assert.equal(annualizeSalary(1000, 'weekly', 40, 52), 52000);
+  assert.equal(annualizeSalary(25, 'hourly', 40, 52), 52000);
+});
+
+test('salary converter rejects annualized totals above the supported boundary', () => {
+  assert.equal(annualizeSalary(MAX_SALARY_AMOUNT, 'monthly', 40, 52), undefined);
+  assert.equal(annualizeSalary(MAX_SALARY_AMOUNT, 'weekly', 40, 52), undefined);
+  assert.equal(annualizeSalary(MAX_SALARY_AMOUNT, 'hourly', 40, 52), undefined);
 });
 
 test('advanced salary prorates unpaid weeks and then adds bonus', () => {
