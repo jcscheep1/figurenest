@@ -78,7 +78,7 @@ test('phase four known outputs and invalid input handling are deterministic', ()
   }
   assert.equal(calculatePhaseFour('mileage', ['120', '4']).primary, '30.00 MPG');
   assert.equal(calculatePhaseFour('roman-numeral', ['2026']).primary, 'MMXXVI');
-  assert.equal(calculatePhaseFour('tire-size', ['225', '45', '17', '25']).primary, '24.97 in diameter');
+  assert.equal(calculatePhaseFour('tire-size', ['225', '45', '17', '225', '45', '17']).primary, '24.97 in diameter');
   assert.equal(calculatePhaseFour('take-home-pay', ['2500', '22', '100']).primary, '$1,850.00');
   assert.equal(calculatePhaseFour('budget', ['5000', '3800']).primary, '$1,200.00');
   assert.ok(calculatePhaseFour('mileage', ['0', '4']).error);
