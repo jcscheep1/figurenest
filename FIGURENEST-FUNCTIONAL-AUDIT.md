@@ -34,12 +34,13 @@
 | Bond Calculator | `/calculators/finance/bond` | ✅ AUDITED + REPAIRED | Run `34270949462`: 1000 face / 5% coupon / 4% yield / 10y -> `$1,081.11`; maturity min=1 and step=1; 10.5y rejected; repair `78069e95af50015ab1645743c902750d0dc908ec`; FN-005-S closed |
 | Compound Interest Calculator | `/calculators/finance/compound-interest` | ✅ AUDITED + REPAIRED | Run `34270949462`: default -> `$50,066.82`; horizon step is one month; 0y rejected; 10.01y rejected as fractional months; 10.5y accepted; Basic and Advanced monthly-horizon contract repaired in `9d333728283b642fc9a84bacacc3463fe5966f91`; FN-005-T closed |
 | Savings Calculator | `/calculators/finance/savings` | ✅ AUDITED | Run `34271534495`: default -> `$12,912.92`; 0% -> `$12,000.00`; blank required field rejected; rate above 100% rejected; horizon above 100 years rejected; Advanced mode rendered the savings-target scenario. Existing hardening commits `d57abdae4b5344edb62cbce3eb16916dffc75069` and `8f91f774ce61e20915592b85c97ba51de3b8aea0` verified on production |
+| Budget Calculator | `/calculators/finance/budget` | ✅ AUDITED | Run `34271765170`: default income 5000 / expenses 3800 -> `$1,200.00` surplus; income 3000 / expenses 3800 showed an `$800.00` shortfall; equal income/expenses returned `$0.00`; blank income rejected; field maximum enforced |
 
 ## Audit cursor
 
 The **Business** category is fully covered in this ledger: ROI, Profit Margin, Markup, Break-Even, and Commission.
 
-The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, Investment, Mortgage, 401(k), Bond, Compound Interest, and Savings are complete and must not be retested unless fresh production evidence proves regression.
+The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, Investment, Mortgage, 401(k), Bond, Compound Interest, Savings, and Budget are complete and must not be retested unless fresh production evidence proves regression.
 
 Continue with genuinely unchecked published calculators. For each calculator, verify at minimum:
 
@@ -53,6 +54,6 @@ If a fresh production defect is found, add the next FN-005 child ID in `FIGURENE
 
 ### Next audit target
 
-**Budget Calculator** — `/calculators/finance/budget`
+**Credit Card Payoff Calculator** — `/calculators/finance/credit-card`
 
-Before starting, check current `main` and active work so any existing Budget repair is reused rather than duplicated.
+Before starting, check current `main` and active work so any existing Credit Card repair is reused rather than duplicated.
