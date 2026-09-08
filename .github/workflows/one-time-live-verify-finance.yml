@@ -18,4 +18,4 @@ jobs:
         run: pip install selenium
       - name: Verify deployed finance calculators in Chrome
         run: python scripts/one-time-live-verify-finance.py
-      # rerun after supporting both finance page result templates
+      # rerun after binding Compound to stable input test ids
