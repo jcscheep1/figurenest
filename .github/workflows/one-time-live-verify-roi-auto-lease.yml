@@ -1,0 +1,71 @@
+name: One-time live verify ROI and Auto Lease
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-live-verify-roi-auto-lease.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Selenium
+        run: pip install 'selenium==4.35.0'
+      - name: Verify production behavior
+        shell: python
+        run: |
+          import time
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          options = webdriver.ChromeOptions()
+          options.add_argument('--headless=new')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('--window-size=1440,1600')
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 20)
+
+          def set_input(css, value):
+              el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
+              driver.execute_script("""
+                const el = arguments[0], value = arguments[1];
+                const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+                Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, value);
+                el.dispatchEvent(new Event('input', {bubbles:true}));
+                el.dispatchEvent(new Event('change', {bubbles:true}));
+              """, el, value)
+              time.sleep(0.2)
+
+          try:
+              driver.get('https://figurenest.com/calculators/business/roi')
+              wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-business-initial"]')))
+              set_input('[data-testid="input-business-initial"]', '1')
+              set_input('[data-testid="input-business-final"]', '2000')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '199,900%' in panel.text, panel.text
+              print('PASS: FN-005-K ROI = 199,900% for 1 to 2000')
+
+              driver.get('https://figurenest.com/calculators/finance/auto-lease')
+              months = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#calculator-auto-lease-months')))
+              assert months.get_attribute('step') == '1', months.get_attribute('step')
+              set_input('#calculator-auto-lease-months', '36.5')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' in panel.get_attribute('class'), panel.text
+              set_input('#calculator-auto-lease-months', '36')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '$503.61/month' in panel.text, panel.text
+              print('PASS: FN-005-J Auto Lease rejects 36.5 and accepts 36 months')
+          finally:
+              driver.quit()
