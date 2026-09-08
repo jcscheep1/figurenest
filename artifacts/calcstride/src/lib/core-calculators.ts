@@ -155,7 +155,19 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
       { label: 'Interest earned', value: Math.max(0, interest) },
     ], currency);
   }
-  if (slug === 'savings') { const months = d * 12; const r = c / 1200; const growth = (1 + r) ** months; const balance = a * growth + (r === 0 ? b * months : b * (growth - 1) / r); return { primary: formatMoney(balance), details: [{ label: 'Deposited principal', value: formatMoney(a + b * months) }, { label: 'Interest earned', value: formatMoney(balance - a - b * months) }] }; }
+  if (slug === 'savings') {
+    const boundsError = financeBoundsError([a, b], c, d, currency);
+    if (boundsError) return invalid(boundsError);
+    const months = d * 12;
+    const deposited = a + b * months;
+    const balance = compoundBalance(a, b, c, months);
+    const interest = balance - deposited;
+    if (interest < -Math.max(0.01, deposited * 1e-12)) return invalid('These inputs could not produce a reliable non-negative interest result');
+    return financeResult(balance, [
+      { label: 'Deposited principal', value: deposited },
+      { label: 'Interest earned', value: Math.max(0, interest) },
+    ], currency);
+  }
   if (slug === 'loan') {
     if (c === 0) return invalid('Loan term must be greater than zero');
     const boundsError = financeBoundsError([a], b, c, currency);
