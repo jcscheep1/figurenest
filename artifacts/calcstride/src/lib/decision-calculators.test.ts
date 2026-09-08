@@ -78,6 +78,17 @@ test('savings target reports the target gap and required monthly deposit', () =>
   assert.ok(result.requiredMonthly && result.requiredMonthly > 300);
 });
 
+test('savings advanced scenario rejects values outside hardened finance limits', () => {
+  assert.equal(savingsTargetDecision(1200, 300, 100.01, 3, 15000, 0, false), undefined);
+  assert.equal(savingsTargetDecision(1200, 300, 4.5, 100.01, 15000, 0, false), undefined);
+  assert.equal(savingsTargetDecision(1_000_000_000_001, 300, 4.5, 3, 15000, 0, false), undefined);
+  assert.equal(savingsTargetDecision(1200, 1_000_000_000_001, 4.5, 3, 15000, 0, false), undefined);
+  assert.equal(savingsTargetDecision(1200, 300, 4.5, 3, 1_000_000_000_001, 0, false), undefined);
+  assert.equal(savingsTargetDecision(1200, 300, 4.5, 3, 15000, Number.POSITIVE_INFINITY, false), undefined);
+
+  assert.ok(savingsTargetDecision(1_000_000_000_000, 0, 100, 100, 1_000_000_000_000, 0, false));
+});
+
 test('APR advanced scenario includes upfront and final charges', () => {
   const result = aprDecision(9800, 220, 60, 200, 100, 250, 10);
   assert.ok(result);
