@@ -2,7 +2,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import time
 
 BASE='https://figurenest.com'
@@ -27,7 +26,7 @@ def dismiss_consent():
 def open_page(path):
     driver.get(BASE+path)
     wait.until(lambda d: d.execute_script('return document.readyState')=='complete')
-    time.sleep(.6)
+    time.sleep(.8)
     dismiss_consent()
 
 def field(label_text):
@@ -41,15 +40,18 @@ def field(label_text):
 def set_value(el,value):
     el.click(); el.send_keys(Keys.CONTROL,'a'); el.send_keys(Keys.BACKSPACE)
     if value!='': el.send_keys(str(value))
-    el.send_keys(Keys.TAB); time.sleep(.35)
+    el.send_keys(Keys.TAB); time.sleep(.4)
 
 def output_text():
-    return driver.find_element(By.CSS_SELECTOR,'.advanced-result-output').text.strip()
+    for selector in ['[data-testid="finance-calculator-result"]','.advanced-result-output']:
+        els=driver.find_elements(By.CSS_SELECTOR,selector)
+        if els:
+            return els[0].text.strip()
+    raise AssertionError('Result element not found')
 
 def body_text(): return driver.find_element(By.TAG_NAME,'body').text
 
 try:
-    # Compound Interest
     open_page('/calculators/finance/compound-interest')
     assert '$50,066.82' in output_text(), ('compound normal', output_text())
     years=field('Years')
@@ -62,7 +64,6 @@ try:
     assert '$' in output_text() and 'CHECK' not in output_text().upper(), output_text()
     print('PASS Compound Interest live production')
 
-    # 401(k)
     open_page('/calculators/finance/401k')
     assert '$558,391.07' in output_text(), ('401k normal', output_text())
     years=field('Years')
@@ -75,7 +76,6 @@ try:
     assert '$285,000.00' in output_text(), ('401k zero rate', output_text())
     print('PASS 401(k) live production')
 
-    # Bond
     open_page('/calculators/finance/bond')
     assert '$1,081.11' in output_text(), ('bond normal', output_text())
     years=field('Years')
