@@ -1,0 +1,139 @@
+name: One-time ROI repair and live verification
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-fix-roi-and-verify.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply guarded ROI repair and regression
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('artifacts/calcstride/src/lib/core-calculators.ts')
+          text = path.read_text()
+          old = """    if (!Number.isFinite(roi) || Math.abs(roi) > MAX_BUSINESS_PERCENT) {
+      return invalid('These values produce an ROI too large to use. Check the initial investment');
+    }"""
+          new = """    if (!Number.isFinite(roi)) {
+      return invalid('These values produce an ROI outside the finite numeric range. Check the initial investment');
+    }"""
+          if old not in text:
+              raise SystemExit('ROI target not found; refusing unsafe edit')
+          path.write_text(text.replace(old, new, 1))
+          Path('artifacts/calcstride/src/lib/roi-high-return-regression.test.ts').write_text("""import assert from 'node:assert/strict';
+          import test from 'node:test';
+          import { calculateCore } from './core-calculators';
+
+          test('ROI accepts mathematically valid finite returns above 100,000 percent', () => {
+            const result = calculateCore('roi', ['1', '2000']);
+            assert.equal(result.error, undefined);
+            assert.equal(result.primary, '199,900%');
+            assert.equal(result.details?.[0].value, '$1,999.00');
+          });
+
+          test('ROI still rejects non-finite calculations instead of displaying Infinity', () => {
+            const result = calculateCore('roi', ['5e-324', '1000000000000']);
+            assert.ok(result.error);
+            assert.equal(result.details, undefined);
+            assert.doesNotMatch(result.primary, /NaN|∞|Infinity/i);
+          });
+          """)
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+      - name: Run calculator regression suite
+        run: pnpm --filter @workspace/calcstride test
+      - name: Typecheck calculator app
+        run: pnpm --filter @workspace/calcstride typecheck
+      - name: Commit passing ROI repair
+        run: |
+          git config user.name 'FigureNest Repair Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add artifacts/calcstride/src/lib/core-calculators.ts artifacts/calcstride/src/lib/roi-high-return-regression.test.ts
+          git diff --cached --quiet && exit 0
+          git commit -m 'Allow valid high-return ROI calculations'
+          git push origin HEAD:main
+      - name: Install Selenium
+        run: pip install 'selenium==4.35.0'
+      - name: Wait for live ROI deployment and verify ROI plus Auto Lease
+        shell: python
+        run: |
+          import time
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          options = webdriver.ChromeOptions()
+          options.add_argument('--headless=new')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('--window-size=1440,1600')
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 20)
+
+          def set_input(css, value):
+              el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
+              driver.execute_script("""
+                const el = arguments[0], value = arguments[1];
+                const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+                Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, value);
+                el.dispatchEvent(new Event('input', {bubbles:true}));
+                el.dispatchEvent(new Event('change', {bubbles:true}));
+              """, el, value)
+              time.sleep(0.15)
+
+          try:
+              roi_ok = False
+              last = ''
+              for attempt in range(30):
+                  driver.get('https://figurenest.com/calculators/business/roi')
+                  wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-business-initial"]')))
+                  set_input('[data-testid="input-business-initial"]', '1')
+                  set_input('[data-testid="input-business-final"]', '2000')
+                  panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+                  last = panel.text
+                  if 'has-error' not in panel.get_attribute('class') and '199,900%' in last:
+                      roi_ok = True
+                      break
+                  time.sleep(10)
+              assert roi_ok, f'ROI production did not update in polling window: {last}'
+              print('PASS: FN-005-K ROI high-return live result = 199,900%')
+
+              driver.get('https://figurenest.com/calculators/finance/auto-lease')
+              wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#calculator-auto-lease-months')))
+              months = driver.find_element(By.CSS_SELECTOR, '#calculator-auto-lease-months')
+              assert months.get_attribute('step') == '1', months.get_attribute('step')
+              set_input('#calculator-auto-lease-months', '36.5')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' in panel.get_attribute('class'), panel.text
+              set_input('#calculator-auto-lease-months', '36')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '$503.61/month' in panel.text, panel.text
+              print('PASS: FN-005-J Auto Lease whole-month term live validation')
+          finally:
+              driver.quit()
