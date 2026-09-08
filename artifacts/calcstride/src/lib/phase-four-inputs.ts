@@ -11,10 +11,22 @@ export function normalizePhaseFourInputs(slug: PhaseFourSlug, values: readonly s
   if (slug === 'auto-lease') {
     return values.map((value, index) => index === 2 && value.trim() !== '' && !Number.isInteger(Number(value)) ? '' : value);
   }
+  if (slug === 'annuity') {
+    const years = values[2];
+    const mode = values[3];
+    if (years?.trim() !== '') {
+      const numericYears = Number(years);
+      const payoutPeriods = mode === 'monthly' ? numericYears * 12 : numericYears;
+      if (!Number.isFinite(payoutPeriods) || !Number.isInteger(payoutPeriods)) {
+        return values.map((value, index) => index === 2 ? '' : value);
+      }
+    }
+  }
   return [...values];
 }
 
 export function phaseFourFieldStep(slug: PhaseFourSlug, fieldIndex: number, fallback: string | undefined): string | undefined {
   if (slug === 'auto-lease' && fieldIndex === 2) return '1';
+  if (slug === 'annuity' && fieldIndex === 2) return '0.08333333333333333';
   return fallback;
 }
