@@ -419,9 +419,10 @@ export function calculatePriorityFinance(
     const k = selectedPayment;
     const monthly = payment(principal, rate, months);
     const monthlyRate = rate / 1200;
+    const remainingBefore = months - (k - 1);
     const balanceBefore = monthlyRate === 0
-      ? principal - monthly * (k - 1)
-      : principal * (1 + monthlyRate) ** (k - 1) - monthly * Math.expm1((k - 1) * Math.log1p(monthlyRate)) / monthlyRate;
+      ? monthly * remainingBefore
+      : monthly * -Math.expm1(-remainingBefore * Math.log1p(monthlyRate)) / monthlyRate;
     const interestForPayment = balanceBefore * monthlyRate;
     const principalForPayment = Math.min(balanceBefore, monthly - interestForPayment);
     const balanceAfter = Math.max(0, balanceBefore - principalForPayment);
