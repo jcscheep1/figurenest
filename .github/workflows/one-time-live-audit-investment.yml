@@ -42,6 +42,7 @@ jobs:
               driver.execute_script('arguments[0].scrollIntoView({block:"center"})', el)
               el.click()
               el.send_keys(Keys.CONTROL, 'a')
+              el.send_keys(Keys.BACKSPACE)
               if value != '':
                   el.send_keys(str(value))
               el.send_keys(Keys.TAB)
