@@ -1,0 +1,98 @@
+name: One-time live audit pregnancy and Profit Margin
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-time-live-audit-pregnancy-profit-margin.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Selenium
+        run: pip install 'selenium==4.35.0'
+      - name: Audit production behavior
+        shell: python
+        run: |
+          import time
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.common.keys import Keys
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          options = webdriver.ChromeOptions()
+          options.add_argument('--headless=new')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('--window-size=1440,1600')
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 20)
+
+          def type_input(css, value):
+              el = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, css)))
+              driver.execute_script('arguments[0].scrollIntoView({block:"center"})', el)
+              el.click()
+              el.send_keys(Keys.CONTROL, 'a')
+              el.send_keys(value)
+              el.send_keys(Keys.TAB)
+              time.sleep(0.35)
+
+          try:
+              # PR #40 production verification: browser exposes a real date field and leap day remains valid.
+              driver.get('https://figurenest.com/calculators/health/pregnancy-conception')
+              last_period = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-pregnancy-conception-lastPeriod"]')))
+              assert last_period.get_attribute('type') == 'date', last_period.get_attribute('type')
+              driver.execute_script("""
+                const el = arguments[0];
+                const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+                setter.call(el, '2024-02-29');
+                el.dispatchEvent(new Event('input', {bubbles:true}));
+                el.dispatchEvent(new Event('change', {bubbles:true}));
+              """, last_period)
+              time.sleep(0.5)
+              pregnancy = driver.find_element(By.CSS_SELECTOR, '[data-testid="status-pregnancy-conception"]')
+              assert 'has-error' not in pregnancy.get_attribute('class'), pregnancy.text
+              assert '2024-03-28' in pregnancy.text, pregnancy.text
+              details = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+              assert '2024-03-14' in details, details
+              print('PASS: pregnancy estimator leap-day production behavior; impossible-date regression remains covered by merged strict-date tests')
+
+              # Profit Margin normal case.
+              driver.get('https://figurenest.com/calculators/business/profit-margin')
+              wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="input-business-cost"]')))
+              type_input('[data-testid="input-business-cost"]', '48')
+              type_input('[data-testid="input-business-price"]', '80')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '40%' in panel.text, panel.text
+              breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+              assert '$32.00' in breakdown and '66.67%' in breakdown, breakdown
+              print('PASS: Profit Margin normal case = 40%, $32 gross profit, 66.67% markup')
+
+              # Documented edge: zero cost is a valid 100% margin and markup is undefined.
+              type_input('[data-testid="input-business-cost"]', '0')
+              type_input('[data-testid="input-business-price"]', '80')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), panel.text
+              assert '100%' in panel.text, panel.text
+              breakdown = driver.find_element(By.CSS_SELECTOR, '.advanced-breakdown').text
+              assert 'Not defined' in breakdown, breakdown
+              print('PASS: Profit Margin zero-cost edge = 100%, markup Not defined')
+
+              # Documented contract says selling below cost is valid negative margin. This finite case must not be rejected arbitrarily.
+              type_input('[data-testid="input-business-cost"]', '2000')
+              type_input('[data-testid="input-business-price"]', '1')
+              panel = driver.find_element(By.CSS_SELECTOR, '.advanced-result')
+              assert 'has-error' not in panel.get_attribute('class'), 'CONFIRMED DEFECT: finite below-cost margin rejected: ' + panel.text
+              assert '-199,900%' in panel.text, panel.text
+              print('PASS: Profit Margin finite high-loss case = -199,900%')
+          finally:
+              driver.quit()
