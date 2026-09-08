@@ -24,7 +24,6 @@ jobs:
           import time
           from selenium import webdriver
           from selenium.webdriver.common.by import By
-          from selenium.webdriver.common.keys import Keys
           from selenium.webdriver.support.ui import WebDriverWait
           from selenium.webdriver.support import expected_conditions as EC
 
@@ -39,14 +38,15 @@ jobs:
 
           def set_value(testid, value):
               el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f'[data-testid="{testid}"]')))
-              driver.execute_script('arguments[0].scrollIntoView({block:"center"})', el)
-              el.click()
-              el.send_keys(Keys.CONTROL, 'a')
-              el.send_keys(Keys.BACKSPACE)
-              if value != '':
-                  el.send_keys(str(value))
-              el.send_keys(Keys.TAB)
-              time.sleep(0.25)
+              driver.execute_script("""
+                const el = arguments[0];
+                const value = arguments[1];
+                const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+                setter.call(el, value);
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+              """, el, str(value))
+              time.sleep(0.3)
 
           def result_text():
               return driver.find_element(By.CSS_SELECTOR, '[data-testid="status-investment"]').text
@@ -62,9 +62,6 @@ jobs:
           try:
               driver.get('https://figurenest.com/calculators/finance/investment')
               wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="page-investment"]')))
-              for button in driver.find_elements(By.TAG_NAME, 'button'):
-                  if 'Reject analytics' in button.text:
-                      button.click(); time.sleep(0.35); break
 
               def normal():
                   set_value('input-investment-principal', '25000')
@@ -97,20 +94,21 @@ jobs:
                   assert 'CHECK THE VALUES' in result_text(), result_text()
               check('negative annual return rejected', negative_rate)
 
-              def non_month_aligned_term():
+              def fractional_term():
                   set_value('input-investment-rate', '6.5')
                   set_value('input-investment-years', '5.01')
                   el = driver.find_element(By.CSS_SELECTOR, '[data-testid="input-investment-years"]')
                   assert el.get_attribute('step') == 'any', 'term UI is not explicitly fractional'
                   text = result_text()
                   assert 'CHECK THE VALUES' not in text, text
-              check('fractional-year behavior is explicit in UI', non_month_aligned_term)
+              check('fractional-year behavior is explicit in UI', fractional_term)
 
               def overflow_guard():
                   set_value('input-investment-years', '100')
                   set_value('input-investment-rate', '1000000')
                   text = result_text()
                   assert 'CHECK THE VALUES' in text, 'unsupported overflow produced: ' + text
+                  assert '∞' not in text, text
               check('extreme finite inputs do not display non-finite money', overflow_guard)
 
               def mobile_and_a11y():
