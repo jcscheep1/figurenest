@@ -9,6 +9,7 @@ import { toCanonicalUrl } from '@/lib/public-url';
 import { calculateCore, convertCore, converterUnits } from '@/lib/core-calculators';
 import { automotiveCalculatorContent, type AutomotiveCalculatorSlug } from '@/lib/automotive-calculators';
 import { getAutomotiveResetUnits } from '@/lib/automotive-reset-state';
+import { fuelCostPerDisplayedDistance } from '@/lib/fuel-cost-distance';
 import { localTools } from '@/lib/catalog';
 import { CurrencySelector, MeasurementSystemSelector } from '@/components/UnitsPreferencesSelectors';
 import { formatConvertedInput, formatCurrency, useUnitsPreferences, type CurrencyCode, type MeasurementSystem } from '@/lib/units-preferences';
@@ -85,7 +86,7 @@ export function AutomotiveCalculatorPage({ slug }: { slug: AutomotiveCalculatorS
       const liquid = gallons * liquidUnits.usGallons.litres / liquidUnits[liquidUnit].litres;
       return { primary: formatCurrency(gallons * c, preferences.currency), details: [
         { label: 'Fuel used', value: `${decimal.format(liquid)} ${liquidUnits[liquidUnit].short}` },
-        { label: `Fuel cost per ${distanceUnits[distanceUnit].label.slice(0, -1).toLowerCase()}`, value: formatCurrency((c / b) / distanceUnits[distanceUnit].miles, preferences.currency) },
+        { label: `Fuel cost per ${distanceUnits[distanceUnit].label.slice(0, -1).toLowerCase()}`, value: formatCurrency(fuelCostPerDisplayedDistance(c / b, distanceUnits[distanceUnit].miles), preferences.currency) },
       ] };
     }
     if (slug === 'ev-charging-cost') {
