@@ -28,12 +28,13 @@
 | Profit Margin Calculator | `/calculators/business/profit-margin` | ✅ AUDITED + REPAIRED | Run `34267127384`: cost 2000 / price 1 -> -199,900%, $1,999 gross loss, -99.95% markup; FN-005-M closed |
 | Break-Even Calculator | `/calculators/business/break-even` | ✅ AUDITED | Run `34267127384`: 12000/80/32 -> 250 units; price=variable rejected; 100/10/4 rounds 16.666... up to 17 units with $166.67 exact and $170.00 whole-unit revenue |
 | Loan Calculator | `/calculators/finance/loan` | ✅ AUDITED + REPAIRED | Run `34268276394`: normal 24000 @ 7.2% / 5y remains $477.50; blank principal/rate/term rejected; zero rate remains valid; 5.01y rejected; 5.5y / 66 months accepted; UI step is one month; Advanced follows the same whole-month contract; FN-005-N and FN-005-O closed |
+| Investment Calculator | `/calculators/finance/investment` | ✅ AUDITED + REPAIRED | Run `34269010115`: normal 25000 @ 6.5% / 5y -> `$34,570.43`, zero return -> `$25,000.00`, blank/negative inputs rejected, fractional years explicitly supported, extreme finite overflow rejected without `$∞`, mobile/a11y/internal-link and SEO/content checks passed; repair `c9923462763dcdadc70a8322a24459bff53f8ec6`; FN-005-P closed |
 
 ## Audit cursor
 
 The **Business** category is fully covered in this ledger: ROI, Profit Margin, Markup, Break-Even, and Commission.
 
-The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, and Loan are complete and must not be retested unless fresh production evidence proves regression.
+The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, and Investment are complete and must not be retested unless fresh production evidence proves regression.
 
 Continue with genuinely unchecked published calculators. For each calculator, verify at minimum:
 
