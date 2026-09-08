@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { estimateSocialSecurityBenefit, formatRetirementAge, fullRetirementAgeMonths } from './social-security';
+import { estimateSocialSecurityBenefit, formatRetirementAge, fullRetirementAgeMonths, parseRequiredSocialSecurityNumber } from './social-security';
 
 test('Social Security full retirement age follows SSA birth-year cohorts', () => {
   assert.equal(fullRetirementAgeMonths(1954), 66 * 12);
@@ -33,4 +33,13 @@ test('Social Security keeps the FRA-67 default deterministic and rejects unsuppo
   assert.equal(estimateSocialSecurityBenefit(2000, 1942, 67), undefined);
   assert.equal(formatRetirementAge(66 * 12 + 4), '66 years 4 months');
   assert.equal(formatRetirementAge(67 * 12), '67');
+});
+
+test('Social Security required input parsing distinguishes blank PIA from a deliberate zero', () => {
+  assert.ok(Number.isNaN(parseRequiredSocialSecurityNumber('')));
+  assert.ok(Number.isNaN(parseRequiredSocialSecurityNumber('   ')));
+  assert.equal(parseRequiredSocialSecurityNumber('0'), 0);
+  assert.equal(parseRequiredSocialSecurityNumber('2000'), 2000);
+  assert.equal(estimateSocialSecurityBenefit(parseRequiredSocialSecurityNumber(''), 1960, 67), undefined);
+  assert.equal(estimateSocialSecurityBenefit(parseRequiredSocialSecurityNumber('0'), 1960, 67)?.monthlyBenefit, 0);
 });
