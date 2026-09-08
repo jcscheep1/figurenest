@@ -29,12 +29,13 @@
 | Break-Even Calculator | `/calculators/business/break-even` | ✅ AUDITED | Run `34267127384`: 12000/80/32 -> 250 units; price=variable rejected; 100/10/4 rounds 16.666... up to 17 units with $166.67 exact and $170.00 whole-unit revenue |
 | Loan Calculator | `/calculators/finance/loan` | ✅ AUDITED + REPAIRED | Run `34268276394`: normal 24000 @ 7.2% / 5y remains $477.50; blank principal/rate/term rejected; zero rate remains valid; 5.01y rejected; 5.5y / 66 months accepted; UI step is one month; Advanced follows the same whole-month contract; FN-005-N and FN-005-O closed |
 | Investment Calculator | `/calculators/finance/investment` | ✅ AUDITED + REPAIRED | Run `34269010115`: normal 25000 @ 6.5% / 5y -> `$34,570.43`, zero return -> `$25,000.00`, blank/negative inputs rejected, fractional years explicitly supported, extreme finite overflow rejected without `$∞`, mobile/a11y/internal-link and SEO/content checks passed; repair `c9923462763dcdadc70a8322a24459bff53f8ec6`; FN-005-P closed |
+| Mortgage Calculator | `/calculators/finance/mortgage` | ✅ AUDITED + REPAIRED | Run `34269240781`: normal 360000/72000/6.5%/30y + tax/insurance -> `$2,345.36`; zero rate and invalid inputs passed; 30.01y rejected; 30.5y / 366 months accepted; UI step is one month; Advanced baseline matches Basic and rejects the same invalid term; repair `ac3d33a2cd58854d183c92daf36ee1ba7acc92fc`; FN-005-Q closed |
 
 ## Audit cursor
 
 The **Business** category is fully covered in this ledger: ROI, Profit Margin, Markup, Break-Even, and Commission.
 
-The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, and Investment are complete and must not be retested unless fresh production evidence proves regression.
+The systematic **Money & Finance** pass is active. Percentage, APR, Auto Lease, Loan, Investment, and Mortgage are complete and must not be retested unless fresh production evidence proves regression.
 
 Continue with genuinely unchecked published calculators. For each calculator, verify at minimum:
 
@@ -48,6 +49,6 @@ If a fresh production defect is found, add the next FN-005 child ID in `FIGURENE
 
 ### Next audit target
 
-**Mortgage Calculator** — `/calculators/finance/mortgage`
+**Compound Interest Calculator** — `/calculators/finance/compound-interest`
 
-Continue the Money & Finance pass while skipping completed rows above.
+A separate 401(k) repair is already active; do not duplicate that work. Continue the Money & Finance pass with Compound Interest while skipping completed rows above.
