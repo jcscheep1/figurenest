@@ -388,7 +388,7 @@ export const catalogTools: CatalogTool[] = [
   },
   {
     slug: "date-difference",
-    name: "Date Duration Calculator",
+    name: "Date Calculator & Day Counter",
     description: "Count days between dates or add and subtract calendar years, months, weeks, and days.",
     category: "Date & Time",
     categorySlug: "date-time",
