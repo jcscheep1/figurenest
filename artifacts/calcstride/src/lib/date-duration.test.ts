@@ -183,6 +183,19 @@ test('date calculator subtracts exactly across boundaries and rejects invalid or
   }).ok, false);
 });
 
+test('date calculator rejects safe-integer offsets that overflow the JavaScript Date range', () => {
+  const result = calculateDateArithmetic({
+    startDate: '2024-01-01',
+    direction: 'add',
+    years: 0,
+    months: 0,
+    weeks: 0,
+    days: Number.MAX_SAFE_INTEGER,
+  });
+  assert.deepEqual(result, { ok: false, error: 'Date is outside the supported calendar range.' });
+  assert.doesNotMatch(JSON.stringify(result), /NaN|Infinity/);
+});
+
 test('shared content is substantial and links only the relevant date tools', () => {
   assert.ok(dateDurationContent.examples.length >= 3);
   assert.ok(dateDurationContent.faqs.length >= 8);
