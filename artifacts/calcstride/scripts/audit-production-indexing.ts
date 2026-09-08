@@ -49,7 +49,7 @@ function auditSitemap(body: string) {
   assert(locs.length > 0, 'sitemap.xml contains no <loc> entries');
   assert.equal(new Set(locs).size, locs.length, 'sitemap.xml contains duplicate URLs');
 
-  const expectedUrls = publicRoutes.map((route) => toCanonicalUrl(route));
+  const expectedUrls = [...new Set(publicRoutes.map((route) => toCanonicalUrl(normalizeRoutePath(route))))];
   const expectedSet = new Set(expectedUrls);
   const actualSet = new Set(locs);
 
@@ -57,7 +57,7 @@ function auditSitemap(body: string) {
   const unexpected = locs.filter((url) => !expectedSet.has(url));
   assert.deepEqual(missing, [], `sitemap.xml is missing ${missing.length} published routes: ${missing.slice(0, 10).join(', ')}`);
   assert.deepEqual(unexpected, [], `sitemap.xml contains ${unexpected.length} unexpected routes: ${unexpected.slice(0, 10).join(', ')}`);
-  assert.equal(locs.length, expectedUrls.length, `sitemap.xml contains ${locs.length} URLs; expected ${expectedUrls.length}`);
+  assert.equal(locs.length, expectedUrls.length, `sitemap.xml contains ${locs.length} canonical URLs; expected ${expectedUrls.length}`);
 
   for (const value of locs) {
     const url = new URL(value);
