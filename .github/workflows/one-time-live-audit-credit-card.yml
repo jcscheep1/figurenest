@@ -16,3 +16,4 @@ jobs:
           python-version: '3.12'
       - run: pip install selenium
       - run: python scripts/one-time-live-audit-credit-card.py
+      # rerun with mathematically correct 33-month default payoff expectation
