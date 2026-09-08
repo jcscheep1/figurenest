@@ -1,15 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import test from 'node:test';
 import { parseTimeCardNumber } from './time-card-input';
 
-describe('parseTimeCardNumber', () => {
-  it('rejects an empty field instead of silently treating it as zero', () => {
-    expect(Number.isNaN(parseTimeCardNumber(''))).toBe(true);
-    expect(Number.isNaN(parseTimeCardNumber('   '))).toBe(true);
-  });
+test('rejects an empty field instead of silently treating it as zero', () => {
+  assert.equal(Number.isNaN(parseTimeCardNumber('')), true);
+  assert.equal(Number.isNaN(parseTimeCardNumber('   ')), true);
+});
 
-  it('preserves explicit zero and normal decimal values', () => {
-    expect(parseTimeCardNumber('0')).toBe(0);
-    expect(parseTimeCardNumber('20')).toBe(20);
-    expect(parseTimeCardNumber('1.5')).toBe(1.5);
-  });
+test('preserves explicit zero and normal decimal values', () => {
+  assert.equal(parseTimeCardNumber('0'), 0);
+  assert.equal(parseTimeCardNumber('20'), 20);
+  assert.equal(parseTimeCardNumber('1.5'), 1.5);
 });
