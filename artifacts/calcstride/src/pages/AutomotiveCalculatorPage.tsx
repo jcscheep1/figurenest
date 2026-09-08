@@ -8,6 +8,7 @@ import { trackEvent } from '@/lib/analytics';
 import { toCanonicalUrl } from '@/lib/public-url';
 import { calculateCore, convertCore, converterUnits } from '@/lib/core-calculators';
 import { automotiveCalculatorContent, type AutomotiveCalculatorSlug } from '@/lib/automotive-calculators';
+import { getAutomotiveResetUnits } from '@/lib/automotive-reset-state';
 import { localTools } from '@/lib/catalog';
 import { CurrencySelector, MeasurementSystemSelector } from '@/components/UnitsPreferencesSelectors';
 import { formatConvertedInput, formatCurrency, useUnitsPreferences, type CurrencyCode, type MeasurementSystem } from '@/lib/units-preferences';
@@ -251,13 +252,35 @@ export function AutomotiveCalculatorPage({ slug }: { slug: AutomotiveCalculatorS
   const reset = () => {
     const defaults = content.fields.map((field) => field.value);
     canonicalValues.current = defaults.map(Number);
-    setValues(defaults);
-    if (converter) {
-      setConverterValue(converter.value);
-      setFromUnit(converter.from);
-      setToUnit(converter.to);
-      converterCanonicalValue.current = efficiencyToUsMpg(Number(converter.value), converter.from as EfficiencyUnit);
+    const resetUnits = getAutomotiveResetUnits(preferences.measurementSystem);
+
+    setDistanceUnit(resetUnits.distanceUnit);
+    setEfficiencyUnit(resetUnits.efficiencyUnit);
+    setLiquidUnit(resetUnits.liquidUnit);
+    setEnergyUnit(resetUnits.energyUnit);
+    setPowerUnit(resetUnits.powerUnit);
+
+    if (slug === 'fuel-cost') {
+      setValues(defaults.map((value, index) => {
+        const canonical = Number(value);
+        if (index === 0) return formatConvertedInput(canonical / distanceUnits[resetUnits.distanceUnit].miles);
+        if (index === 1) return formatConvertedInput(efficiencyFromUsMpg(canonical, resetUnits.efficiencyUnit));
+        return formatConvertedInput(
+          canonical * liquidUnits[resetUnits.liquidUnit].litres / liquidUnits.usGallons.litres,
+          { significantDigits: 7, maximumFractionDigits: 6 },
+        );
+      }));
+    } else {
+      setValues(defaults);
     }
+
+    if (converter) {
+      converterCanonicalValue.current = efficiencyToUsMpg(Number(converter.value), converter.from as EfficiencyUnit);
+      setConverterValue(formatConvertedInput(efficiencyFromUsMpg(converterCanonicalValue.current, resetUnits.converterFromUnit)));
+      setFromUnit(resetUnits.converterFromUnit);
+      setToUnit(resetUnits.converterToUnit);
+    }
+    appliedMeasurementSystem.current = preferences.measurementSystem;
     setCopied(false);
     trackEvent('calculator_used', { calculator_slug: slug, action: 'reset' });
   };
