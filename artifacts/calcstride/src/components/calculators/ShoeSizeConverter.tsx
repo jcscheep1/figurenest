@@ -2,80 +2,42 @@ import { useMemo, useState } from 'react';
 import '@/styles/advanced-calculator-pages.css';
 import { Shell } from '@/components/FigureNestShell';
 import { Seo } from '@/pages/AppPages';
-
-type Group = 'baby' | 'kids' | 'women' | 'men';
-type Region = 'US' | 'UK' | 'EU';
-type ShoeRow = { us: number; uk: number; eu: number; cm: number };
-
-const tables: Record<Group, ShoeRow[]> = {
-  baby: [
-    { us: 1, uk: 0.5, eu: 16, cm: 9.5 }, { us: 2, uk: 1, eu: 17, cm: 10.2 },
-    { us: 3, uk: 2, eu: 18, cm: 10.8 }, { us: 4, uk: 3, eu: 19, cm: 11.4 },
-    { us: 5, uk: 4, eu: 20, cm: 12.1 }, { us: 5.5, uk: 4.5, eu: 21, cm: 12.7 },
-    { us: 6, uk: 5, eu: 22, cm: 13.3 }, { us: 7, uk: 6, eu: 23, cm: 14.0 },
-  ],
-  kids: [
-    { us: 8, uk: 7, eu: 24, cm: 14.6 }, { us: 9, uk: 8, eu: 25, cm: 15.2 },
-    { us: 9.5, uk: 8.5, eu: 26, cm: 15.9 }, { us: 10, uk: 9, eu: 27, cm: 16.5 },
-    { us: 11, uk: 10, eu: 28, cm: 17.1 }, { us: 11.5, uk: 10.5, eu: 29, cm: 17.8 },
-    { us: 12, uk: 11, eu: 30, cm: 18.4 }, { us: 13, uk: 12, eu: 31, cm: 19.1 },
-    { us: 1, uk: 13, eu: 32, cm: 19.7 }, { us: 2, uk: 1, eu: 33, cm: 20.3 },
-    { us: 3, uk: 2, eu: 34, cm: 21.0 }, { us: 3.5, uk: 2.5, eu: 35, cm: 21.6 },
-    { us: 4, uk: 3, eu: 36, cm: 22.2 }, { us: 5, uk: 4, eu: 37, cm: 22.9 },
-    { us: 6, uk: 5, eu: 38, cm: 23.5 }, { us: 7, uk: 6, eu: 39, cm: 24.1 },
-  ],
-  women: [
-    { us: 5, uk: 3, eu: 35.5, cm: 22.0 }, { us: 5.5, uk: 3.5, eu: 36, cm: 22.5 },
-    { us: 6, uk: 4, eu: 36.5, cm: 23.0 }, { us: 6.5, uk: 4.5, eu: 37.5, cm: 23.5 },
-    { us: 7, uk: 5, eu: 38, cm: 24.0 }, { us: 7.5, uk: 5.5, eu: 38.5, cm: 24.5 },
-    { us: 8, uk: 6, eu: 39, cm: 25.0 }, { us: 8.5, uk: 6.5, eu: 40, cm: 25.5 },
-    { us: 9, uk: 7, eu: 40.5, cm: 26.0 }, { us: 9.5, uk: 7.5, eu: 41, cm: 26.5 },
-    { us: 10, uk: 8, eu: 42, cm: 27.0 }, { us: 10.5, uk: 8.5, eu: 42.5, cm: 27.5 },
-    { us: 11, uk: 9, eu: 43, cm: 28.0 }, { us: 12, uk: 10, eu: 44.5, cm: 29.0 },
-  ],
-  men: [
-    { us: 6, uk: 5, eu: 38.5, cm: 24.0 }, { us: 6.5, uk: 5.5, eu: 39, cm: 24.5 },
-    { us: 7, uk: 6, eu: 40, cm: 25.0 }, { us: 7.5, uk: 6.5, eu: 40.5, cm: 25.5 },
-    { us: 8, uk: 7, eu: 41, cm: 26.0 }, { us: 8.5, uk: 7.5, eu: 42, cm: 26.5 },
-    { us: 9, uk: 8, eu: 42.5, cm: 27.0 }, { us: 9.5, uk: 8.5, eu: 43, cm: 27.5 },
-    { us: 10, uk: 9, eu: 44, cm: 28.0 }, { us: 10.5, uk: 9.5, eu: 44.5, cm: 28.5 },
-    { us: 11, uk: 10, eu: 45, cm: 29.0 }, { us: 11.5, uk: 10.5, eu: 45.5, cm: 29.5 },
-    { us: 12, uk: 11, eu: 46, cm: 30.0 }, { us: 13, uk: 12, eu: 47.5, cm: 31.0 },
-    { us: 14, uk: 13, eu: 48.5, cm: 32.0 }, { us: 15, uk: 14, eu: 49.5, cm: 33.0 },
-  ],
-};
-
-const groupLabels: Record<Group, string> = { baby: 'Baby / toddler', kids: 'Children / youth', women: 'Women', men: 'Men' };
-const keyForRegion: Record<Region, keyof ShoeRow> = { US: 'us', UK: 'uk', EU: 'eu' };
-const fmt = (n: number) => Number.isInteger(n) ? String(n) : n.toFixed(1);
+import {
+  findShoeSizeMatch,
+  formatShoeSize,
+  shoeGroupLabels,
+  shoeKeyForRegion,
+  shoeSizeTables,
+  type ShoeGroup,
+  type ShoeRegion,
+} from '@/lib/shoe-size';
 
 export function ShoeSizeConverter() {
-  const [group, setGroup] = useState<Group>('men');
-  const [region, setRegion] = useState<Region>('EU');
+  const [group, setGroup] = useState<ShoeGroup>('men');
+  const [region, setRegion] = useState<ShoeRegion>('EU');
   const [size, setSize] = useState('42.5');
-  const rows = tables[group];
+  const rows = shoeSizeTables[group];
   const supported = useMemo(() => {
-    const key = keyForRegion[region];
-    return rows.map(row => Number(row[key]));
+    const key = shoeKeyForRegion[region];
+    return rows.map((row) => Number(row[key]));
   }, [region, rows]);
   const range = useMemo(() => ({ min: Math.min(...supported), max: Math.max(...supported) }), [supported]);
   const result = useMemo(() => {
     const value = Number(size);
     if (!size.trim() || !Number.isFinite(value)) return undefined;
-    const key = keyForRegion[region];
-    return rows.find(row => Math.abs(Number(row[key]) - value) < 0.001);
-  }, [region, rows, size]);
+    return findShoeSizeMatch(group, region, value);
+  }, [group, region, size]);
 
-  const changeGroup = (next: Group) => {
+  const changeGroup = (next: ShoeGroup) => {
     setGroup(next);
-    const row = tables[next][Math.floor(tables[next].length / 2)];
-    setSize(fmt(Number(row[keyForRegion[region]])));
+    const row = shoeSizeTables[next][Math.floor(shoeSizeTables[next].length / 2)];
+    setSize(formatShoeSize(Number(row[shoeKeyForRegion[region]])));
   };
-  const changeRegion = (next: Region) => {
+  const changeRegion = (next: ShoeRegion) => {
     if (next === region) return;
     const matched = result;
     setRegion(next);
-    if (matched) setSize(fmt(Number(matched[keyForRegion[next]])));
+    if (matched) setSize(formatShoeSize(Number(matched[shoeKeyForRegion[next]])));
   };
 
   return <Shell><Seo path="/converters/shoe-size" /><div className="advanced-calc-page shoe-size-page" data-testid="page-shoe-size">
@@ -84,13 +46,13 @@ export function ShoeSizeConverter() {
       <section className="advanced-calculator-card" aria-label="Shoe size converter">
         <div className="advanced-calc-head"><span className="mono">SHOE SIZE — CONVERT</span><div className="live-dot"><i /> LOCAL RESULT</div></div>
         <div className="advanced-fields">
-          <label className="advanced-field"><span>Who is the shoe for?</span><div><select value={group} onChange={(e)=>changeGroup(e.target.value as Group)} data-testid="select-shoe-group">{(Object.keys(groupLabels) as Group[]).map((key)=><option key={key} value={key}>{groupLabels[key]}</option>)}</select></div></label>
-          <label className="advanced-field"><span>Input sizing system</span><div><select value={region} onChange={(e)=>changeRegion(e.target.value as Region)} data-testid="select-shoe-region"><option value="US">US</option><option value="UK">UK</option><option value="EU">EU</option></select></div></label>
-          <label className="advanced-field"><span>Shoe size</span><div><input type="number" step="0.5" min={range.min} max={range.max} value={size} onChange={(e)=>setSize(e.target.value)} data-testid="input-shoe-size" /></div><small>Supported {groupLabels[group]} {region} reference sizes: {supported.map(fmt).join(', ')}.</small></label>
+          <label className="advanced-field"><span>Who is the shoe for?</span><div><select value={group} onChange={(e)=>changeGroup(e.target.value as ShoeGroup)} data-testid="select-shoe-group">{(Object.keys(shoeGroupLabels) as ShoeGroup[]).map((key)=><option key={key} value={key}>{shoeGroupLabels[key]}</option>)}</select></div></label>
+          <label className="advanced-field"><span>Input sizing system</span><div><select value={region} onChange={(e)=>changeRegion(e.target.value as ShoeRegion)} data-testid="select-shoe-region"><option value="US">US</option><option value="UK">UK</option><option value="EU">EU</option></select></div></label>
+          <label className="advanced-field"><span>Shoe size</span><div><input type="number" step="0.5" min={range.min} max={range.max} value={size} onChange={(e)=>setSize(e.target.value)} data-testid="input-shoe-size" /></div><small>Supported {shoeGroupLabels[group]} {region} reference sizes: {supported.map(formatShoeSize).join(', ')}.</small></label>
         </div>
         <div className={`shoe-result-panel${!result?' has-error':''}`} role="status" aria-live="polite">
-          <div className="advanced-result"><span className="mono">{result?'REFERENCE SIZE MATCH':'CHECK THE SIZE'}</span><strong className="advanced-result-output">{result ? `${groupLabels[group]} · EU ${fmt(result.eu)}` : 'Unsupported reference size'}</strong><p>{result ? `Reference-table match for ${region} ${size}. Brand-specific sizing may differ.` : `Enter one of the listed ${region} reference sizes for ${groupLabels[group]}. Values between table rows are not silently rounded.`}</p></div>
-          {result && <div className="advanced-breakdown"><div><span>US size</span><strong>{fmt(result.us)}</strong></div><div><span>UK size</span><strong>{fmt(result.uk)}</strong></div><div><span>EU size</span><strong>{fmt(result.eu)}</strong></div><div><span>Approx. foot length</span><strong>{fmt(result.cm)} cm</strong></div></div>}
+          <div className="advanced-result"><span className="mono">{result?'REFERENCE SIZE MATCH':'CHECK THE SIZE'}</span><strong className="advanced-result-output">{result ? `${shoeGroupLabels[group]} · EU ${formatShoeSize(result.eu)}` : 'Unsupported reference size'}</strong><p>{result ? `Reference-table match for ${region} ${size}. Brand-specific sizing may differ.` : `Enter one of the listed ${region} reference sizes for ${shoeGroupLabels[group]}. Values between table rows are not silently rounded.`}</p></div>
+          {result && <div className="advanced-breakdown"><div><span>US size</span><strong>{formatShoeSize(result.us)}</strong></div><div><span>UK size</span><strong>{formatShoeSize(result.uk)}</strong></div><div><span>EU size</span><strong>{formatShoeSize(result.eu)}</strong></div><div><span>Approx. foot length</span><strong>{formatShoeSize(result.cm)} cm</strong></div></div>}
         </div>
         <button type="button" className="reset-button mt-6" onClick={()=>{setGroup('men');setRegion('EU');setSize('42.5');}}>Reset values</button>
       </section>
