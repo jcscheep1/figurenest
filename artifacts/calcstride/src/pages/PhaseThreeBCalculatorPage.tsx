@@ -11,6 +11,7 @@ import {
   phaseThreeBProbabilityDefaults,
   type PhaseThreeBSlug,
 } from '@/lib/phase-three-b';
+import { calculateProbability, probabilityFieldContract, type ProbabilityMode } from '@/lib/probability-calculator';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 
 export function PhaseThreeBCalculatorPage({ slug }: { slug: PhaseThreeBSlug }) {
@@ -18,9 +19,10 @@ export function PhaseThreeBCalculatorPage({ slug }: { slug: PhaseThreeBSlug }) {
   const defaults = () => definition.fields.map((field) => field.value);
   const [values, setValues] = useState(defaults);
   const [copied, setCopied] = useState(false);
-  const result = calculatePhaseThreeB(slug, values);
+  const result = slug === 'probability' ? calculateProbability(values) : calculatePhaseThreeB(slug, values);
   const a11y = calculatorFieldA11y(slug, result.error);
   const categoryHref = '/category/math';
+  const probabilityMode = slug === 'probability' ? values[0] as ProbabilityMode : null;
   const relatedTools = definition.relatedRoutes.flatMap((href) => {
     const tool = publishedTools.find((candidate) => candidate.href === href);
     return tool ? [tool] : [];
@@ -61,15 +63,20 @@ export function PhaseThreeBCalculatorPage({ slug }: { slug: PhaseThreeBSlug }) {
         <section className="advanced-calculator-card" aria-labelledby={a11y.regionLabelId}>
           <div className="advanced-calc-head"><span id={a11y.regionLabelId} className="mono">{definition.name.toUpperCase()} — CALCULATE</span><div className="live-dot"><i /> LOCAL RESULT</div></div>
           <div className="advanced-fields">
-            {definition.fields.map((field, index) => <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}>
-              <span>{field.label}</span>
-              <div>{field.type === 'select'
-                ? <select {...a11y.field(field.key)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-                : field.type === 'textarea'
-                ? <textarea {...a11y.field(field.key)} rows={5} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />
-                : <input {...a11y.field(field.key)} type={field.type} min={field.min} max={field.max} step={field.step} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
-              </div>
-            </label>)}
+            {definition.fields.map((field, index) => {
+              const contract = probabilityMode ? probabilityFieldContract(probabilityMode, index) : null;
+              if (contract?.hidden) return null;
+              const label = contract?.label ?? field.label;
+              return <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}>
+                <span>{label}</span>
+                <div>{field.type === 'select'
+                  ? <select {...a11y.field(field.key)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+                  : field.type === 'textarea'
+                  ? <textarea {...a11y.field(field.key)} rows={5} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />
+                  : <input {...a11y.field(field.key)} type={field.type} min={contract?.min ?? field.min} max={contract?.max ?? field.max} step={contract?.step ?? field.step} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
+                </div>
+              </label>;
+            })}
           </div>
           <CalculatorResultAnnouncement error={result.error} result={result.primary} />
           <div className={`advanced-result${result.error ? ' has-error' : ''}`} data-testid={`status-${slug}`}>
