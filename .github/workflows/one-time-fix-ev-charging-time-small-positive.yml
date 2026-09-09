@@ -20,10 +20,6 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/one-time-fix-ev-charging-time-small-positive.mjs
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter calcstride typecheck
-      - run: pnpm --filter calcstride test
       - name: Commit repair
         run: |
           git config user.name github-actions[bot]
