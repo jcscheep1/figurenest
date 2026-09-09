@@ -7,7 +7,7 @@ import { currencyPrefix, formatCurrency, useUnitsPreferences } from '@/lib/units
 import { CalculatorModeSwitch } from '@/components/calculators/CalculatorDecisionExpansion';
 import { workDateCalculatorContent } from '@/lib/work-date-calculators';
 import { calculateOvertimePay } from '@/lib/work-pay-math';
-import { annualizeSalary, calculateSalary, type SalaryPeriod } from '@/lib/salary-math';
+import { annualizeSalary, calculateSalary, parseRequiredSalaryNumber, type SalaryPeriod } from '@/lib/salary-math';
 
 type WorkPaySlug = 'salary' | 'overtime';
 const num = (value: string) => Number(value);
@@ -34,13 +34,18 @@ function SalaryCalculator({ currency, symbol, setCurrency }: any) {
   const [bonus, setBonus] = useState('0');
   const [unpaidWeeks, setUnpaidWeeks] = useState('0');
   const annual = useMemo(
-    () => annualizeSalary(num(amount), period, num(hours), num(weeks)),
+    () => annualizeSalary(
+      parseRequiredSalaryNumber(amount),
+      period,
+      parseRequiredSalaryNumber(hours),
+      parseRequiredSalaryNumber(weeks),
+    ),
     [amount, period, hours, weeks],
   );
   const result = useMemo(() => annual === undefined ? undefined : calculateSalary({
     annual,
-    hoursPerWeek: num(hours),
-    weeksPerYear: num(weeks),
+    hoursPerWeek: parseRequiredSalaryNumber(hours),
+    weeksPerYear: parseRequiredSalaryNumber(weeks),
     bonus: advanced ? num(bonus) : 0,
     unpaidWeeks: advanced ? num(unpaidWeeks) : 0,
   }), [annual, hours, weeks, bonus, unpaidWeeks, advanced]);
