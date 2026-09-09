@@ -1,0 +1,72 @@
+.decision-expansion-results {
+  margin: 1rem 0 0;
+  padding: 4px 20px 16px;
+  color: #f8fafc;
+  background: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.decision-expansion-results > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  min-width: 0;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(203, 213, 225, .18);
+}
+
+.decision-expansion-results > div:last-child {
+  border-bottom: 0;
+}
+
+.decision-expansion-results > div span {
+  min-width: 0;
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.decision-expansion-results > div strong {
+  min-width: 0;
+  max-width: 55%;
+  color: #f8fafc;
+  text-align: right;
+  font-family: var(--app-font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 680px) {
+  .decision-expansion-results {
+    padding: 4px 16px 14px;
+  }
+
+  .decision-expansion-results > div {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .decision-expansion-results > div span,
+  .decision-expansion-results > div strong {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .decision-expansion-results > div {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .decision-expansion-results > div strong {
+    max-width: none;
+    text-align: left;
+  }
+}
