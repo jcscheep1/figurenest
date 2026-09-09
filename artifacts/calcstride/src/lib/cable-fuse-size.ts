@@ -1,4 +1,4 @@
-export type SupplySystem = 'single-230' | 'three-400';
+export type SupplyPhase = 'single' | 'three';
 export type LoadMode = 'amps' | 'watts' | 'kw';
 export type LengthUnit = 'm' | 'ft';
 export type ConductorMaterial = 'copper' | 'aluminium';
@@ -8,7 +8,8 @@ export type InsulationType = 'pvc70' | 'xlpe90';
 export type CableFuseInput = {
   loadMode: LoadMode;
   load: number;
-  supply: SupplySystem;
+  voltage: number;
+  phase: SupplyPhase;
   powerFactor: number;
   length: number;
   lengthUnit: LengthUnit;
@@ -80,26 +81,26 @@ function insulationAmpacityFactor(insulation: InsulationType): number {
 }
 
 function conductorResistanceOhmPerKm(sizeMm2: number, material: ConductorMaterial): number {
-  const resistivity = material === 'copper' ? 17.5 : 28.2; // Ω·mm²/km near 20 °C
+  const resistivity = material === 'copper' ? 17.5 : 28.2;
   return resistivity / sizeMm2;
 }
 
 export function calculateCableFuseSize(input: CableFuseInput): CableFuseResult | { error: string } {
-  const finite = [input.load, input.powerFactor, input.length, input.ambientC, input.voltageDropLimitPct].every(Number.isFinite);
+  const finite = [input.load, input.voltage, input.powerFactor, input.length, input.ambientC, input.voltageDropLimitPct].every(Number.isFinite);
   if (!finite) return { error: 'Enter finite numeric values in every numeric field.' };
   if (input.load <= 0) return { error: 'Load must be greater than zero.' };
+  if (input.voltage < 1 || input.voltage > 1000) return { error: 'Supply voltage must be between 1 V and 1000 V.' };
   if (input.powerFactor <= 0 || input.powerFactor > 1) return { error: 'Power factor must be greater than 0 and no more than 1.' };
   if (input.length <= 0) return { error: 'Cable length must be greater than zero.' };
   if (input.ambientC < -20 || input.ambientC > 60) return { error: 'Ambient temperature must be between -20 °C and 60 °C.' };
   if (input.voltageDropLimitPct <= 0 || input.voltageDropLimitPct > 10) return { error: 'Voltage-drop limit must be greater than 0% and no more than 10%.' };
 
-  const voltage = input.supply === 'single-230' ? 230 : 400;
   const loadW = input.loadMode === 'amps' ? null : input.loadMode === 'kw' ? input.load * 1000 : input.load;
   const designCurrentA = input.loadMode === 'amps'
     ? input.load
-    : input.supply === 'single-230'
-      ? loadW! / (voltage * input.powerFactor)
-      : loadW! / (Math.sqrt(3) * voltage * input.powerFactor);
+    : input.phase === 'single'
+      ? loadW! / (input.voltage * input.powerFactor)
+      : loadW! / (Math.sqrt(3) * input.voltage * input.powerFactor);
 
   if (!Number.isFinite(designCurrentA) || designCurrentA <= 0 || designCurrentA > 1000) {
     return { error: 'The calculated design current is outside the supported range.' };
@@ -126,9 +127,9 @@ export function calculateCableFuseSize(input: CableFuseInput): CableFuseResult |
   const breakerA = STANDARD_BREAKERS.find((rating) => rating >= designCurrentA && rating <= correctedAmpacityA) ?? null;
   const lengthM = input.lengthUnit === 'ft' ? input.length * FEET_TO_METRES : input.length;
   const resistanceOhmPerKm = conductorResistanceOhmPerKm(selectedSize, input.material);
-  const loopFactor = input.supply === 'single-230' ? 2 : Math.sqrt(3);
+  const loopFactor = input.phase === 'single' ? 2 : Math.sqrt(3);
   const voltageDropV = loopFactor * designCurrentA * (lengthM / 1000) * resistanceOhmPerKm;
-  const voltageDropPct = voltageDropV / voltage * 100;
+  const voltageDropPct = voltageDropV / input.voltage * 100;
   const voltageDropPass = voltageDropPct <= input.voltageDropLimitPct;
 
   const warnings: string[] = [];
@@ -147,6 +148,7 @@ export function calculateCableFuseSize(input: CableFuseInput): CableFuseResult |
     voltageDropPass,
     warnings,
     assumptions: [
+      `Supply basis: ${input.voltage} V ${input.phase === 'single' ? 'single-phase' : 'three-phase'}.`,
       'Planning estimate using conservative generic low-voltage cable ampacity values, not a statutory wiring-table lookup.',
       'No grouping factor, harmonic loading, fault-loop impedance, short-circuit withstand, RCD selection or disconnection-time verification is included.',
       'Final cable and protective-device selection must follow the applicable code, manufacturer data and site conditions.',
