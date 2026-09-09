@@ -1,0 +1,222 @@
+exit_code=1
+--- tail ---
+  ...
+# Subtest: tire size compares two complete sidewall sizes instead of requiring a precomputed reference diameter
+ok 474 - tire size compares two complete sidewall sizes instead of requiring a precomputed reference diameter
+  ---
+  duration_ms: 2.485103
+  type: 'test'
+  ...
+# Subtest: unit registry round-trips every published unit via its canonical value
+ok 475 - unit registry round-trips every published unit via its canonical value
+  ---
+  duration_ms: 1.762872
+  type: 'test'
+  ...
+# Subtest: conversions distinguish US and imperial liquid and fuel-economy units
+ok 476 - conversions distinguish US and imperial liquid and fuel-economy units
+  ---
+  duration_ms: 0.32445
+  type: 'test'
+  ...
+# Subtest: cross-unit conversions are bidirectional without material drift
+ok 477 - cross-unit conversions are bidirectional without material drift
+  ---
+  duration_ms: 0.415828
+  type: 'test'
+  ...
+# Subtest: absolute-zero validation covers below, exact, and above boundaries on every temperature scale
+ok 478 - absolute-zero validation covers below, exact, and above boundaries on every temperature scale
+  ---
+  duration_ms: 0.422417
+  type: 'test'
+  ...
+# Subtest: measurement systems provide useful cross-system converter pairs without changing represented values
+ok 479 - measurement systems provide useful cross-system converter pairs without changing represented values
+  ---
+  duration_ms: 0.666396
+  type: 'test'
+  ...
+# Subtest: converted input display removes binary artifacts without changing canonical precision
+ok 480 - converted input display removes binary artifacts without changing canonical precision
+  ---
+  duration_ms: 1.338742
+  type: 'test'
+  ...
+# Subtest: currency formatting uses the selected denomination without scaling
+ok 481 - currency formatting uses the selected denomination without scaling
+  ---
+  duration_ms: 2.909463
+  type: 'test'
+  ...
+# Subtest: applicability classifies every published tool and validates stored preferences
+not ok 482 - applicability classifies every published tool and validates stored preferences
+  ---
+  duration_ms: 2.705856
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/units-preferences.test.ts:1:4302'
+  failureType: 'testCodeFailure'
+  error: 'missing cable-fuse-size'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/units-preferences.test.ts:104:45)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: VA Mortgage keeps a normal financed-loan scenario valid
+ok 483 - VA Mortgage keeps a normal financed-loan scenario valid
+  ---
+  duration_ms: 25.58309
+  type: 'test'
+  ...
+# Subtest: VA Mortgage rejects a down payment greater than the home price
+ok 484 - VA Mortgage rejects a down payment greater than the home price
+  ---
+  duration_ms: 0.43059
+  type: 'test'
+  ...
+# Subtest: VA Mortgage allows a fully paid purchase without inventing negative financing
+ok 485 - VA Mortgage allows a fully paid purchase without inventing negative financing
+  ---
+  duration_ms: 0.412824
+  type: 'test'
+  ...
+# Subtest: VAT add mode reports gross price and VAT amount consistently
+ok 486 - VAT add mode reports gross price and VAT amount consistently
+  ---
+  duration_ms: 3.227002
+  type: 'test'
+  ...
+# Subtest: VAT remove mode reports the pre-VAT net price in the breakdown
+ok 487 - VAT remove mode reports the pre-VAT net price in the breakdown
+  ---
+  duration_ms: 0.518403
+  type: 'test'
+  ...
+# Subtest: Voltage Drop keeps feet unchanged for the legacy calculator contract
+ok 488 - Voltage Drop keeps feet unchanged for the legacy calculator contract
+  ---
+  duration_ms: 1.745726
+  type: 'test'
+  ...
+# Subtest: Voltage Drop converts metres to feet before the legacy formula runs
+ok 489 - Voltage Drop converts metres to feet before the legacy formula runs
+  ---
+  duration_ms: 0.275196
+  type: 'test'
+  ...
+# Subtest: work and date content is substantial, distinct, and internally connected
+ok 490 - work and date content is substantial, distinct, and internally connected
+  ---
+  duration_ms: 2.652555
+  type: 'test'
+  ...
+# Subtest: age and working-days examples match the existing calendar engines
+ok 491 - age and working-days examples match the existing calendar engines
+  ---
+  duration_ms: 1.611243
+  type: 'test'
+  ...
+# Subtest: salary and overtime examples match the existing pay engines
+ok 492 - salary and overtime examples match the existing pay engines
+  ---
+  duration_ms: 2.234824
+  type: 'test'
+  ...
+# Subtest: work and date invalid and edge inputs fail explicitly
+ok 493 - work and date invalid and edge inputs fail explicitly
+  ---
+  duration_ms: 0.642249
+  type: 'test'
+  ...
+# Subtest: salary and overtime reject unreasonable or overflowing finite inputs
+ok 494 - salary and overtime reject unreasonable or overflowing finite inputs
+  ---
+  duration_ms: 1.108815
+  type: 'test'
+  ...
+# Subtest: basic overtime mode uses entered overtime hours directly
+ok 495 - basic overtime mode uses entered overtime hours directly
+  ---
+  duration_ms: 1.253863
+  type: 'test'
+  ...
+# Subtest: advanced overtime mode derives regular and overtime hours from threshold
+ok 496 - advanced overtime mode derives regular and overtime hours from threshold
+  ---
+  duration_ms: 0.237349
+  type: 'test'
+  ...
+# Subtest: advanced overtime mode pays all hours at regular rate below the threshold
+ok 497 - advanced overtime mode pays all hours at regular rate below the threshold
+  ---
+  duration_ms: 0.190487
+  type: 'test'
+  ...
+# Subtest: overtime math rejects impossible weekly hours and invalid multipliers
+ok 498 - overtime math rejects impossible weekly hours and invalid multipliers
+  ---
+  duration_ms: 0.171088
+  type: 'test'
+  ...
+# Subtest: counts an inclusive Monday-Friday range
+ok 499 - counts an inclusive Monday-Friday range
+  ---
+  duration_ms: 1.818316
+  type: 'test'
+  ...
+# Subtest: reversed endpoints produce the same result
+ok 500 - reversed endpoints produce the same result
+  ---
+  duration_ms: 0.184189
+  type: 'test'
+  ...
+# Subtest: basic mode always restores the standard Monday-Friday schedule
+ok 501 - basic mode always restores the standard Monday-Friday schedule
+  ---
+  duration_ms: 0.145821
+  type: 'test'
+  ...
+# Subtest: advanced mode excludes each valid active date once
+ok 502 - advanced mode excludes each valid active date once
+  ---
+  duration_ms: 0.329537
+  type: 'test'
+  ...
+# Subtest: malformed advanced workweek schedules are rejected instead of coercing blank tokens to Sunday
+ok 503 - malformed advanced workweek schedules are rejected instead of coercing blank tokens to Sunday
+  ---
+  duration_ms: 0.262196
+  type: 'test'
+  ...
+# Subtest: invalid manually excluded dates are rejected instead of silently ignored
+ok 504 - invalid manually excluded dates are rejected instead of silently ignored
+  ---
+  duration_ms: 0.175194
+  type: 'test'
+  ...
+# Subtest: large ranges use bounded arithmetic and retain inclusive semantics
+ok 505 - large ranges use bounded arithmetic and retain inclusive semantics
+  ---
+  duration_ms: 0.343799
+  type: 'test'
+  ...
+1..505
+# tests 507
+# suites 0
+# pass 493
+# fail 14
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9575.732015
+/home/runner/work/figurenest/figurenest/artifacts/calcstride:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/calcstride@0.0.0 test: `tsx --test src/lib/*.test.ts`
+Exit status 1
