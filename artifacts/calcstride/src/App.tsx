@@ -46,6 +46,7 @@ const phaseThreeAPages = import.meta.env.SSR ? await import('@/pages/PhaseThreeA
 const phaseThreeBPages = import.meta.env.SSR ? await import('@/pages/PhaseThreeBCalculatorPage') : null;
 const phaseThreeCPages = import.meta.env.SSR ? await import('@/pages/PhaseThreeCCalculatorPage') : null;
 const phaseFourPages = import.meta.env.SSR ? await import('@/pages/PhaseFourCalculatorPage') : null;
+const cableFusePages = import.meta.env.SSR ? await import('@/pages/CableFuseSizeCalculatorPage') : null;
 const directoryPages = import.meta.env.SSR ? await import('@/pages/CalculatorDirectoryPage') : null;
 const articlePages = import.meta.env.SSR ? await import('@/pages/ArticlePages') : null;
 const notFoundPage = import.meta.env.SSR ? await import('@/pages/not-found') : null;
@@ -90,6 +91,8 @@ const PhaseThreeCCalculatorPage = phaseThreeCPages?.PhaseThreeCCalculatorPage
   ?? lazy(() => import('@/pages/PhaseThreeCCalculatorPage').then(({ PhaseThreeCCalculatorPage: page }) => ({ default: page })));
 const PhaseFourCalculatorPage = phaseFourPages?.PhaseFourCalculatorPage
   ?? lazy(() => import('@/pages/PhaseFourCalculatorPage').then(({ PhaseFourCalculatorPage: page }) => ({ default: page })));
+const CableFuseSizeCalculatorPage = cableFusePages?.CableFuseSizeCalculatorPage
+  ?? lazy(() => import('@/pages/CableFuseSizeCalculatorPage').then(({ CableFuseSizeCalculatorPage: page }) => ({ default: page })));
 const CalculatorDirectoryPage = directoryPages?.CalculatorDirectoryPage
   ?? lazy(() => import('@/pages/CalculatorDirectoryPage').then(({ CalculatorDirectoryPage: page }) => ({ default: page })));
 const ArticleIndexPage = articlePages?.ArticleIndexPage
@@ -210,6 +213,7 @@ function Router() {
         <Route path="/" component={HomePage} />
         <Route path="/calculators" component={CalculatorDirectoryPage} />
         <Route path="/home-construction" component={HomeConstructionPage} />
+        <Route path="/calculators/electrical/cable-fuse-size" component={CableFuseSizeCalculatorPage} />
         {phaseTwoRoutes.map(({ slug, href }) => (
           <Route path={href} key={slug}>
             <PhaseTwoCalculatorPage slug={slug as PhaseTwoSlug} />
