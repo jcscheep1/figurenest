@@ -13,6 +13,7 @@ import {
   type PhaseThreeASlug,
 } from '@/lib/phase-three-a';
 import { phaseThreeAFieldStep } from '@/lib/phase-three-a-field-contracts';
+import { phaseThreeAFieldLabel } from '@/lib/phase-three-a-field-labels';
 import { useUnitsPreferences } from '@/lib/units-preferences';
 import { publishedTools } from '@/lib/catalog';
 import { getCalculatorSeoCapability } from '@/lib/seo-capabilities';
@@ -95,7 +96,7 @@ export function PhaseThreeACalculatorPage({ slug }: { slug: PhaseThreeASlug }) {
           </label>}
           <div className="advanced-fields">
             {definition.fields.map((field, index) => <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}>
-              <span>{field.label}</span>
+              <span>{phaseThreeAFieldLabel(slug, field.key, field.label, values)}</span>
               <div>{field.type === 'select'
                 ? <select {...a11y.field(field.key)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
                 : field.type === 'textarea'
