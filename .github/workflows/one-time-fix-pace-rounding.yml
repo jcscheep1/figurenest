@@ -1,0 +1,65 @@
+name: One-time Pace rounding repair
+
+on:
+  push:
+    branches: [audit/pace-second-rounding]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, '[pace-fix]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: audit/pace-second-rounding
+
+      - name: Apply exact Pace formatter repair
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('artifacts/calcstride/src/lib/priority-one-expansion.ts')
+          text = path.read_text()
+          old = "if(slug==='pace'){if(!n[0])return bad('Distance must be greater than zero.');return {primary:`${Math.floor(n[1]/n[0])}:${String(Math.round(n[1]/n[0]%1*60)).padStart(2,'0')} per ${values[0]?'km':'unit'}`,summary:'Average pace.',details:[]};}"
+          new = "if(slug==='pace'){if(!n[0])return bad('Distance must be greater than zero.');const totalSeconds=Math.round(n[1]/n[0]*60),paceMinutes=Math.floor(totalSeconds/60),paceSeconds=totalSeconds%60;return {primary:`${paceMinutes}:${String(paceSeconds).padStart(2,'0')} per km`,summary:'Average pace.',details:[]};}"
+          if old not in text:
+              raise SystemExit('Expected Pace implementation not found; refusing broad edit')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+
+      - name: Run focused and repository validation
+        run: |
+          pnpm --filter @workspace/calcstride typecheck
+          pnpm --filter @workspace/calcstride test
+          pnpm --filter @workspace/calcstride build
+
+      - name: Commit repaired production code and remove one-time workflow
+        run: |
+          rm .github/workflows/one-time-fix-pace-rounding.yml
+          git config user.name "FigureNest Audit"
+          git config user.email "actions@users.noreply.github.com"
+          git add artifacts/calcstride/src/lib/priority-one-expansion.ts artifacts/calcstride/src/lib/pace-rounding-regression.test.ts .github/workflows/one-time-fix-pace-rounding.yml
+          git commit -m "Fix Pace second-rounding carry [pace-fix]"
+          git push origin HEAD:audit/pace-second-rounding
