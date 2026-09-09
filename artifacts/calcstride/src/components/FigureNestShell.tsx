@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowRight, Calculator, Menu, Search, X } from 'lucide-react';
+import '@/styles/result-containment.css';
 import { localCategories, localTools } from '@/lib/catalog';
 import { ConsentManager, openConsentPreferences } from '@/components/ConsentManager';
 import { AdSenseLoader } from '@/components/AdSenseLoader';
