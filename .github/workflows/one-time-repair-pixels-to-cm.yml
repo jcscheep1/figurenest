@@ -1,0 +1,96 @@
+name: One-time repair Pixels to CM required inputs
+
+on:
+  push:
+    branches:
+      - audit/pixels-to-cm-required-inputs
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/pixels-to-cm-required-inputs
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply guarded Pixels to CM repair
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('artifacts/calcstride/src/lib/core-calculators.ts')
+          text = path.read_text()
+          needle = "  if ([...BUSINESS_SLUGS, ...AUTOMOTIVE_CALCULATOR_SLUGS].includes(slug) && inputs.some((value) => !value.trim())) {\n    return invalid('Complete every field with a valid non-negative value');\n  }\n  const n = numbers(inputs);"
+          replacement = "  if ([...BUSINESS_SLUGS, ...AUTOMOTIVE_CALCULATOR_SLUGS].includes(slug) && inputs.some((value) => !value.trim())) {\n    return invalid('Complete every field with a valid non-negative value');\n  }\n  if (slug === 'pixels-to-cm' && inputs.some((value) => !value.trim())) {\n    return invalid('Complete every field with a valid non-negative value');\n  }\n  const n = numbers(inputs);"
+          if needle not in text:
+              raise SystemExit('Guarded source insertion point not found; refusing to edit')
+          path.write_text(text.replace(needle, replacement, 1))
+
+          test = Path('artifacts/calcstride/src/lib/pixels-to-cm-contract.test.ts')
+          test.write_text("""import test from 'node:test';
+import assert from 'node:assert/strict';
+import { calculateCore } from './core-calculators';
+
+test('Pixels to CM preserves the 1200 px at 300 PPI reference result', () => {
+  const result = calculateCore('pixels-to-cm', ['1200', '300']);
+  assert.equal(result.error, undefined);
+  assert.equal(result.primary, '10.16 cm');
+  assert.deepEqual(result.details, [{ label: 'Inches', value: '4 in' }]);
+});
+
+test('Pixels to CM rejects cleared required inputs before numeric coercion', () => {
+  for (const values of [['', '300'], ['   ', '300'], ['1200', ''], ['1200', '   ']]) {
+    const result = calculateCore('pixels-to-cm', values);
+    assert.ok(result.error, `expected ${JSON.stringify(values)} to be invalid`);
+  }
+});
+
+test('Pixels to CM distinguishes explicit zero pixels from a cleared field', () => {
+  const zeroPixels = calculateCore('pixels-to-cm', ['0', '300']);
+  assert.equal(zeroPixels.error, undefined);
+  assert.equal(zeroPixels.primary, '0 cm');
+  assert.deepEqual(zeroPixels.details, [{ label: 'Inches', value: '0 in' }]);
+
+  const zeroResolution = calculateCore('pixels-to-cm', ['1200', '0']);
+  assert.equal(zeroResolution.error, 'Resolution must be greater than zero');
+});
+
+test('Pixels to CM rejects negative and non-finite numeric inputs', () => {
+  assert.ok(calculateCore('pixels-to-cm', ['-1', '300']).error);
+  assert.ok(calculateCore('pixels-to-cm', ['1200', '-300']).error);
+  assert.ok(calculateCore('pixels-to-cm', ['NaN', '300']).error);
+  assert.ok(calculateCore('pixels-to-cm', ['Infinity', '300']).error);
+});
+""")
+
+      - name: Focused regression
+        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/pixels-to-cm-contract.test.ts
+
+      - name: Typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
+
+      - name: Production build
+        run: pnpm --filter @workspace/calcstride build
+
+      - name: Commit verified repair and remove one-time workflow
+        run: |
+          rm .github/workflows/one-time-repair-pixels-to-cm.yml
+          git config user.name "FigureNest Audit Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add artifacts/calcstride/src/lib/core-calculators.ts artifacts/calcstride/src/lib/pixels-to-cm-contract.test.ts .github/workflows/one-time-repair-pixels-to-cm.yml
+          git commit -m "Reject cleared Pixels to CM inputs"
+          git push origin HEAD:audit/pixels-to-cm-required-inputs
