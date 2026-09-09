@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { annualizeSalary, calculateSalary, MAX_SALARY_AMOUNT } from './salary-math';
+import { annualizeSalary, calculateSalary, MAX_SALARY_AMOUNT, parseRequiredSalaryNumber } from './salary-math';
+
+test('required salary input parsing rejects blank values but preserves explicit zero', () => {
+  assert.equal(Number.isNaN(parseRequiredSalaryNumber('')), true);
+  assert.equal(Number.isNaN(parseRequiredSalaryNumber('   ')), true);
+  assert.equal(parseRequiredSalaryNumber('0'), 0);
+  assert.equal(parseRequiredSalaryNumber('60000'), 60000);
+});
 
 test('salary calculation preserves the standard full-time example', () => {
   const result = calculateSalary({ annual: 60000, hoursPerWeek: 40, weeksPerYear: 52, bonus: 0, unpaidWeeks: 0 });

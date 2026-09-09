@@ -21,6 +21,10 @@ export type SalaryResult = {
   paidWeeks: number;
 };
 
+export function parseRequiredSalaryNumber(value: string): number {
+  return value.trim() === '' ? Number.NaN : Number(value);
+}
+
 export function annualizeSalary(
   amount: number,
   period: SalaryPeriod,
