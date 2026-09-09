@@ -29,6 +29,22 @@ test('keeps ordinary birthdays and completed age totals stable', () => {
   assert.equal(result.nextBirthday, '2027-06-14');
 });
 
+test('normalizes month-end borrowing across a shorter February', () => {
+  const leapYear = calculateAge('2024-01-31', '2024-03-01');
+  assert.equal(leapYear.ok, true);
+  if (!leapYear.ok) return;
+  assert.equal(leapYear.primary, '0 years, 0 months, 30 days');
+  assert.equal(leapYear.days, 30);
+  assert.equal(leapYear.totalDays, 30);
+
+  const commonYear = calculateAge('2023-01-31', '2023-03-01');
+  assert.equal(commonYear.ok, true);
+  if (!commonYear.ok) return;
+  assert.equal(commonYear.primary, '0 years, 0 months, 29 days');
+  assert.equal(commonYear.days, 29);
+  assert.equal(commonYear.totalDays, 29);
+});
+
 test('rejects impossible dates and future birth dates', () => {
   assert.equal(calculateAge('2026-02-30', '2026-09-08').ok, false);
   assert.equal(calculateAge('2027-01-01', '2026-09-08').ok, false);
