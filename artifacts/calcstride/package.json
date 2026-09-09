@@ -6,11 +6,10 @@
   "scripts": {
     "dev": "tsx scripts/dev-server.ts",
     "generate:seo": "tsx scripts/generate-seo-files.ts",
-    "prebuild:client": "pnpm run generate:seo",
     "build:client": "vite build --config vite.config.ts",
     "build:ssr": "vite build --config vite.config.ts --ssr src/entry-server.tsx",
     "build:runtime": "vite build --config vite.production-server.config.ts",
-    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && pnpm run build:client && pnpm run build:ssr && pnpm run build:runtime && tsx scripts/prerender.ts",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && pnpm run generate:seo && pnpm run build:client && pnpm run build:ssr && pnpm run build:runtime && tsx scripts/prerender.ts",
     "audit:seo": "tsx scripts/audit-built-site.ts",
     "audit:static": "tsx scripts/audit-built-site.ts",
     "build:static": "pnpm run build && pnpm run audit:static",
