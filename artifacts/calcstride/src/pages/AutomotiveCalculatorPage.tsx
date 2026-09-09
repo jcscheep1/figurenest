@@ -406,6 +406,7 @@ export function AutomotiveCalculatorPage({ slug }: { slug: AutomotiveCalculatorS
                       {...a11y.field(field.key)}
                       type="number"
                       min="0"
+                      max={slug === 'ev-charging-cost' && field.key === 'charge' ? 100 : undefined}
                       step="any"
                       value={values[index]}
                       onChange={(event) => update(index, event.target.value)}
