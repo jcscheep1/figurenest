@@ -536,7 +536,7 @@ function calculateFormula(slug: string, v: Record<string, number>, unit: UnitSys
     if (!finite(baseVolume) || !finite(adjusted)) return errorResult('The result is outside a safe numeric range.');
     return safeResult(outputVolume(adjusted), `${outputVolume(baseVolume)} base volume plus ${format(v.waste)}% waste.`, [
       { label: 'Base volume', value: outputVolume(baseVolume) },
-      { label: 'Waste allowance', value: `${format(adjusted - baseVolume)} volume` },
+      { label: 'Waste allowance', value: outputVolume(adjusted - baseVolume) },
       { label: 'Order quantity', value: outputVolume(adjusted) },
     ], adjusted);
   }
