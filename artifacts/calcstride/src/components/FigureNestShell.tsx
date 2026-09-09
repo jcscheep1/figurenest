@@ -5,6 +5,7 @@ import '@/styles/result-containment.css';
 import { localCategories, localTools } from '@/lib/catalog';
 import { ConsentManager, openConsentPreferences } from '@/components/ConsentManager';
 import { AdSenseLoader } from '@/components/AdSenseLoader';
+import { CalculatorExportActions } from '@/components/CalculatorExportActions';
 import { Link } from '@/components/PublicLink';
 import { normalizeRoutePath } from '@/lib/public-url';
 import { FigureNestLogo } from '@/components/FigureNestLogo';
@@ -117,7 +118,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
       <button ref={menuButtonRef} className="menu-toggle" onClick={() => mobileOpen ? closeMenu(true) : setMobileOpen(true)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} aria-controls="primary-navigation" data-testid="button-toggle-menu">{mobileOpen ? <X size={21} aria-hidden="true" /> : <Menu size={21} aria-hidden="true" />}</button>
     </header>
-    <main><SiteBreadcrumbs path={location} isPrivate={isPrivateRoute(location)} />{children}<Suspense fallback={null}><SeoEducationalContent /></Suspense>{decisionNotice && <aside className="decision-notice" aria-label="Important limitation"><strong>Before relying on this result</strong><p>{decisionNotice}</p></aside>}</main>
+    <main><SiteBreadcrumbs path={location} isPrivate={isPrivateRoute(location)} />{children}{currentTool && <CalculatorExportActions title={currentTool.name} href={currentTool.href} />}<Suspense fallback={null}><SeoEducationalContent /></Suspense>{decisionNotice && <aside className="decision-notice" aria-label="Important limitation"><strong>Before relying on this result</strong><p>{decisionNotice}</p></aside>}</main>
     {deferredServicesReady && <Suspense fallback={null}><DeferredAdSlot eligible={advertisingEligible} /></Suspense>}
     <footer className="footer">
       <div className="footer-brand"><Logo /><p>Clear answers for the numbers<br />behind your next move.</p></div>
