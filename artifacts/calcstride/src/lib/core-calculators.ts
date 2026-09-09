@@ -334,10 +334,14 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
     if (!Number.isFinite(hours) || !Number.isFinite(totalMinutes) || hours > 100_000) {
       return invalid('These values produce a charging time above the supported range');
     }
+    const hoursDisplay = hours > 0 && hours < 0.01 ? '<0.01' : decimal.format(hours);
+    const durationDisplay = hours > 0 && totalMinutes === 0
+      ? '<1 min'
+      : `${whole.format(Math.floor(totalMinutes / 60))} hr ${whole.format(totalMinutes % 60)} min`;
     return {
-      primary: `${decimal.format(hours)} hours`,
+      primary: `${hoursDisplay} hours`,
       details: [
-        { label: 'Approximate duration', value: `${whole.format(Math.floor(totalMinutes / 60))} hr ${whole.format(totalMinutes % 60)} min` },
+        { label: 'Approximate duration', value: durationDisplay },
         { label: 'Charger power used', value: `${decimal.format(b)} kW` },
       ],
     };
