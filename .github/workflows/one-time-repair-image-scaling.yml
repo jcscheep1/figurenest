@@ -1,0 +1,62 @@
+name: One-time repair Image Scaling required inputs
+
+on:
+  push:
+    branches:
+      - audit/image-scaling-required-inputs
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/image-scaling-required-inputs
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply guarded Image Scaling repair
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('artifacts/calcstride/src/lib/core-calculators.ts')
+          text = path.read_text()
+          needle = "  if (slug === 'image-scaling') return a ? { primary: `${decimal.format(b / a * c)} px tall` } : invalid('Original width must be greater than zero');"
+          replacement = "  if (slug === 'image-scaling') {\n    if (inputs.some((value) => !value.trim())) return invalid('Complete every field with a valid non-negative value');\n    return a ? { primary: `${decimal.format(b / a * c)} px tall` } : invalid('Original width must be greater than zero');\n  }"
+          if needle not in text:
+              raise SystemExit('Guarded Image Scaling source line not found; refusing to edit')
+          path.write_text(text.replace(needle, replacement, 1))
+
+      - name: Focused regression
+        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/image-scaling-required-inputs-regression.test.ts
+
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+
+      - name: Typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
+
+      - name: Production build
+        run: pnpm --filter @workspace/calcstride build
+
+      - name: Commit verified repair and remove one-time workflow
+        run: |
+          rm .github/workflows/one-time-repair-image-scaling.yml
+          git config user.name "FigureNest Audit Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add artifacts/calcstride/src/lib/core-calculators.ts artifacts/calcstride/src/lib/image-scaling-required-inputs-regression.test.ts .github/workflows/one-time-repair-image-scaling.yml
+          git commit -m "Reject cleared Image Scaling inputs"
+          git push origin HEAD:audit/image-scaling-required-inputs
