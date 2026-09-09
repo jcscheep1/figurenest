@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Download, FileSpreadsheet, Printer, X } from 'lucide-react';
 import '@/styles/calculator-export.css';
 import { buildCalculatorCsv, buildCalculatorExcelHtml, buildCalculatorPrintHtml, safeExportFilename, type CalculatorExportSnapshot, type ExportRow, type ExportScope } from '@/lib/calculator-export';
@@ -82,6 +82,19 @@ export function CalculatorExportActions({ title, href }: Props) {
   const snapshot = () => captureSnapshot(title, href);
   const baseName = safeExportFilename(title);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.body.classList.add('calculator-export-open');
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.classList.remove('calculator-export-open');
+    };
+  }, [open]);
+
   const exportCsv = () => downloadBlob(`\uFEFF${buildCalculatorCsv(snapshot(), scope)}`, 'text/csv;charset=utf-8', `${baseName}.csv`);
   const exportExcel = () => downloadBlob(buildCalculatorExcelHtml(snapshot(), scope), 'application/vnd.ms-excel;charset=utf-8', `${baseName}.xls`);
   const exportPdf = () => {
@@ -93,26 +106,29 @@ export function CalculatorExportActions({ title, href }: Props) {
   };
 
   return <div className="calculator-export-floating">
-    {open && <section className="calculator-export-panel" aria-label="Export calculation">
-      <div className="calculator-export-panel-head">
-        <div className="calculator-export-copy"><strong>Export calculation</strong><span>Save the current inputs and results.</span></div>
-        <button type="button" className="calculator-export-close" onClick={() => setOpen(false)} aria-label="Close export options"><X size={18} /></button>
-      </div>
-      <label className="calculator-export-scope">
-        <span>Export</span>
-        <select value={scope} onChange={(event) => setScope(event.target.value as ExportScope)}>
-          <option value="full">Full calculation</option>
-          <option value="results">Results only</option>
-        </select>
-      </label>
-      <div className="calculator-export-actions">
-        <button type="button" onClick={exportExcel}><FileSpreadsheet size={16} aria-hidden="true" /> Excel</button>
-        <button type="button" onClick={exportCsv}><Download size={16} aria-hidden="true" /> CSV</button>
-        <button type="button" onClick={exportPdf}><Printer size={16} aria-hidden="true" /> PDF / Print</button>
-      </div>
-    </section>}
-    <button type="button" className="calculator-export-trigger" onClick={() => setOpen((current) => !current)} aria-expanded={open} aria-label="Export this calculation">
+    {open && <>
+      <button type="button" className="calculator-export-backdrop" aria-label="Close export options" onClick={() => setOpen(false)} />
+      <section className="calculator-export-panel" aria-label="Export calculation" role="dialog" aria-modal="true">
+        <div className="calculator-export-panel-head">
+          <div className="calculator-export-copy"><strong>Export calculation</strong><span>Save the current inputs and results.</span></div>
+          <button type="button" className="calculator-export-close" onClick={() => setOpen(false)} aria-label="Close export options"><X size={18} /></button>
+        </div>
+        <label className="calculator-export-scope">
+          <span>Export</span>
+          <select value={scope} onChange={(event) => setScope(event.target.value as ExportScope)}>
+            <option value="full">Full calculation</option>
+            <option value="results">Results only</option>
+          </select>
+        </label>
+        <div className="calculator-export-actions">
+          <button type="button" onClick={exportExcel}><FileSpreadsheet size={16} aria-hidden="true" /> Excel</button>
+          <button type="button" onClick={exportCsv}><Download size={16} aria-hidden="true" /> CSV</button>
+          <button type="button" onClick={exportPdf}><Printer size={16} aria-hidden="true" /> PDF / Print</button>
+        </div>
+      </section>
+    </>}
+    {!open && <button type="button" className="calculator-export-trigger" onClick={() => setOpen(true)} aria-expanded={open} aria-label="Export this calculation">
       <Download size={17} aria-hidden="true" /> Export
-    </button>
+    </button>}
   </div>;
 }
