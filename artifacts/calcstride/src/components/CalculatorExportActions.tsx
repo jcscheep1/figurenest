@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, FileSpreadsheet, Printer } from 'lucide-react';
+import { Download, FileSpreadsheet, Printer, X } from 'lucide-react';
 import '@/styles/calculator-export.css';
 import { buildCalculatorCsv, buildCalculatorExcelHtml, buildCalculatorPrintHtml, safeExportFilename, type CalculatorExportSnapshot, type ExportRow, type ExportScope } from '@/lib/calculator-export';
 
@@ -32,7 +32,7 @@ function uniqueRows(rows: ExportRow[]): ExportRow[] {
 function captureSnapshot(title: string, href: string): CalculatorExportSnapshot {
   const main = document.querySelector('main');
   const controls = [...(main?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea') ?? [])]
-    .filter((control) => !control.closest('.calculator-export-bar') && !control.disabled && control.type !== 'hidden');
+    .filter((control) => !control.closest('.calculator-export-panel') && !control.disabled && control.type !== 'hidden');
   const inputs = uniqueRows(controls.map((control) => ({ label: labelForControl(control), value: valueForControl(control) })));
 
   const resultRows: ExportRow[] = [];
@@ -78,6 +78,7 @@ function downloadBlob(content: BlobPart, type: string, filename: string) {
 
 export function CalculatorExportActions({ title, href }: Props) {
   const [scope, setScope] = useState<ExportScope>('full');
+  const [open, setOpen] = useState(false);
   const snapshot = () => captureSnapshot(title, href);
   const baseName = safeExportFilename(title);
 
@@ -91,22 +92,27 @@ export function CalculatorExportActions({ title, href }: Props) {
     popup.document.close();
   };
 
-  return <section className="calculator-export-bar" aria-label="Export calculation">
-    <div className="calculator-export-copy">
-      <strong>Export calculation</strong>
-      <span>Save the current inputs and results for Excel, CSV, or PDF/print.</span>
-    </div>
-    <label className="calculator-export-scope">
-      <span>Export</span>
-      <select value={scope} onChange={(event) => setScope(event.target.value as ExportScope)}>
-        <option value="full">Full calculation</option>
-        <option value="results">Results only</option>
-      </select>
-    </label>
-    <div className="calculator-export-actions">
-      <button type="button" onClick={exportExcel}><FileSpreadsheet size={16} aria-hidden="true" /> Excel</button>
-      <button type="button" onClick={exportCsv}><Download size={16} aria-hidden="true" /> CSV</button>
-      <button type="button" onClick={exportPdf}><Printer size={16} aria-hidden="true" /> PDF / Print</button>
-    </div>
-  </section>;
+  return <div className="calculator-export-floating">
+    {open && <section className="calculator-export-panel" aria-label="Export calculation">
+      <div className="calculator-export-panel-head">
+        <div className="calculator-export-copy"><strong>Export calculation</strong><span>Save the current inputs and results.</span></div>
+        <button type="button" className="calculator-export-close" onClick={() => setOpen(false)} aria-label="Close export options"><X size={18} /></button>
+      </div>
+      <label className="calculator-export-scope">
+        <span>Export</span>
+        <select value={scope} onChange={(event) => setScope(event.target.value as ExportScope)}>
+          <option value="full">Full calculation</option>
+          <option value="results">Results only</option>
+        </select>
+      </label>
+      <div className="calculator-export-actions">
+        <button type="button" onClick={exportExcel}><FileSpreadsheet size={16} aria-hidden="true" /> Excel</button>
+        <button type="button" onClick={exportCsv}><Download size={16} aria-hidden="true" /> CSV</button>
+        <button type="button" onClick={exportPdf}><Printer size={16} aria-hidden="true" /> PDF / Print</button>
+      </div>
+    </section>}
+    <button type="button" className="calculator-export-trigger" onClick={() => setOpen((current) => !current)} aria-expanded={open} aria-label="Export this calculation">
+      <Download size={17} aria-hidden="true" /> Export
+    </button>
+  </div>;
 }
