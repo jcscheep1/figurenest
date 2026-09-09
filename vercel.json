@@ -1,5 +1,6 @@
 {
   "framework": "vite",
+  "buildCommand": "pnpm --filter @workspace/calcstride run build:static",
   "redirects": [
     {
       "source": "/:path*",
