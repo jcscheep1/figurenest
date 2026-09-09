@@ -1,0 +1,59 @@
+.advanced-calculator-card,
+.advanced-result,
+.advanced-breakdown,
+.advanced-breakdown > div,
+.advanced-result > strong,
+.advanced-result-output {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.advanced-result {
+  overflow: hidden;
+}
+
+.advanced-result > strong,
+.advanced-result-output {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: clamp(1.75rem, 5vw, 2rem);
+  line-height: 1.15;
+}
+
+.advanced-result > p,
+.advanced-breakdown > div span,
+.advanced-breakdown > div strong {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.advanced-breakdown > div {
+  flex-wrap: wrap;
+}
+
+.advanced-breakdown > div strong {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .advanced-result {
+    padding: 20px;
+  }
+
+  .advanced-result > strong,
+  .advanced-result-output {
+    font-size: clamp(1.5rem, 8vw, 1.85rem);
+  }
+
+  .advanced-breakdown > div {
+    align-items: flex-start;
+    gap: 6px 16px;
+  }
+
+  .advanced-breakdown > div span,
+  .advanced-breakdown > div strong {
+    width: 100%;
+    text-align: left;
+  }
+}
