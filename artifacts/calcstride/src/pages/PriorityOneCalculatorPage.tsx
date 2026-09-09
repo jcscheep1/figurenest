@@ -29,6 +29,7 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
   const [values, setValues] = useState(() => definition.fields.map(field => field.value));
   const [copied, setCopied] = useState(false);
   const supportsAdvancedMode = slug === 'retirement';
+  const supportsCurrency = definition.category === 'finance' && slug !== 'currency';
   const [advancedMode, setAdvancedMode] = useCalculatorMode(supportsAdvancedMode);
   const { forCalculator, setCurrency, setCalculatorOverride } = useUnitsPreferences();
   const currency = forCalculator(slug).currency;
@@ -68,7 +69,7 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
           <div className="advanced-calc-head"><span id={a11y.regionLabelId} className="mono">{definition.name.toUpperCase()} — CALCULATE</span><div className="live-dot"><i /> LIVE RESULT</div></div>
           {supportsAdvancedMode && <CalculatorModeSwitch advanced={advancedMode} onChange={setAdvancedMode} />}
           <div className="date-method-notes" role="note" data-testid={`safety-notice-${slug}`}><p><strong>Important context:</strong> {definition.safetyNotice}</p></div>
-          {slug === 'currency' && <label className="advanced-field" htmlFor={`${slug}-currency`}><span>Display currency</span><CurrencySelector id={`${slug}-currency`} value={currency} onChange={next => { setCurrency(next); setCalculatorOverride(slug, { ...forCalculator(slug).calculatorOverrides[slug], currency: next }); }} /></label>}
+          {supportsCurrency && <label className="advanced-field" htmlFor={`${slug}-currency`}><span>Display currency</span><CurrencySelector id={`${slug}-currency`} value={currency} onChange={next => { setCurrency(next); setCalculatorOverride(slug, { ...forCalculator(slug).calculatorOverrides[slug], currency: next }); }} /></label>}
           <div className="advanced-fields">{definition.fields.map((field, index) => {
             const isStudentLoanTerm = slug === 'student-loan' && field.key === 'years';
             return <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}><span>{field.label}</span><div>
