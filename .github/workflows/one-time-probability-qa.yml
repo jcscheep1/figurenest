@@ -1,0 +1,29 @@
+name: One-time probability QA
+on:
+  push:
+    branches: [qa/probability-boundaries-20260909]
+    paths:
+      - .github/workflows/one-time-probability-qa.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/probability-boundaries-20260909
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Focused probability tests
+        run: pnpm --filter @workspace/calcstride exec node --import tsx --test src/lib/probability-calculator.test.ts
+      - name: Typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
+      - name: Build
+        run: pnpm --filter @workspace/calcstride build
