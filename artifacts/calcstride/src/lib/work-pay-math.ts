@@ -18,11 +18,17 @@ export type OvertimeResult = {
   threshold: number;
 };
 
+const validNonNegative = (value: number) => Number.isFinite(value) && value >= 0;
+
 export function calculateOvertimePay(inputs: OvertimeInputs): OvertimeResult | undefined {
   const { hourlyRate, overtimeHours, multiplier, totalHours, threshold, advanced } = inputs;
-  const values = [hourlyRate, overtimeHours, multiplier, totalHours, threshold];
-  if (!values.every((value) => Number.isFinite(value) && value >= 0)) return undefined;
-  if (multiplier <= 0 || totalHours > 168 || overtimeHours > 168 || threshold > 168) return undefined;
+  if (![hourlyRate, multiplier].every(validNonNegative) || multiplier <= 0) return undefined;
+
+  if (advanced) {
+    if (![totalHours, threshold].every(validNonNegative) || totalHours > 168 || threshold > 168) return undefined;
+  } else if (!validNonNegative(overtimeHours) || overtimeHours > 168) {
+    return undefined;
+  }
 
   const regularHours = advanced ? Math.min(totalHours, threshold) : 0;
   const appliedOvertimeHours = advanced ? Math.max(totalHours - threshold, 0) : overtimeHours;
