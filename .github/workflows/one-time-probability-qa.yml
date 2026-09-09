@@ -21,6 +21,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
       - name: Focused probability tests
         run: pnpm --filter @workspace/calcstride exec node --import tsx --test src/lib/probability-calculator.test.ts
       - name: Typecheck
