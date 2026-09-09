@@ -18,10 +18,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @workspace/api-spec run build
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
       - name: Focused currency preference regressions
         run: pnpm --filter @workspace/calcstride exec tsx --test --test-name-pattern="currency helpers|currency and measurement validators|persisted preference validation" src/lib/units-preferences.test.ts
       - name: Calcstride typecheck
-        run: pnpm --filter @workspace/calcstride run typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
       - name: Calcstride build
-        run: pnpm --filter @workspace/calcstride run build
+        run: pnpm --filter @workspace/calcstride build
