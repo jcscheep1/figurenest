@@ -2,11 +2,12 @@ name: One-time unit baseline diagnostic
 on:
   push:
     branches: [qa/unit-baseline-diagnostic-20260909]
+    paths:
+      - .github/workflows/one-time-unit-baseline-diagnostic.yml
 permissions:
   contents: write
 jobs:
   diagnose:
-    if: github.event.head_commit.message != 'chore: record unit-test diagnostic'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
