@@ -24,6 +24,7 @@ const fmt = (value: number, digits = 2) => value.toLocaleString('en-US', { maxim
 export function CableFuseSizeCalculatorPage() {
   const [input, setInput] = useState<CableFuseInput>(DEFAULTS);
   const result = useMemo(() => calculateCableFuseSize(input), [input]);
+  const validResult = 'error' in result ? undefined : result;
   const error = 'error' in result ? result.error : undefined;
   const update = <K extends keyof CableFuseInput>(key: K, value: CableFuseInput[K]) => setInput((current) => ({ ...current, [key]: value }));
 
@@ -59,20 +60,20 @@ export function CableFuseSizeCalculatorPage() {
 
           <div className={`advanced-result${error ? ' has-error' : ''}`} data-testid="status-cable-fuse-size">
             <span className="mono">{error ? 'CHECK THE VALUES' : 'RECOMMENDED CABLE'}</span>
-            <strong>{error ? error : `${result.cableSizeMm2} mm² ${input.material === 'copper' ? 'Cu' : 'Al'}`}</strong>
-            {!error && <p>{result.breakerA ? `Recommended protective device: ${result.breakerA} A. ` : 'No coordinated standard protective-device rating found. '}{result.voltageDropPass ? 'Voltage drop is within the selected limit.' : 'Voltage drop exceeds the selected limit.'}</p>}
+            <strong>{error ? error : `${validResult!.cableSizeMm2} mm² ${input.material === 'copper' ? 'Cu' : 'Al'}`}</strong>
+            {validResult && <p>{validResult.breakerA ? `Recommended protective device: ${validResult.breakerA} A. ` : 'No coordinated standard protective-device rating found. '}{validResult.voltageDropPass ? 'Voltage drop is within the selected limit.' : 'Voltage drop exceeds the selected limit.'}</p>}
           </div>
 
-          {!error && <>
+          {validResult && <>
             <div className="advanced-breakdown">
-              <div><span>Design current</span><strong>{fmt(result.designCurrentA)} A</strong></div>
-              <div><span>Protective device</span><strong>{result.breakerA ? `${result.breakerA} A` : 'Review required'}</strong></div>
-              <div><span>Corrected cable capacity</span><strong>{fmt(result.correctedAmpacityA)} A</strong></div>
-              <div><span>Voltage drop</span><strong>{fmt(result.voltageDropV)} V</strong></div>
-              <div><span>Voltage drop</span><strong>{fmt(result.voltageDropPct)}%</strong></div>
-              <div><span>Drop limit</span><strong>{result.voltageDropPass ? 'PASS' : 'FAIL'}</strong></div>
+              <div><span>Design current</span><strong>{fmt(validResult.designCurrentA)} A</strong></div>
+              <div><span>Protective device</span><strong>{validResult.breakerA ? `${validResult.breakerA} A` : 'Review required'}</strong></div>
+              <div><span>Corrected cable capacity</span><strong>{fmt(validResult.correctedAmpacityA)} A</strong></div>
+              <div><span>Voltage drop</span><strong>{fmt(validResult.voltageDropV)} V</strong></div>
+              <div><span>Voltage drop</span><strong>{fmt(validResult.voltageDropPct)}%</strong></div>
+              <div><span>Drop limit</span><strong>{validResult.voltageDropPass ? 'PASS' : 'FAIL'}</strong></div>
             </div>
-            {result.warnings.length > 0 && <div className="advanced-content"><section><div className="eyebrow">WARNINGS</div><h2>Review before using the result.</h2>{result.warnings.map((warning) => <p key={warning}>{warning}</p>)}</section></div>}
+            {validResult.warnings.length > 0 && <div className="advanced-content"><section><div className="eyebrow">WARNINGS</div><h2>Review before using the result.</h2>{validResult.warnings.map((warning: string) => <p key={warning}>{warning}</p>)}</section></div>}
           </>}
 
           <button type="button" className="reset-button mt-6" onClick={() => setInput(DEFAULTS)} data-testid="button-reset-cable-fuse-size">Reset values</button>
