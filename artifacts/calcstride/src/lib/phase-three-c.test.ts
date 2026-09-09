@@ -14,7 +14,7 @@ import { getSeoForPath, publicRouteKeys, renderSeoHead } from './seo';
 const defaults = (slug: typeof phaseThreeCSlugs[number]) => phaseThreeCDefinitions[slug].fields.map((field) => field.value);
 
 test('Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages', () => {
-  assert.equal(publishedTools.length, 163);
+  assert.equal(publishedTools.length, 162);
   assert.equal(phaseThreeCNewSlugs.length, 9);
   assert.deepEqual(phaseThreeCExpandedSlugs, ['bmi', 'pregnancy-conception']);
   assert.equal(new Set(publishedTools.map((tool) => tool.href)).size, publishedTools.length);

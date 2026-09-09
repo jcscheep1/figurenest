@@ -111,7 +111,12 @@ const constructionCatalogTools: Tool[] = constructionTools.map((item) => tool(
 const expansionTools = (entries: readonly CatalogEntry[]): Tool[] => entries.map((entry) =>
   tool(entry.slug, entry.name, entry.description, entry.category, entry.categorySlug, [...entry.tags], false, entry.href),
 );
-const priorityOneExpansionTools = expansionTools(priorityOneCatalog);
+// The legacy /calculators/finance/interest route duplicates the core Simple Interest
+// calculator's formula and intent. Keep it out of the public catalogue so search,
+// counts, internal navigation, SEO routes, and the sitemap expose one canonical tool.
+const priorityOneExpansionTools = expansionTools(
+  priorityOneCatalog.filter((entry) => entry.slug !== 'interest'),
+);
 const phaseTwoExpansionTools = expansionTools(phaseTwoCatalog);
 const phaseThreeAExpansionTools = expansionTools(phaseThreeACatalog);
 const phaseThreeBExpansionTools = expansionTools(phaseThreeBCatalog);

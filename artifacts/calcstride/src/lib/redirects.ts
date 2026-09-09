@@ -11,6 +11,8 @@ const legacyPathRedirects = new Map([
   ['/es/', '/'],
   ['/category/construction', '/home-construction/'],
   ['/category/construction/', '/home-construction/'],
+  ['/calculators/finance/interest', '/calculators/finance/simple-interest/'],
+  ['/calculators/finance/interest/', '/calculators/finance/simple-interest/'],
 ]);
 
 const canonicalPathForHostRedirect = (pathname: string) => {

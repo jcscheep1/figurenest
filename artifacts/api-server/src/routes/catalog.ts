@@ -539,7 +539,7 @@ const expandedConstructionTools = [
   ["brick", "Brick Calculator", "Estimate bricks for a wall from brick face size, mortar joint, openings, and waste.", ["brick", "masonry", "wall"]],
 ] as const;
 
-catalogTools.push(...priorityOneExpansionSlugs.map((slug) => {
+catalogTools.push(...priorityOneExpansionSlugs.filter((slug) => slug !== "interest").map((slug) => {
   const definition = priorityOneExpansionDefinitions[slug];
   const categoryNames: Record<string, string> = {
     automotive: "Automotive & EV",

@@ -5,6 +5,7 @@ import { localCategories, publishedTools } from '../src/lib/catalog';
 import { publicRoutes, SITE_ORIGIN } from '../src/lib/seo';
 import { normalizeRoutePath, toCanonicalUrl } from '../src/lib/public-url';
 import { articles } from '../src/lib/articles';
+import { legacyRedirectPaths } from '../src/lib/redirects';
 import { CATALOG_LAST_MODIFIED } from '../src/lib/catalog-metadata';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -39,7 +40,9 @@ for (const category of localCategories) {
 
 // Sitemap entries must be unique by canonical route. Catalog aliases can point to the
 // same public destination, but Google should only receive one <url> entry per route.
-const sitemapRoutes = [...new Set(publicRoutes.map(normalizeRoutePath))];
+const legacyPaths = new Set(legacyRedirectPaths.map(normalizeRoutePath));
+const sitemapRoutes = [...new Set(publicRoutes.map(normalizeRoutePath))]
+  .filter((route) => !legacyPaths.has(route));
 const urls = sitemapRoutes.map((route) => {
   const routeKey = normalizeRoutePath(route);
   const lastmod = contentLastmod.get(routeKey) ?? catalogLastmod.get(routeKey);
