@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import '@/styles/advanced-calculator-pages.css';
+import '@/styles/decision-expansion-results.css';
 import { amortizationScenario, aprDecision, autoLoanDecision, budgetDecision, creditCardDecision, growthDecision, mortgageDecision, mortgagePayoffDecision, retirementDecision, savingsTargetDecision } from '@/lib/decision-calculators';
 import { formatCurrency, type CurrencyCode } from '@/lib/units-preferences';
 
