@@ -2,7 +2,7 @@ name: One-time fix EV charge maximum
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, synchronize]
 
 permissions:
   contents: write
@@ -66,6 +66,8 @@ jobs:
           PY
       - name: Focused regression
         run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/ev-charging-cost-charge-boundary-regression.test.ts
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
       - name: Calcstride typecheck
         run: pnpm --filter @workspace/calcstride typecheck
       - name: Calcstride production build
