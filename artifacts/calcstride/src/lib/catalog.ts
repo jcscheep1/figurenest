@@ -71,6 +71,7 @@ const coreTools: Tool[] = [
   tool('dpi-ppi', 'DPI / PPI Calculator', 'Calculate print resolution from pixel width and physical print width.', 'Printing & Design', 'printing-design', ['dpi', 'ppi', 'print', 'resolution']),
   tool('pixels-to-cm', 'Pixels to cm / inches', 'Convert digital pixel dimensions into print-ready physical sizes.', 'Printing & Design', 'printing-design', ['pixels', 'cm', 'inches', 'print']),
   tool('image-scaling', 'Image Scaling Calculator', 'Resize an image while preserving its aspect ratio.', 'Printing & Design', 'printing-design', ['image', 'resize', 'aspect ratio']),
+  tool('cable-fuse-size', 'Cable & Fuse Size Calculator', 'Estimate cable size, protective-device rating, design current, and voltage drop for common low-voltage circuits.', 'Electrical', 'electrical', ['cable size', 'wire size', 'fuse size', 'breaker size', 'electrical cable', 'voltage drop', '230v', '400v'], true),
 ];
 
 const constructionDescriptions: Record<string, string> = {
