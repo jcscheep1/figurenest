@@ -114,7 +114,7 @@ export const autoLoanDecision = (price: number, down: number, trade: number, ann
   const years = months / 12;
   const base = amortizationScenario(financed, annualRate, years, 0, 0, balloon);
   const accelerated = amortizationScenario(financed, annualRate, years, extraMonthly, 0, balloon);
-  if (!base || !accelerated || [rebate, balloon, extraMonthly, ownershipMonthly].some((value) => !Number.isFinite(value) || value < 0) || financed <= 0 || balloon > financed) return undefined;
+  if (!base || !accelerated || [rebate, balloon, extraMonthly, ownershipMonthly].some((value) => !Number.isFinite(value) || value < 0) || financed < 0 || balloon > financed) return undefined;
   return { financed, payment: accelerated.paymentWithExtra, ownershipMonthly: accelerated.paymentWithExtra + ownershipMonthly, payoffMonths: accelerated.months, interest: accelerated.interest, interestSaved: Math.max(0, base.interest - accelerated.interest), balloon: accelerated.balloon };
 };
 
