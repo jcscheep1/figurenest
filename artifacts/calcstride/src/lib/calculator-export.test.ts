@@ -44,4 +44,9 @@ test('Excel and print exports escape HTML-sensitive content', () => {
 
 test('export filename is stable and filesystem-friendly', () => {
   assert.equal(safeExportFilename('Cable & Fuse Size Calculator'), 'cable-fuse-size-calculator');
+  assert.equal(safeExportFilename('***'), 'figurenest-calculation');
+  const boundaryTitle = `${'a'.repeat(79)} b`;
+  const filename = safeExportFilename(boundaryTitle);
+  assert.equal(filename.length, 79);
+  assert.doesNotMatch(filename, /-$/);
 });
