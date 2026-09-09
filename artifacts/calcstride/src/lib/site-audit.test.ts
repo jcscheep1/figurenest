@@ -129,9 +129,9 @@ test('every public meta description is complete, unique, and snippet-safe', () =
 
 test('all site-wide tool and category counts derive from published tool pages', () => {
   const canonicalHrefs = localTools.map(canonicalToolHref);
-  assert.equal(publishedToolCount, 162);
+  assert.equal(publishedToolCount, 163);
   assert.equal(publishedToolCount, new Set(canonicalHrefs).size);
-  assert.equal(localTools.length, 162);
+  assert.equal(localTools.length, 163);
   assert.ok(!localTools.some((tool) => tool.slug === 'unit'));
   assert.equal(localCategories.reduce((total, category) => total + category.toolCount, 0), publishedToolCount);
   for (const category of localCategories) {
