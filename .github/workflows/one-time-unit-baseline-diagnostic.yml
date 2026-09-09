@@ -21,15 +21,17 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Run unit suite and capture failure
+      - name: Run unit suite and capture failures
         shell: bash
         run: |
           set +e
           pnpm --filter @workspace/calcstride test > /tmp/unit-output.txt 2>&1
           status=$?
           echo "exit_code=$status" > QA-UNIT-DIAGNOSTIC.txt
-          echo "--- tail ---" >> QA-UNIT-DIAGNOSTIC.txt
-          tail -n 220 /tmp/unit-output.txt >> QA-UNIT-DIAGNOSTIC.txt
+          echo "--- failures ---" >> QA-UNIT-DIAGNOSTIC.txt
+          grep -B 2 -A 12 '^not ok ' /tmp/unit-output.txt >> QA-UNIT-DIAGNOSTIC.txt || true
+          echo "--- summary ---" >> QA-UNIT-DIAGNOSTIC.txt
+          grep -E '^# (tests|pass|fail|cancelled|skipped|todo|duration_ms)' /tmp/unit-output.txt >> QA-UNIT-DIAGNOSTIC.txt || true
           exit 0
       - name: Commit diagnostic
         run: |
