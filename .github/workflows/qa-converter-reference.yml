@@ -1,0 +1,42 @@
+name: Verify converter reference regression
+
+on:
+  push:
+    branches: [qa/converter-reference-boundaries]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+
+      - name: Focused converter/unit regression
+        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/units-preferences.test.ts
+
+      - name: Typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
+
+      - name: Production build
+        run: pnpm --filter @workspace/calcstride build
