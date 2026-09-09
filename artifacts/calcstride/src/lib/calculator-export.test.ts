@@ -21,8 +21,18 @@ test('full CSV includes inputs and results while results scope omits inputs', ()
 });
 
 test('spreadsheet export neutralizes formula-like cells', () => {
-  const risky = { ...snapshot, results: [{ label: 'Result', value: '=2+2' }] };
-  assert.match(buildCalculatorCsv(risky, 'results'), /'=2\+2/);
+  for (const formula of ['=2+2', '+2+2', '-2+2', '@SUM(A1:A2)', '  =2+2']) {
+    const risky = { ...snapshot, results: [{ label: 'Result', value: formula }] };
+    assert.ok(buildCalculatorCsv(risky, 'results').includes(`'${formula}`));
+  }
+});
+
+test('Excel-compatible export neutralizes formula-like cells', () => {
+  for (const formula of ['=2+2', '+2+2', '-2+2', '@SUM(A1:A2)', '  =2+2']) {
+    const risky = { ...snapshot, results: [{ label: 'Result', value: formula }] };
+    const html = buildCalculatorExcelHtml(risky, 'results');
+    assert.ok(html.includes(`&#39;${formula}`));
+  }
 });
 
 test('Excel and print exports escape HTML-sensitive content', () => {
