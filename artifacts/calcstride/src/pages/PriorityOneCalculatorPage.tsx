@@ -7,7 +7,8 @@ import { CurrencySelector, MeasurementSystemSelector } from '@/components/UnitsP
 import { Link } from '@/components/PublicLink';
 import { publishedTools } from '@/lib/catalog';
 import { toCanonicalUrl } from '@/lib/public-url';
-import { calculatePriorityOneExpansion, priorityOneExpansionDefinitions, type PriorityOneExpansionSlug, type PriorityOneResult } from '@/lib/priority-one-expansion';
+import { priorityOneExpansionDefinitions, type PriorityOneExpansionSlug, type PriorityOneResult } from '@/lib/priority-one-expansion';
+import { calculatePriorityOneWithInputContracts, priorityOneFieldMax } from '@/lib/priority-one-input-contracts';
 import { STUDENT_LOAN_MIN_YEARS, STUDENT_LOAN_TERM_ERROR, STUDENT_LOAN_YEAR_STEP, studentLoanTermMonths } from '@/lib/student-loan-validation';
 import { useUnitsPreferences, type MeasurementSystem } from '@/lib/units-preferences';
 import { convertPriorityOneValues, localizePriorityOneResult, normalizePriorityOneValues, priorityOneFieldLabel, supportsPriorityOneMeasurementSystem } from '@/lib/priority-one-measurement';
@@ -38,7 +39,7 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
   }, [preferences.measurementSystem, slug, supportsMeasurement]);
 
   const normalizedValues = normalizePriorityOneValues(slug, values, preferences.measurementSystem);
-  const calculatedResult = calculatePriorityOneExpansion(slug, normalizedValues, currency);
+  const calculatedResult = calculatePriorityOneWithInputContracts(slug, normalizedValues, currency);
   const baseResult = slug === 'student-loan' && studentLoanTermMonths(values[2] ?? '') === null ? studentLoanTermError() : calculatedResult;
   const result = baseResult.error ? baseResult : { ...baseResult, primary: localizePriorityOneResult(slug, baseResult.primary, preferences.measurementSystem) };
   const a11y = calculatorFieldA11y(slug, result.error);
@@ -61,7 +62,7 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
           <div className="advanced-fields">{definition.fields.map((field, index) => {
             const isStudentLoanTerm = slug === 'student-loan' && field.key === 'years';
             const label = priorityOneFieldLabel(slug, index, field.label, preferences.measurementSystem);
-            return <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}><span>{label}</span><div>{field.type === 'select' ? <select {...a11y.field(field.key)} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select> : <input {...a11y.field(field.key)} type={field.type === 'date' || field.type === 'time' ? field.type : 'number'} min={isStudentLoanTerm ? STUDENT_LOAN_MIN_YEARS : field.min} max={field.max} step={isStudentLoanTerm ? STUDENT_LOAN_YEAR_STEP : field.step ?? (field.type === 'date' || field.type === 'time' ? undefined : 'any')} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}{field.suffix && <small>{field.suffix}</small>}</div></label>;
+            return <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}><span>{label}</span><div>{field.type === 'select' ? <select {...a11y.field(field.key)} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select> : <input {...a11y.field(field.key)} type={field.type === 'date' || field.type === 'time' ? field.type : 'number'} min={isStudentLoanTerm ? STUDENT_LOAN_MIN_YEARS : field.min} max={priorityOneFieldMax(slug, field.key, field.max)} step={isStudentLoanTerm ? STUDENT_LOAN_YEAR_STEP : field.step ?? (field.type === 'date' || field.type === 'time' ? undefined : 'any')} value={values[index]} onChange={event => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}{field.suffix && <small>{field.suffix}</small>}</div></label>;
           })}</div>
           {slug === 'retirement' && <CalculatorDecisionExpansion slug="retirement" values={values} currency={currency} open={advancedMode} />}
           <CalculatorResultAnnouncement error={result.error} result={result.primary} />
