@@ -6,17 +6,43 @@ import { Shell } from '@/components/FigureNestShell';
 import { Link } from '@/components/PublicLink';
 import { CurrencySelector } from '@/components/UnitsPreferencesSelectors';
 import { toCanonicalUrl } from '@/lib/public-url';
-import { calculatePhaseTwo, phaseTwoDefinitions, type PhaseTwoResult, type PhaseTwoSlug } from '@/lib/phase-two-expansion';
+import { calculatePhaseTwo, phaseTwoDefinitions, type PhaseTwoField, type PhaseTwoResult, type PhaseTwoSlug } from '@/lib/phase-two-expansion';
 import { calculateAverageReturn } from '@/lib/average-return';
 import { validateWholeMinuteDuration } from '@/lib/time-calculator-validation';
 import { useUnitsPreferences } from '@/lib/units-preferences';
 import { publishedTools } from '@/lib/catalog';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 import { TimeDurationEducationalContent } from '@/components/TimeDurationEducationalContent';
+import { normalizeVoltageDropValues } from '@/lib/voltage-drop-units';
+
+const voltageDropLengthUnitField: PhaseTwoField = {
+  key: 'lengthUnit',
+  label: 'Length unit',
+  value: 'ft',
+  type: 'select',
+  options: [
+    { value: 'ft', label: 'Feet (ft)' },
+    { value: 'm', label: 'Metres (m)' },
+  ],
+};
+
+function displayFieldsFor(slug: PhaseTwoSlug): readonly PhaseTwoField[] {
+  const definition = phaseTwoDefinitions[slug];
+  if (slug !== 'voltage-drop') return definition.fields;
+  const [current, length, resistance, phase] = definition.fields;
+  return [
+    current,
+    { ...length, label: 'One-way length' },
+    voltageDropLengthUnitField,
+    resistance,
+    phase,
+  ];
+}
 
 export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
   const definition = phaseTwoDefinitions[slug];
-  const [values, setValues] = useState(() => definition.fields.map((field) => field.value));
+  const displayFields = displayFieldsFor(slug);
+  const [values, setValues] = useState(() => displayFields.map((field) => field.value));
   const [copied, setCopied] = useState(false);
   const { forCalculator, setCurrency, setCalculatorOverride } = useUnitsPreferences();
   const currency = forCalculator(slug).currency;
@@ -27,11 +53,12 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
     return tool ? [tool] : [];
   });
   const timePrecisionError = slug === 'time' ? validateWholeMinuteDuration(values[1] ?? '', values[2] ?? '') : undefined;
+  const calculationValues = slug === 'voltage-drop' ? normalizeVoltageDropValues(values) : values;
   const result: PhaseTwoResult = timePrecisionError
     ? { primary: timePrecisionError, summary: timePrecisionError, details: [], error: timePrecisionError }
     : slug === 'average-return'
       ? calculateAverageReturn(values)
-      : calculatePhaseTwo(slug, values, isMonetary ? currency : undefined);
+      : calculatePhaseTwo(slug, calculationValues, isMonetary ? currency : undefined);
   const a11y = calculatorFieldA11y(slug, result.error);
   const update = (index: number, value: string) => {
     setValues((current) => current.map((old, itemIndex) => itemIndex === index ? value : old));
@@ -76,7 +103,7 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
             />
           </label>}
           <div className="advanced-fields">
-            {definition.fields.map((field, index) => <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}>
+            {displayFields.map((field, index) => <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}>
               <span>{field.label}</span>
               <div>{field.type === 'select'
                 ? <select {...a11y.field(field.key)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
@@ -95,7 +122,7 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
             </div>
           </div>
           <div className="advanced-breakdown">{result.details.map((detail) => <div key={detail.label}><span>{detail.label}</span><strong>{detail.value}</strong></div>)}</div>
-          <button type="button" className="reset-button mt-6" onClick={() => { setValues(definition.fields.map((field) => field.value)); setCopied(false); }} data-testid={`button-reset-${slug}`}>Reset values</button>
+          <button type="button" className="reset-button mt-6" onClick={() => { setValues(displayFields.map((field) => field.value)); setCopied(false); }} data-testid={`button-reset-${slug}`}>Reset values</button>
         </section>
       </div>
       <div className="advanced-content-grid">
