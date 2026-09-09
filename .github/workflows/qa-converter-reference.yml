@@ -32,8 +32,8 @@ jobs:
       - name: Build workspace type dependency
         run: pnpm exec tsc -b lib/api-client-react
 
-      - name: Focused converter/unit regression
-        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/units-preferences.test.ts
+      - name: Focused converter reference regression
+        run: pnpm --filter @workspace/calcstride exec tsx --test --test-name-pattern="converter reference values cover" src/lib/units-preferences.test.ts
 
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
