@@ -29,6 +29,7 @@ import type { PhaseFourSlug } from '@/lib/phase-four-routes';
 // page families eagerly, while the browser build keeps each family in its own
 // async chunk. Vite replaces import.meta.env.SSR at build time and removes the
 // unused side of each branch.
+const homePages = import.meta.env.SSR ? await import('@/pages/HomePage') : null;
 const appPages = import.meta.env.SSR ? await import('@/pages/AppPages') : null;
 const trustPages = import.meta.env.SSR ? await import('@/pages/TrustPages') : null;
 const constructionPages = import.meta.env.SSR ? await import('@/pages/ConstructionPages') : null;
@@ -51,8 +52,8 @@ const directoryPages = import.meta.env.SSR ? await import('@/pages/CalculatorDir
 const articlePages = import.meta.env.SSR ? await import('@/pages/ArticlePages') : null;
 const notFoundPage = import.meta.env.SSR ? await import('@/pages/not-found') : null;
 
-const HomePage = appPages?.HomePage
-  ?? lazy(() => import('@/pages/AppPages').then(({ HomePage: page }) => ({ default: page })));
+const HomePage = homePages?.HomePage
+  ?? lazy(() => import('@/pages/HomePage').then(({ HomePage: page }) => ({ default: page })));
 const CategoryPage = appPages?.CategoryPage
   ?? lazy(() => import('@/pages/AppPages').then(({ CategoryPage: page }) => ({ default: page })));
 const ToolDetailPage = appPages?.ToolDetailPage
