@@ -77,10 +77,17 @@ export function calculateAge(birthDate: string, asOfDate: string): AgeCalculatio
   let days = asOf.day - effectiveBirthDay;
 
   if (days < 0) {
-    months--;
-    const previousMonth = asOf.month === 1 ? 12 : asOf.month - 1;
-    const previousMonthYear = asOf.month === 1 ? asOf.year - 1 : asOf.year;
-    days += daysInMonth(previousMonthYear, previousMonth);
+    let borrowYear = asOf.year;
+    let borrowMonth = asOf.month - 1;
+    while (days < 0) {
+      if (borrowMonth < 1) {
+        borrowMonth = 12;
+        borrowYear--;
+      }
+      months--;
+      days += daysInMonth(borrowYear, borrowMonth);
+      borrowMonth--;
+    }
   }
   if (months < 0) {
     years--;
