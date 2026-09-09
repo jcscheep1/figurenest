@@ -1,0 +1,27 @@
+name: QA 106 Focused Currency Preferences
+
+on:
+  push:
+    branches:
+      - qa/units-currency-preference-boundaries
+
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @workspace/api-spec run build
+      - name: Focused currency preference regressions
+        run: pnpm --filter @workspace/calcstride exec tsx --test --test-name-pattern="currency helpers|currency and measurement validators|persisted preference validation" src/lib/units-preferences.test.ts
+      - name: Calcstride typecheck
+        run: pnpm --filter @workspace/calcstride run typecheck
+      - name: Calcstride build
+        run: pnpm --filter @workspace/calcstride run build
