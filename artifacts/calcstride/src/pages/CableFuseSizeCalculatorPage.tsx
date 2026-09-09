@@ -64,7 +64,7 @@ export function CableFuseSizeCalculatorPage() {
             <label className="advanced-field"><span>Voltage-drop limit (%)</span><div><select value={String(input.voltageDropLimitPct)} onChange={(e) => update('voltageDropLimitPct', Number(e.target.value))}><option value="3">3%</option><option value="5">5%</option></select></div></label>
           </div>
 
-          <div className={`advanced-result${error ? ' has-error' : ''}`} data-testid="status-cable-fuse-size">
+          <div className={`advanced-result${error ? ' has-error' : ''}`} data-testid="status-cable-fuse-size" role="status" aria-live="polite" aria-atomic="true">
             <span className="mono">{error ? 'CHECK THE VALUES' : 'RECOMMENDED CABLE'}</span>
             <strong>{error ? error : `${validResult!.cableSizeMm2} mm² ${input.material === 'copper' ? 'Cu' : 'Al'}`}</strong>
             {validResult && <p>{validResult.breakerA ? `Recommended protective device: ${validResult.breakerA} A. ` : 'No coordinated standard protective-device rating found. '}{validResult.voltageDropPass ? 'Voltage drop is within the selected limit.' : 'Voltage drop exceeds the selected limit.'}</p>}
