@@ -7,9 +7,14 @@ import {
   convertFromCanonical,
   convertToCanonical,
   convertUnitValue,
+  currencyPrefix,
+  currencyRateLabel,
   formatConvertedInput,
   formatCurrency,
+  isCurrencyCode,
+  isMeasurementSystem,
   isTemperatureBelowAbsoluteZero,
+  localizeCurrencyText,
   toolApplicability,
   unitRegistry,
   validateUnitsPreferences,
@@ -98,6 +103,47 @@ test('currency formatting uses the selected denomination without scaling', () =>
   const gbp = calculateCore('vat', ['100', '20'], 'default', { currency: 'GBP' });
   assert.equal(usd.primary, '$120.00');
   assert.match(gbp.primary, /£|GBP/);
+});
+
+test('currency helpers localize amounts, rate labels, and denomination text consistently', () => {
+  assert.equal(currencyPrefix('EUR'), '€');
+  assert.equal(currencyPrefix('USD'), '$');
+  assert.equal(currencyPrefix('GBP'), '£');
+  assert.equal(currencyPrefix('ZAR'), 'R');
+  assert.equal(currencyRateLabel('GBP', 'hour'), '£/hour');
+  assert.equal(currencyRateLabel('ZAR'), 'R');
+  assert.equal(localizeCurrencyText('$1,234.50 at $/hour in US dollars (USD)', 'GBP'), '£1,234.50 at £/hour in British Pound (GBP)');
+  assert.equal(localizeCurrencyText('No monetary value here', 'EUR'), 'No monetary value here');
+});
+
+test('currency and measurement validators reject blank, case-mismatched, and unsupported values', () => {
+  for (const code of ['EUR', 'USD', 'GBP', 'ZAR']) assert.equal(isCurrencyCode(code), true, `${code} should be valid`);
+  for (const value of ['', 'usd', 'CAD', null, 0]) assert.equal(isCurrencyCode(value), false, `${String(value)} should be invalid`);
+  assert.equal(isMeasurementSystem('metric'), true);
+  assert.equal(isMeasurementSystem('imperial'), true);
+  for (const value of ['', 'Metric', 'custom', null, 0]) assert.equal(isMeasurementSystem(value), false, `${String(value)} should be invalid`);
+});
+
+test('persisted preference validation preserves independent valid overrides and drops invalid values', () => {
+  assert.deepEqual(validateUnitsPreferences(null), {
+    currency: 'USD', measurementSystem: 'metric', calculatorOverrides: {},
+  });
+  assert.deepEqual(validateUnitsPreferences({
+    currency: 'EUR',
+    measurementSystem: 'imperial',
+    calculatorOverrides: {
+      loan: { currency: 'GBP' },
+      area: { measurementSystem: 'metric' },
+      invalid: { currency: 'CAD', measurementSystem: 'custom' },
+    },
+  }), {
+    currency: 'EUR',
+    measurementSystem: 'imperial',
+    calculatorOverrides: {
+      loan: { currency: 'GBP' },
+      area: { measurementSystem: 'metric' },
+    },
+  });
 });
 
 test('applicability classifies every published tool and validates stored preferences', () => {
