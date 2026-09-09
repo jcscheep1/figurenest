@@ -12,6 +12,7 @@ import {
   type PhaseThreeBSlug,
 } from '@/lib/phase-three-b';
 import { calculateProbability, probabilityFieldContract, type ProbabilityMode } from '@/lib/probability-calculator';
+import { phaseThreeBNumberStep } from '@/lib/confidence-interval-input-contract';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 
 export function PhaseThreeBCalculatorPage({ slug }: { slug: PhaseThreeBSlug }) {
@@ -73,7 +74,7 @@ export function PhaseThreeBCalculatorPage({ slug }: { slug: PhaseThreeBSlug }) {
                   ? <select {...a11y.field(field.key)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
                   : field.type === 'textarea'
                   ? <textarea {...a11y.field(field.key)} rows={5} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />
-                  : <input {...a11y.field(field.key)} type={field.type} min={contract?.min ?? field.min} max={contract?.max ?? field.max} step={contract?.step ?? field.step} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
+                  : <input {...a11y.field(field.key)} type={field.type} min={contract?.min ?? field.min} max={contract?.max ?? field.max} step={contract?.step ?? phaseThreeBNumberStep(slug, field.key, field.step)} value={values[index]} onChange={(event) => update(index, event.target.value)} data-testid={`input-${slug}-${field.key}`} />}
                 </div>
               </label>;
             })}
