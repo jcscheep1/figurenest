@@ -1,58 +1,218 @@
 exit_code=1
---- tail ---
+--- failures ---
   ...
-# Subtest: tire size compares two complete sidewall sizes instead of requiring a precomputed reference diameter
-ok 474 - tire size compares two complete sidewall sizes instead of requiring a precomputed reference diameter
+# Subtest: directory has exact published-tool coverage and unique links
+not ok 44 - directory has exact published-tool coverage and unique links
   ---
-  duration_ms: 2.485103
+  duration_ms: 5.783098
   type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/calculator-directory.test.ts:1:852'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    163 !== 162
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+--
   ...
-# Subtest: unit registry round-trips every published unit via its canonical value
-ok 475 - unit registry round-trips every published unit via its canonical value
+# Subtest: directory category totals reconcile with the canonical registry
+not ok 47 - directory category totals reconcile with the canonical registry
   ---
-  duration_ms: 1.762872
+  duration_ms: 0.859027
   type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/calculator-directory.test.ts:1:4589'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    5 !== 4
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+--
+# Node.js v22.23.2
+# Subtest: src/lib/core-blank-input-regression.test.ts
+not ok 25 - src/lib/core-blank-input-regression.test.ts
+  ---
+  duration_ms: 307.975813
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/core-blank-input-regression.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
   ...
-# Subtest: conversions distinguish US and imperial liquid and fuel-economy units
-ok 476 - conversions distinguish US and imperial liquid and fuel-economy units
-  ---
-  duration_ms: 0.32445
-  type: 'test'
+# Subtest: loan handles amortization, totals, and zero interest
+ok 218 - loan handles amortization, totals, and zero interest
+--
   ...
-# Subtest: cross-unit conversions are bidirectional without material drift
-ok 477 - cross-unit conversions are bidirectional without material drift
+# Subtest: Home & Construction exposes the published Electrical calculators as a related field
+not ok 281 - Home & Construction exposes the published Electrical calculators as a related field
   ---
-  duration_ms: 0.415828
+  duration_ms: 4.592952
   type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/home-construction-hub.test.ts:1:175'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   'cable-fuse-size',
+        'electricity',
+--
   ...
-# Subtest: absolute-zero validation covers below, exact, and above boundaries on every temperature scale
-ok 478 - absolute-zero validation covers below, exact, and above boundaries on every temperature scale
+# Subtest: phase four publishes 15 canonical definition-driven tools with API parity
+not ok 333 - phase four publishes 15 canonical definition-driven tools with API parity
   ---
-  duration_ms: 0.422417
+  duration_ms: 7.323619
   type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-four.test.ts:1:389'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    164 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+--
   ...
-# Subtest: measurement systems provide useful cross-system converter pairs without changing represented values
-ok 479 - measurement systems provide useful cross-system converter pairs without changing represented values
+# Subtest: Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages
+not ok 355 - Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages
   ---
-  duration_ms: 0.666396
+  duration_ms: 6.713248
   type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/phase-three-c.test.ts:1:583'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    164 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+--
   ...
-# Subtest: converted input display removes binary artifacts without changing canonical precision
-ok 480 - converted input display removes binary artifacts without changing canonical precision
+# Subtest: every measured or monetary tool has specific capability copy
+not ok 411 - every measured or monetary tool has specific capability copy
   ---
-  duration_ms: 1.338742
+  duration_ms: 3.647764
   type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/seo-capabilities.test.ts:1:487'
+  failureType: 'testCodeFailure'
+  error: 'cable-fuse-size is missing an applicability classification'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/seo-capabilities.test.ts:13:12)
+--
   ...
-# Subtest: currency formatting uses the selected denomination without scaling
-ok 481 - currency formatting uses the selected denomination without scaling
+# Subtest: currency language is limited to monetary tools and explains the no-FX boundary
+not ok 412 - currency language is limited to monetary tools and explains the no-FX boundary
   ---
-  duration_ms: 2.909463
+  duration_ms: 1.018725
   type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/seo-capabilities.test.ts:1:893'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'monetary')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/seo-capabilities.test.ts:25:23)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+--
+  ...
+# Subtest: API and local fallback catalogs expose the same published tools
+not ok 417 - API and local fallback catalogs expose the same published tools
+  ---
+  duration_ms: 22.308105
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:2159'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+--
+  ...
+# Subtest: API and local fallback catalogs expose the same non-empty categories
+not ok 418 - API and local fallback catalogs expose the same non-empty categories
+  ---
+  duration_ms: 1.03748
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:2435'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+--
+  ...
+# Subtest: new category guides describe every published tool in their category
+not ok 420 - new category guides describe every published tool in their category
+  ---
+  duration_ms: 0.464879
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:3994'
+  failureType: 'testCodeFailure'
+  error: 'electrical is missing a description for cable-fuse-size'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+--
+  ...
+# Subtest: canonical related-tool graph covers every published tool with reciprocal semantic links
+not ok 429 - canonical related-tool graph covers every published tool with reciprocal semantic links
+  ---
+  duration_ms: 0.816567
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:8718'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    164 !== 163
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+--
+  ...
+# Subtest: sitemap exactly matches all indexable app pages
+not ok 451 - sitemap exactly matches all indexable app pages
+  ---
+  duration_ms: 4.693149
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:26062'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        '/',
+--
   ...
 # Subtest: applicability classifies every published tool and validates stored preferences
 not ok 482 - applicability classifies every published tool and validates stored preferences
   ---
-  duration_ms: 2.705856
+  duration_ms: 2.980845
   type: 'test'
   location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/units-preferences.test.ts:1:4302'
   failureType: 'testCodeFailure'
@@ -63,160 +223,11 @@ not ok 482 - applicability classifies every published tool and validates stored 
   operator: '=='
   stack: |-
     TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/units-preferences.test.ts:104:45)
-    Test.runInAsyncScope (node:async_hooks:214:14)
-    Test.run (node:internal/test_runner/test:1047:25)
-    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
-    Test.postRun (node:internal/test_runner/test:1173:19)
-    Test.run (node:internal/test_runner/test:1101:12)
-    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
-  ...
-# Subtest: VA Mortgage keeps a normal financed-loan scenario valid
-ok 483 - VA Mortgage keeps a normal financed-loan scenario valid
-  ---
-  duration_ms: 25.58309
-  type: 'test'
-  ...
-# Subtest: VA Mortgage rejects a down payment greater than the home price
-ok 484 - VA Mortgage rejects a down payment greater than the home price
-  ---
-  duration_ms: 0.43059
-  type: 'test'
-  ...
-# Subtest: VA Mortgage allows a fully paid purchase without inventing negative financing
-ok 485 - VA Mortgage allows a fully paid purchase without inventing negative financing
-  ---
-  duration_ms: 0.412824
-  type: 'test'
-  ...
-# Subtest: VAT add mode reports gross price and VAT amount consistently
-ok 486 - VAT add mode reports gross price and VAT amount consistently
-  ---
-  duration_ms: 3.227002
-  type: 'test'
-  ...
-# Subtest: VAT remove mode reports the pre-VAT net price in the breakdown
-ok 487 - VAT remove mode reports the pre-VAT net price in the breakdown
-  ---
-  duration_ms: 0.518403
-  type: 'test'
-  ...
-# Subtest: Voltage Drop keeps feet unchanged for the legacy calculator contract
-ok 488 - Voltage Drop keeps feet unchanged for the legacy calculator contract
-  ---
-  duration_ms: 1.745726
-  type: 'test'
-  ...
-# Subtest: Voltage Drop converts metres to feet before the legacy formula runs
-ok 489 - Voltage Drop converts metres to feet before the legacy formula runs
-  ---
-  duration_ms: 0.275196
-  type: 'test'
-  ...
-# Subtest: work and date content is substantial, distinct, and internally connected
-ok 490 - work and date content is substantial, distinct, and internally connected
-  ---
-  duration_ms: 2.652555
-  type: 'test'
-  ...
-# Subtest: age and working-days examples match the existing calendar engines
-ok 491 - age and working-days examples match the existing calendar engines
-  ---
-  duration_ms: 1.611243
-  type: 'test'
-  ...
-# Subtest: salary and overtime examples match the existing pay engines
-ok 492 - salary and overtime examples match the existing pay engines
-  ---
-  duration_ms: 2.234824
-  type: 'test'
-  ...
-# Subtest: work and date invalid and edge inputs fail explicitly
-ok 493 - work and date invalid and edge inputs fail explicitly
-  ---
-  duration_ms: 0.642249
-  type: 'test'
-  ...
-# Subtest: salary and overtime reject unreasonable or overflowing finite inputs
-ok 494 - salary and overtime reject unreasonable or overflowing finite inputs
-  ---
-  duration_ms: 1.108815
-  type: 'test'
-  ...
-# Subtest: basic overtime mode uses entered overtime hours directly
-ok 495 - basic overtime mode uses entered overtime hours directly
-  ---
-  duration_ms: 1.253863
-  type: 'test'
-  ...
-# Subtest: advanced overtime mode derives regular and overtime hours from threshold
-ok 496 - advanced overtime mode derives regular and overtime hours from threshold
-  ---
-  duration_ms: 0.237349
-  type: 'test'
-  ...
-# Subtest: advanced overtime mode pays all hours at regular rate below the threshold
-ok 497 - advanced overtime mode pays all hours at regular rate below the threshold
-  ---
-  duration_ms: 0.190487
-  type: 'test'
-  ...
-# Subtest: overtime math rejects impossible weekly hours and invalid multipliers
-ok 498 - overtime math rejects impossible weekly hours and invalid multipliers
-  ---
-  duration_ms: 0.171088
-  type: 'test'
-  ...
-# Subtest: counts an inclusive Monday-Friday range
-ok 499 - counts an inclusive Monday-Friday range
-  ---
-  duration_ms: 1.818316
-  type: 'test'
-  ...
-# Subtest: reversed endpoints produce the same result
-ok 500 - reversed endpoints produce the same result
-  ---
-  duration_ms: 0.184189
-  type: 'test'
-  ...
-# Subtest: basic mode always restores the standard Monday-Friday schedule
-ok 501 - basic mode always restores the standard Monday-Friday schedule
-  ---
-  duration_ms: 0.145821
-  type: 'test'
-  ...
-# Subtest: advanced mode excludes each valid active date once
-ok 502 - advanced mode excludes each valid active date once
-  ---
-  duration_ms: 0.329537
-  type: 'test'
-  ...
-# Subtest: malformed advanced workweek schedules are rejected instead of coercing blank tokens to Sunday
-ok 503 - malformed advanced workweek schedules are rejected instead of coercing blank tokens to Sunday
-  ---
-  duration_ms: 0.262196
-  type: 'test'
-  ...
-# Subtest: invalid manually excluded dates are rejected instead of silently ignored
-ok 504 - invalid manually excluded dates are rejected instead of silently ignored
-  ---
-  duration_ms: 0.175194
-  type: 'test'
-  ...
-# Subtest: large ranges use bounded arithmetic and retain inclusive semantics
-ok 505 - large ranges use bounded arithmetic and retain inclusive semantics
-  ---
-  duration_ms: 0.343799
-  type: 'test'
-  ...
-1..505
+--- summary ---
 # tests 507
-# suites 0
 # pass 493
 # fail 14
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 9575.732015
-/home/runner/work/figurenest/figurenest/artifacts/calcstride:
- ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/calcstride@0.0.0 test: `tsx --test src/lib/*.test.ts`
-Exit status 1
+# duration_ms 11094.473439
