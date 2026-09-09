@@ -17,7 +17,7 @@ const filterTools = (query: string, category = '', letter = '') => {
 };
 
 test('directory has exact published-tool coverage and unique links', () => {
-  assert.equal(localTools.length, 162);
+  assert.equal(localTools.length, 163);
   assert.equal(new Set(localTools.map((tool) => tool.slug)).size, localTools.length);
   assert.equal(new Set(localTools.map((tool) => tool.href)).size, localTools.length);
   assert.equal(sortByName(localTools).length, localTools.length);
@@ -117,7 +117,7 @@ test('directory category totals reconcile with the canonical registry', () => {
       ).size,
     );
   }
-  assert.equal(localCategories.find((category) => category.slug === 'electrical')?.toolCount, 4);
+  assert.equal(localCategories.find((category) => category.slug === 'electrical')?.toolCount, 5);
   assert.equal(localCategories.find((category) => category.slug === 'technology')?.toolCount, 5);
   assert.equal(localCategories.find((category) => category.slug === 'science-engineering')?.toolCount, 9);
   assert.equal(localCategories.find((category) => category.slug === 'math')?.toolCount, 24);
