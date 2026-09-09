@@ -35,7 +35,7 @@ export const coreFields: Record<string, CoreField[]> = {
 };
 
 const invalid = (message: string): CalculationResult => ({ primary: message, error: message });
-const numbers = (values: string[]) => values.map((v) => Number(v));
+const numbers = (values: string[]) => values.map((v) => v.trim() === '' ? Number.NaN : Number(v));
 const validNumbers = (values: number[]) => values.every(Number.isFinite) && values.every((v) => v >= 0);
 const MAX_FINANCE_AMOUNT = 1_000_000_000_000;
 const MAX_FINANCE_RATE = 100;
