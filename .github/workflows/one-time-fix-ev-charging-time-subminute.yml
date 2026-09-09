@@ -43,6 +43,8 @@ jobs:
           PY
       - name: Focused regression
         run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/ev-charging-time-display.test.ts
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
       - name: Production build
