@@ -52,6 +52,6 @@ export function buildCalculatorPrintHtml(snapshot: CalculatorExportSnapshot, sco
 }
 
 export function safeExportFilename(title: string): string {
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80).replace(/-+$/g, '');
   return slug || 'figurenest-calculation';
 }
