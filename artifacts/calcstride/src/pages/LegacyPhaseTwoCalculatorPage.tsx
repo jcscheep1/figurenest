@@ -5,11 +5,13 @@ import { Seo } from '@/pages/AppPages';
 import { Shell } from '@/components/FigureNestShell';
 import { Link } from '@/components/PublicLink';
 import { CurrencySelector } from '@/components/UnitsPreferencesSelectors';
+import { ElectricalPreferencesSelector } from '@/components/ElectricalPreferencesSelector';
 import { toCanonicalUrl } from '@/lib/public-url';
 import { calculatePhaseTwo, phaseTwoDefinitions, type PhaseTwoField, type PhaseTwoResult, type PhaseTwoSlug } from '@/lib/phase-two-expansion';
 import { calculateAverageReturn } from '@/lib/average-return';
 import { validateWholeMinuteDuration } from '@/lib/time-calculator-validation';
 import { useUnitsPreferences } from '@/lib/units-preferences';
+import { useElectricalPreferences } from '@/lib/electrical-preferences';
 import { publishedTools } from '@/lib/catalog';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 import { TimeDurationEducationalContent } from '@/components/TimeDurationEducationalContent';
@@ -29,13 +31,12 @@ const voltageDropLengthUnitField: PhaseTwoField = {
 function displayFieldsFor(slug: PhaseTwoSlug): readonly PhaseTwoField[] {
   const definition = phaseTwoDefinitions[slug];
   if (slug !== 'voltage-drop') return definition.fields;
-  const [current, length, resistance, phase] = definition.fields;
+  const [current, length, resistance] = definition.fields;
   return [
     current,
     { ...length, label: 'One-way length' },
     voltageDropLengthUnitField,
     resistance,
-    phase,
   ];
 }
 
@@ -45,6 +46,7 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
   const [values, setValues] = useState(() => displayFields.map((field) => field.value));
   const [copied, setCopied] = useState(false);
   const { forCalculator, setCurrency, setCalculatorOverride } = useUnitsPreferences();
+  const { preferences: electricalPreferences } = useElectricalPreferences();
   const currency = forCalculator(slug).currency;
   const isMonetary = slug === 'percent-off' || slug === 'time-card';
   const categoryHref = definition.categorySlug === 'construction' ? '/home-construction' : `/category/${definition.categorySlug}`;
@@ -53,12 +55,19 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
     return tool ? [tool] : [];
   });
   const timePrecisionError = slug === 'time' ? validateWholeMinuteDuration(values[1] ?? '', values[2] ?? '') : undefined;
-  const calculationValues = slug === 'voltage-drop' ? normalizeVoltageDropValues(values) : values;
+  const voltageDropDisplayValues = slug === 'voltage-drop'
+    ? [...values, electricalPreferences.phase]
+    : values;
+  const calculationValues = slug === 'voltage-drop' ? normalizeVoltageDropValues(voltageDropDisplayValues) : values;
   const result: PhaseTwoResult = timePrecisionError
     ? { primary: timePrecisionError, summary: timePrecisionError, details: [], error: timePrecisionError }
     : slug === 'average-return'
       ? calculateAverageReturn(values)
       : calculatePhaseTwo(slug, calculationValues, isMonetary ? currency : undefined);
+  const voltageDropV = slug === 'voltage-drop' && !result.error ? Number.parseFloat(result.primary) : Number.NaN;
+  const voltageDropPct = Number.isFinite(voltageDropV) && electricalPreferences.voltage > 0
+    ? voltageDropV / electricalPreferences.voltage * 100
+    : Number.NaN;
   const a11y = calculatorFieldA11y(slug, result.error);
   const update = (index: number, value: string) => {
     setValues((current) => current.map((old, itemIndex) => itemIndex === index ? value : old));
@@ -102,6 +111,10 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
               }}
             />
           </label>}
+          {slug === 'voltage-drop' && <>
+            <div className="date-method-notes" role="note"><p><strong>Electrical supply preference:</strong> Voltage sets the percentage-drop basis and phase sets the single- or three-phase formula. This preference carries to other applicable electrical calculators.</p></div>
+            <ElectricalPreferencesSelector idPrefix="voltage-drop-supply" />
+          </>}
           <div className="advanced-fields">
             {displayFields.map((field, index) => <label className="advanced-field" key={field.key} htmlFor={a11y.field(field.key).id}>
               <span>{field.label}</span>
@@ -115,13 +128,19 @@ export function PhaseTwoCalculatorPage({ slug }: { slug: PhaseTwoSlug }) {
           <div className={`advanced-result${result.error ? ' has-error' : ''}`} data-testid={`status-${slug}`}>
             <span className="mono">{result.error ? 'CHECK THE VALUES' : definition.resultLabel}</span>
             <strong>{result.primary}</strong>
-            <p id={result.error ? a11y.errorId : undefined}>{result.summary}</p>
+            <p id={result.error ? a11y.errorId : undefined}>{slug === 'voltage-drop' && Number.isFinite(voltageDropPct) ? `${result.summary} That is approximately ${voltageDropPct.toFixed(2)}% of the selected ${electricalPreferences.voltage} V supply.` : result.summary}</p>
             <div className="advanced-result-actions">
               <button type="button" className="copy-button" disabled={Boolean(result.error)} onClick={() => void copy()} data-testid={`button-copy-${slug}`}>{copied ? <Check size={15} /> : <Copy size={15} />} {copied ? 'Copied' : 'Copy result'}</button>
               <button type="button" className="copy-button" disabled={Boolean(result.error)} onClick={() => void share()} data-testid={`button-share-${slug}`}><Share2 size={15} /> Share</button>
             </div>
           </div>
-          <div className="advanced-breakdown">{result.details.map((detail) => <div key={detail.label}><span>{detail.label}</span><strong>{detail.value}</strong></div>)}</div>
+          <div className="advanced-breakdown">
+            {slug === 'voltage-drop' && !result.error && <>
+              <div><span>Supply basis</span><strong>{electricalPreferences.voltage} V · {electricalPreferences.phase === 'single' ? 'single-phase' : 'three-phase'}</strong></div>
+              <div><span>Voltage drop percentage</span><strong>{voltageDropPct.toFixed(2)}%</strong></div>
+            </>}
+            {result.details.map((detail) => <div key={detail.label}><span>{detail.label}</span><strong>{detail.value}</strong></div>)}
+          </div>
           <button type="button" className="reset-button mt-6" onClick={() => { setValues(displayFields.map((field) => field.value)); setCopied(false); }} data-testid={`button-reset-${slug}`}>Reset values</button>
         </section>
       </div>
