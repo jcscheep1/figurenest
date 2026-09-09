@@ -45,7 +45,33 @@ test('normalizes month-end borrowing across a shorter February', () => {
   assert.equal(commonYear.totalDays, 29);
 });
 
-test('rejects impossible dates and future birth dates', () => {
+test('handles the zero-age boundary without rolling the birthday forward', () => {
+  const result = calculateAge('2026-09-09', '2026-09-09');
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.primary, '0 years, 0 months, 0 days');
+  assert.equal(result.totalMonths, 0);
+  assert.equal(result.totalWeeks, 0);
+  assert.equal(result.totalDays, 0);
+  assert.equal(result.nextBirthday, '2026-09-09');
+  assert.equal(result.daysUntilNextBirthday, 0);
+});
+
+test('honors Gregorian century leap-year rules', () => {
+  const leapCentury = calculateAge('2000-02-29', '2001-02-28');
+  assert.equal(leapCentury.ok, true);
+  if (!leapCentury.ok) return;
+  assert.equal(leapCentury.primary, '1 year, 0 months, 0 days');
+
+  assert.equal(calculateAge('1900-02-29', '1901-02-28').ok, false);
+  assert.equal(calculateAge('2100-02-29', '2101-02-28').ok, false);
+});
+
+test('rejects blank, malformed, impossible, and future dates', () => {
+  assert.equal(calculateAge('', '2026-09-09').ok, false);
+  assert.equal(calculateAge('2026-09-09', '').ok, false);
+  assert.equal(calculateAge(' 2026-09-09 ', '2026-09-09').ok, false);
+  assert.equal(calculateAge('09/09/2026', '2026-09-09').ok, false);
   assert.equal(calculateAge('2026-02-30', '2026-09-08').ok, false);
   assert.equal(calculateAge('2027-01-01', '2026-09-08').ok, false);
 });
