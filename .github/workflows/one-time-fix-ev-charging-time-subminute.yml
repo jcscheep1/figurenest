@@ -1,0 +1,57 @@
+name: One-time EV charging time sub-minute repair
+
+on:
+  push:
+    branches:
+      - audit/ev-charging-time-subminute-display
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/ev-charging-time-subminute-display
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply guarded page repair
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('artifacts/calcstride/src/pages/AutomotiveCalculatorPage.tsx')
+          s = p.read_text()
+          old_import = "import { fuelCostPerDisplayedDistance } from '@/lib/fuel-cost-distance';\n"
+          new_import = old_import + "import { formatEvChargingTimeDisplay } from '@/lib/ev-charging-time-display';\n"
+          if old_import not in s or "formatEvChargingTimeDisplay" in s:
+              raise SystemExit('guard failed for import')
+          s = s.replace(old_import, new_import, 1)
+          old = """    if (slug === 'ev-charging-time') {\n      const hours = a / b;\n      const minutes = Math.round(hours * 60);\n      return { primary: `${decimal.format(hours)} hours`, details: [\n        { label: 'Approximate duration', value: `${Math.floor(minutes / 60)} hr ${minutes % 60} min` },\n        { label: 'Charger power used', value: `${decimal.format(b / powerUnits[powerUnit].kw)} ${powerUnits[powerUnit].short}` },\n      ] };\n    }\n"""
+          new = """    if (slug === 'ev-charging-time') {\n      const hours = a / b;\n      const display = formatEvChargingTimeDisplay(hours);\n      return { primary: display.primary, details: [\n        { label: 'Approximate duration', value: display.duration },\n        { label: 'Charger power used', value: `${decimal.format(b / powerUnits[powerUnit].kw)} ${powerUnits[powerUnit].short}` },\n      ] };\n    }\n"""
+          if old not in s:
+              raise SystemExit('guard failed for EV charging time display block')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Focused regression
+        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/ev-charging-time-display.test.ts
+      - name: Typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
+      - name: Production build
+        run: pnpm --filter @workspace/calcstride build
+      - name: Commit verified repair and remove one-time workflow
+        run: |
+          rm .github/workflows/one-time-fix-ev-charging-time-subminute.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/calcstride/src/pages/AutomotiveCalculatorPage.tsx artifacts/calcstride/src/lib/ev-charging-time-display.ts artifacts/calcstride/src/lib/ev-charging-time-display.test.ts .github/workflows/one-time-fix-ev-charging-time-subminute.yml
+          git commit -m "Fix EV charging time sub-minute display"
+          git push
