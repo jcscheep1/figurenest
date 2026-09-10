@@ -3,6 +3,7 @@ import test from 'node:test';
 import { localTools } from './catalog';
 import { calculateCore, coreFields, coreMethodology } from './core-calculators';
 import { businessGrowthSlugs } from './business-growth-calculators';
+import { businessCalculatorContent, businessCalculatorSlugs } from './business-calculators';
 
 const expectedRoutes = new Map([
   ['roas', '/calculators/business/roas'],
@@ -20,6 +21,16 @@ test('Batch 1 business growth tools are published through the shared catalog', (
     assert.equal(tool.categorySlug, 'business');
     assert.equal(tool.href, expectedRoutes.get(slug));
     assert.ok(tool.tags.length >= 3);
+  }
+});
+
+test('Batch 1 business growth tools use the existing Business calculator page/content registry', () => {
+  const registeredBusinessSlugs = new Set<string>(businessCalculatorSlugs);
+  const registeredBusinessContent = businessCalculatorContent as Record<string, unknown>;
+
+  for (const slug of businessGrowthSlugs) {
+    assert.ok(registeredBusinessSlugs.has(slug), `${slug} must be routed through BusinessCalculatorPage's existing slug registry`);
+    assert.ok(registeredBusinessContent[slug], `${slug} must use the existing businessCalculatorContent architecture`);
   }
 });
 
