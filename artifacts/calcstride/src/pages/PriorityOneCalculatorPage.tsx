@@ -8,13 +8,13 @@ import { Link } from '@/components/PublicLink';
 import { publishedTools } from '@/lib/catalog';
 import { toCanonicalUrl } from '@/lib/public-url';
 import { calculatePriorityOneExpansion, priorityOneExpansionDefinitions, type PriorityOneExpansionSlug, type PriorityOneResult } from '@/lib/priority-one-expansion';
-import { STUDENT_LOAN_MIN_YEARS, STUDENT_LOAN_TERM_ERROR, STUDENT_LOAN_YEAR_STEP, studentLoanTermMonths } from '@/lib/student-loan-validation';
+import { STUDENT_LOAN_MIN_YEARS, STUDENT_LOAN_REQUIRED_ERROR, STUDENT_LOAN_TERM_ERROR, STUDENT_LOAN_YEAR_STEP, studentLoanHasBlankRequiredInput, studentLoanTermMonths } from '@/lib/student-loan-validation';
 import { useUnitsPreferences, type MeasurementSystem } from '@/lib/units-preferences';
 import { convertPriorityOneValues, localizePriorityOneResult, normalizePriorityOneValues, priorityOneFieldLabel, supportsPriorityOneMeasurementSystem } from '@/lib/priority-one-measurement';
 import { CalculatorResultAnnouncement, calculatorFieldA11y } from '@/components/calculators/CalculatorFieldA11y';
 import { CalculatorDecisionExpansion, CalculatorModeSwitch, useCalculatorMode } from '@/components/calculators/CalculatorDecisionExpansion';
 
-const studentLoanTermError = (): PriorityOneResult => ({ primary: STUDENT_LOAN_TERM_ERROR, summary: STUDENT_LOAN_TERM_ERROR, details: [], error: STUDENT_LOAN_TERM_ERROR });
+const studentLoanError = (message: string): PriorityOneResult => ({ primary: message, summary: message, details: [], error: message });
 
 export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansionSlug }) {
   const definition = priorityOneExpansionDefinitions[slug];
@@ -39,7 +39,11 @@ export function PriorityOneCalculatorPage({ slug }: { slug: PriorityOneExpansion
 
   const normalizedValues = normalizePriorityOneValues(slug, values, preferences.measurementSystem);
   const calculatedResult = calculatePriorityOneExpansion(slug, normalizedValues, currency);
-  const baseResult = slug === 'student-loan' && studentLoanTermMonths(values[2] ?? '') === null ? studentLoanTermError() : calculatedResult;
+  const baseResult = slug === 'student-loan' && studentLoanHasBlankRequiredInput(values)
+    ? studentLoanError(STUDENT_LOAN_REQUIRED_ERROR)
+    : slug === 'student-loan' && studentLoanTermMonths(values[2] ?? '') === null
+      ? studentLoanError(STUDENT_LOAN_TERM_ERROR)
+      : calculatedResult;
   const result = baseResult.error ? baseResult : { ...baseResult, primary: localizePriorityOneResult(slug, baseResult.primary, preferences.measurementSystem) };
   const a11y = calculatorFieldA11y(slug, result.error);
   const update = (index: number, value: string) => { setValues(current => current.map((item, itemIndex) => itemIndex === index ? value : item)); setCopied(false); };
