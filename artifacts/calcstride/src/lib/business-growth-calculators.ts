@@ -278,6 +278,7 @@ export function calculateBusinessGrowth(
   }
 
   if (slug === 'conversion-rate') {
+    if (!Number.isInteger(a) || !Number.isInteger(b)) return invalid('Opportunity and conversion counts must be whole numbers');
     if (a <= 0) return invalid('Visitors or opportunities must be greater than zero');
     if (b > MAX_COUNT) return invalid('Enter conversions no greater than 1 trillion');
     const rate = b / a * 100;
@@ -293,6 +294,7 @@ export function calculateBusinessGrowth(
   }
 
   if (slug === 'cpc') {
+    if (!Number.isInteger(b)) return invalid('Clicks must be a whole number');
     if (b <= 0) return invalid('Clicks must be greater than zero');
     const cpc = a / b;
     if (!Number.isFinite(cpc)) return invalid('These inputs produce a CPC outside the supported range');
@@ -306,6 +308,7 @@ export function calculateBusinessGrowth(
   }
 
   if (slug === 'cpm') {
+    if (!Number.isInteger(b)) return invalid('Impressions must be a whole number');
     if (b <= 0) return invalid('Impressions must be greater than zero');
     const cpm = a / b * 1000;
     if (!Number.isFinite(cpm)) return invalid('These inputs produce a CPM outside the supported range');
@@ -318,6 +321,7 @@ export function calculateBusinessGrowth(
     };
   }
 
+  if (!Number.isInteger(b)) return invalid('New customers acquired must be a whole number');
   if (b <= 0) return invalid('New customers acquired must be greater than zero');
   const cac = a / b;
   if (!Number.isFinite(cac)) return invalid('These inputs produce a customer acquisition cost outside the supported range');

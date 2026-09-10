@@ -218,6 +218,11 @@ export const catalogTools: CatalogTool[] = [
     lastUpdated: "August 2026",
     icon: "scale",
   },
+  { slug: "roas", name: "ROAS Calculator", description: "Calculate return on ad spend from advertising cost and attributed revenue.", category: "Business", categorySlug: "business", href: "/calculators/business/roas", tags: ["roas", "return on ad spend", "advertising", "marketing"], featured: false, lastUpdated: CATALOG_LAST_UPDATED },
+  { slug: "conversion-rate", name: "Conversion Rate Calculator", description: "Calculate the percentage of visitors, leads, or opportunities that convert.", category: "Business", categorySlug: "business", href: "/calculators/business/conversion-rate", tags: ["conversion rate", "conversions", "marketing", "sales"], featured: false, lastUpdated: CATALOG_LAST_UPDATED },
+  { slug: "cpc", name: "CPC Calculator", description: "Calculate average advertising cost per click from spend and recorded clicks.", category: "Business", categorySlug: "business", href: "/calculators/business/cpc", tags: ["cpc", "cost per click", "advertising", "marketing"], featured: false, lastUpdated: CATALOG_LAST_UPDATED },
+  { slug: "cpm", name: "CPM Calculator", description: "Calculate advertising cost per one thousand impressions from spend and impressions.", category: "Business", categorySlug: "business", href: "/calculators/business/cpm", tags: ["cpm", "cost per thousand", "impressions", "advertising"], featured: false, lastUpdated: CATALOG_LAST_UPDATED },
+  { slug: "customer-acquisition-cost", name: "Customer Acquisition Cost Calculator", description: "Calculate average customer acquisition cost from acquisition spend and new customers.", category: "Business", categorySlug: "business", href: "/calculators/business/customer-acquisition-cost", tags: ["cac", "customer acquisition cost", "marketing", "customers"], featured: false, lastUpdated: CATALOG_LAST_UPDATED },
   {
     slug: "vat",
     name: "VAT Calculator",

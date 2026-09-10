@@ -151,6 +151,10 @@ export const calculatorSeoCapabilities: Record<string, CalculatorSeoCapability> 
     seoDescription: 'Calculate break-even units and revenue with EUR, USD, GBP, or ZAR formatting for costs and prices. Currency selection is not live FX conversion.',
     visibleNote: businessMoneyNote,
   },
+  roas: { seoTitle: 'ROAS Calculator — Return on Ad Spend | FigureNest', seoDescription: 'Calculate ROAS with EUR, USD, GBP, or ZAR formatting from ad spend and attributed revenue; currency selection is not live FX conversion.', visibleNote: businessMoneyNote },
+  cpc: { seoTitle: 'CPC Calculator — Cost Per Click | FigureNest', seoDescription: 'Calculate CPC with EUR, USD, GBP, or ZAR formatting from advertising spend and clicks; currency selection is not live FX conversion.', visibleNote: businessMoneyNote },
+  cpm: { seoTitle: 'CPM Calculator — Cost Per 1,000 Impressions | FigureNest', seoDescription: 'Calculate CPM with EUR, USD, GBP, or ZAR formatting from advertising spend and impressions; currency selection is not live FX conversion.', visibleNote: businessMoneyNote },
+  'customer-acquisition-cost': { seoTitle: 'Customer Acquisition Cost Calculator — CAC | FigureNest', seoDescription: 'Calculate CAC with EUR, USD, GBP, or ZAR formatting from acquisition spend and new customers; currency selection is not live FX conversion.', visibleNote: businessMoneyNote },
   vat: {
     seoTitle: 'VAT Calculator — Add or Remove Tax | FigureNest',
     seoDescription: 'Add or remove VAT with EUR, USD, GBP, or ZAR formatting and a rate you choose. Currency selection changes display only; it is not live FX conversion.',

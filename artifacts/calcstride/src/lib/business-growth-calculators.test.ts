@@ -67,6 +67,15 @@ test('denominator guards reject zero where the formula would divide by zero', ()
   assert.ok(calculateBusinessGrowth('customer-acquisition-cost', ['100', '0']).error);
 });
 
+test('count inputs require whole numbers while monetary inputs may use decimals', () => {
+  assert.ok(calculateBusinessGrowth('conversion-rate', ['100.5', '10']).error);
+  assert.ok(calculateBusinessGrowth('conversion-rate', ['100', '10.5']).error);
+  assert.ok(calculateBusinessGrowth('cpc', ['100.50', '10.5']).error);
+  assert.ok(calculateBusinessGrowth('cpm', ['100.50', '1000.5']).error);
+  assert.ok(calculateBusinessGrowth('customer-acquisition-cost', ['100.50', '2.5']).error);
+  assert.equal(calculateBusinessGrowth('cpc', ['100.50', '3']).error, undefined);
+});
+
 test('blank, negative, nonnumeric, and oversized values are rejected', () => {
   assert.ok(calculateBusinessGrowth('roas', ['', '100']).error);
   assert.ok(calculateBusinessGrowth('cpc', ['-1', '10']).error);

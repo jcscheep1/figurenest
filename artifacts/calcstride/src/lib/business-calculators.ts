@@ -403,6 +403,13 @@ const growthSupplement: Record<BusinessGrowthSlug, {
         result: '0.75× ROAS and 75% ROAS',
         interpretation: 'Attributed revenue is below advertising spend, but the full business decision still depends on attribution quality and downstream customer value.',
       },
+      {
+        title: 'Scaled campaign',
+        inputs: '$12,500 advertising spend and $62,500 attributed revenue',
+        working: '$62,500 ÷ $12,500',
+        result: '5.00× ROAS and 500% ROAS',
+        interpretation: 'The campaign produced five units of attributed revenue per unit of ad spend before non-advertising costs.',
+      },
     ],
     edgeCases: [
       { title: 'Zero advertising spend', explanation: 'ROAS is undefined because advertising spend is the denominator, so the calculator returns an error.' },
@@ -428,6 +435,13 @@ const growthSupplement: Record<BusinessGrowthSlug, {
         working: '96 ÷ 800 × 100',
         result: '12% conversion rate',
         interpretation: 'The result is meaningful only if the lead and sale counts use the same funnel definition and time window.',
+      },
+      {
+        title: 'Signup funnel',
+        inputs: '2,400 eligible visitors and 72 completed signups',
+        working: '72 ÷ 2,400 × 100',
+        result: '3% conversion rate',
+        interpretation: 'Three of every one hundred eligible visitors completed the defined action for this reporting window.',
       },
     ],
     edgeCases: [
@@ -455,6 +469,13 @@ const growthSupplement: Record<BusinessGrowthSlug, {
         result: '$3.00 average CPC',
         interpretation: 'A higher CPC can still be economically stronger if the traffic converts better or produces higher-value customers.',
       },
+      {
+        title: 'Low-cost social traffic',
+        inputs: '$840 spend and 2,100 clicks',
+        working: '$840 ÷ 2,100',
+        result: '$0.40 average CPC',
+        interpretation: 'The average click cost is forty cents before considering conversion quality or customer value.',
+      },
     ],
     edgeCases: [
       { title: 'Zero clicks', explanation: 'Average CPC is undefined because clicks are the denominator, so the calculator returns an error.' },
@@ -481,6 +502,13 @@ const growthSupplement: Record<BusinessGrowthSlug, {
         result: '$24.00 CPM',
         interpretation: 'The higher exposure cost may or may not be justified by better audience fit, placement quality, reach, or downstream results.',
       },
+      {
+        title: 'Broad awareness buy',
+        inputs: '$1,800 spend and 900,000 impressions',
+        working: '$1,800 ÷ 900,000 × 1,000',
+        result: '$2.00 CPM',
+        interpretation: 'The campaign paid two dollars per thousand delivered impressions without implying unique reach or conversions.',
+      },
     ],
     edgeCases: [
       { title: 'Zero impressions', explanation: 'CPM cannot be calculated because impressions are the denominator.' },
@@ -506,6 +534,13 @@ const growthSupplement: Record<BusinessGrowthSlug, {
         working: '$7,500 ÷ 60',
         result: '$125.00 CAC',
         interpretation: 'Compare this channel CAC with a consistently defined benchmark and with the value created by customers from the same channel.',
+      },
+      {
+        title: 'Referral acquisition cohort',
+        inputs: '$9,600 acquisition spend and 80 new customers',
+        working: '$9,600 ÷ 80',
+        result: '$120.00 CAC',
+        interpretation: 'The cohort averages $120 of acquisition spend per new customer before retention and lifetime value.',
       },
     ],
     edgeCases: [

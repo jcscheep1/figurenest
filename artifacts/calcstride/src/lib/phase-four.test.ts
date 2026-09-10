@@ -7,7 +7,7 @@ import { phaseFourRoutes } from './phase-four-routes';
 import { getSeoForPath, publicRouteKeys, renderSeoHead } from './seo';
 
 test('phase four publishes 15 canonical definition-driven tools with API parity', () => {
-  assert.equal(publishedTools.length, 163);
+  assert.equal(publishedTools.length, catalogTools.length);
   assert.equal(phaseFourSlugs.length, 15);
   assert.deepEqual(phaseFourRoutes.map(({ slug }) => slug), phaseFourSlugs);
   assert.equal(new Set(publishedTools.map((tool) => tool.href)).size, publishedTools.length);
