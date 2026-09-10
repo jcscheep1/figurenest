@@ -21,6 +21,7 @@ import { getCalculatorSeoCapability } from './seo-capabilities';
 import { articles, getArticle } from './articles';
 import { homepageFaqData } from './homepage-content';
 import { categoryContent } from './category-content';
+import { fileToolDefinitions, isFileToolSlug } from './file-tools-catalog';
 import { renderAdSenseHead } from './adsense';
 import { breadcrumbListSchema, getBreadcrumbItems } from './breadcrumbs';
 import {
@@ -141,6 +142,7 @@ const categoryMetadata: Record<string, { title: string; description: string }> =
   'printing-design': { title: 'Printing & Design Calculators | FigureNest', description: 'Calculate DPI, PPI, image dimensions, scaling, and pixels-to-centimetres for practical print preparation and digital design work.' },
   health: { title: 'Health & Fitness Calculators | FigureNest', description: 'Use BMI, body fat, calorie, pregnancy, pace, and sleep calculators with transparent methods and clear safety limitations.' },
   education: { title: 'Education Calculators | FigureNest', description: 'Calculate points-earned course percentages and weighted GPA with free academic tools that show the arithmetic and grading-scale limits.' },
+  'file-tools': { title: 'Free PDF & File Tools | Private Browser Processing | FigureNest', description: 'Edit and sign PDFs with free FigureNest file tools designed to keep document content in your browser instead of sending files to a conversion server.' },
 };
 
 const breadcrumb = (items: { name: string; path: string }[]) => breadcrumbListSchema(
@@ -360,6 +362,7 @@ export function getSeoForPath(inputPath: string): SeoRecord {
   const tool = publishedTools.find((item) => item.href === path);
   if (tool) {
     const construction = getConstructionTool(tool.slug);
+    const fileTool = isFileToolSlug(tool.slug) ? fileToolDefinitions[tool.slug] : undefined;
     const isPercentageChange = tool.slug === 'percentage-increase-decrease';
     const isDateDuration = tool.slug === 'date-difference';
     const financeContent = isFinanceCalculatorSlug(tool.slug) ? financeCalculatorContent[tool.slug] : undefined;
@@ -388,7 +391,7 @@ export function getSeoForPath(inputPath: string): SeoRecord {
       : undefined;
     const educationalGuide = expandedGuide ?? focusedConstructionGuide;
     const capability = getCalculatorSeoCapability(tool.slug);
-    const description = phaseFourExpansion ? phaseFourExpansion.seoDescription : phaseThreeCExpansion
+    const description = fileTool ? fileTool.seoDescription : phaseFourExpansion ? phaseFourExpansion.seoDescription : phaseThreeCExpansion
       ? phaseThreeCExpansion.seoDescription
       : phaseThreeBExpansion
       ? phaseThreeBExpansion.seoDescription
@@ -423,7 +426,7 @@ export function getSeoForPath(inputPath: string): SeoRecord {
     const nodes: object[] = [
       {
         '@type': 'WebApplication',
-        name: phaseFourExpansion?.h1 ?? phaseThreeCExpansion?.h1 ?? phaseThreeBExpansion?.h1 ?? phaseThreeAExpansion?.h1 ?? phaseTwoExpansion?.h1 ?? priorityFinance?.title ?? concreteContent?.title ?? tool.name,
+        name: fileTool?.h1 ?? phaseFourExpansion?.h1 ?? phaseThreeCExpansion?.h1 ?? phaseThreeBExpansion?.h1 ?? phaseThreeAExpansion?.h1 ?? phaseTwoExpansion?.h1 ?? priorityFinance?.title ?? concreteContent?.title ?? tool.name,
         applicationCategory: 'UtilitiesApplication',
         operatingSystem: 'Web',
         url: toCanonicalUrl(path),
@@ -433,7 +436,7 @@ export function getSeoForPath(inputPath: string): SeoRecord {
       breadcrumb([
         { name: SITE_NAME, path: '/' },
         { name: tool.category, path: categoryPath },
-         { name: phaseFourExpansion?.h1 ?? phaseThreeCExpansion?.h1 ?? phaseThreeBExpansion?.h1 ?? phaseThreeAExpansion?.h1 ?? phaseTwoExpansion?.h1 ?? priorityFinance?.title ?? concreteContent?.title ?? tool.name, path },
+         { name: fileTool?.h1 ?? phaseFourExpansion?.h1 ?? phaseThreeCExpansion?.h1 ?? phaseThreeBExpansion?.h1 ?? phaseThreeAExpansion?.h1 ?? phaseTwoExpansion?.h1 ?? priorityFinance?.title ?? concreteContent?.title ?? tool.name, path },
       ]),
     ];
     if (concreteContent) {
@@ -589,6 +592,9 @@ export function getSeoForPath(inputPath: string): SeoRecord {
     if (phaseFourExpansion) {
       nodes.push({ '@type': 'FAQPage', mainEntity: phaseFourExpansion.faqs.map((faq) => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer } })) });
     }
+    if (fileTool) {
+      nodes.push({ '@type': 'FAQPage', mainEntity: fileTool.faqs.map((faq) => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer } })) });
+    }
     const hasSpecializedFaq = Boolean(
       concreteContent
       || construction?.faqs.length
@@ -604,7 +610,7 @@ export function getSeoForPath(inputPath: string): SeoRecord {
       || phaseTwoExpansion
       || phaseThreeAExpansion
       || phaseThreeBExpansion
-       || phaseThreeCExpansion || phaseFourExpansion,
+       || phaseThreeCExpansion || phaseFourExpansion || fileTool,
     );
     if (!hasSpecializedFaq && educationalGuide?.faqs.length) {
       nodes.push({
@@ -618,7 +624,7 @@ export function getSeoForPath(inputPath: string): SeoRecord {
     }
     return {
       path,
-      title: phaseFourExpansion?.seoTitle ?? phaseThreeCExpansion?.seoTitle ?? capability?.seoTitle ?? phaseThreeBExpansion?.seoTitle ?? phaseThreeAExpansion?.seoTitle ?? phaseTwoExpansion?.seoTitle ?? (priorityOneExpansion ? `${priorityOneExpansion.name} | FigureNest` : priorityFinance?.seoTitle ?? (concreteContent
+      title: fileTool?.seoTitle ?? phaseFourExpansion?.seoTitle ?? phaseThreeCExpansion?.seoTitle ?? capability?.seoTitle ?? phaseThreeBExpansion?.seoTitle ?? phaseThreeAExpansion?.seoTitle ?? phaseTwoExpansion?.seoTitle ?? (priorityOneExpansion ? `${priorityOneExpansion.name} | FigureNest` : priorityFinance?.seoTitle ?? (concreteContent
         ? concreteContent.seoTitle
         : automotiveContent
         ? automotiveContent.seoTitle
@@ -635,8 +641,8 @@ export function getSeoForPath(inputPath: string): SeoRecord {
         : isDateDuration
           ? 'Date Duration Calculator | FigureNest'
            : `${tool.name} | FigureNest`)),
-      description: phaseFourExpansion?.seoDescription ?? phaseThreeCExpansion?.seoDescription ?? capability?.seoDescription ?? phaseThreeBExpansion?.seoDescription ?? phaseThreeAExpansion?.seoDescription ?? phaseTwoExpansion?.seoDescription ?? priorityFinance?.seoDescription ?? description,
-      h1: phaseFourExpansion?.h1 ?? phaseThreeCExpansion?.h1 ?? phaseThreeBExpansion?.h1 ?? phaseThreeAExpansion?.h1 ?? phaseTwoExpansion?.h1 ?? priorityOneExpansion?.name ?? priorityFinance?.title ?? concreteContent?.title ?? tool.name,
+      description: fileTool?.seoDescription ?? phaseFourExpansion?.seoDescription ?? phaseThreeCExpansion?.seoDescription ?? capability?.seoDescription ?? phaseThreeBExpansion?.seoDescription ?? phaseThreeAExpansion?.seoDescription ?? phaseTwoExpansion?.seoDescription ?? priorityFinance?.seoDescription ?? description,
+      h1: fileTool?.h1 ?? phaseFourExpansion?.h1 ?? phaseThreeCExpansion?.h1 ?? phaseThreeBExpansion?.h1 ?? phaseThreeAExpansion?.h1 ?? phaseTwoExpansion?.h1 ?? priorityOneExpansion?.name ?? priorityFinance?.title ?? concreteContent?.title ?? tool.name,
       canonical: toCanonicalUrl(path),
       robots: 'index, follow',
       status: 200,
