@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { catalogTools } from '../../../api-server/src/routes/catalog';
-import { publishedTools } from './catalog';
+import { localTools, publishedTools } from './catalog';
 import {
   calculatePhaseThreeC,
   phaseThreeCDefinitions,
@@ -14,7 +14,7 @@ import { getSeoForPath, publicRouteKeys, renderSeoHead } from './seo';
 const defaults = (slug: typeof phaseThreeCSlugs[number]) => phaseThreeCDefinitions[slug].fields.map((field) => field.value);
 
 test('Phase 3C reconciles approved, expanded, existing, and rejected intents without duplicate pages', () => {
-  assert.equal(publishedTools.length, catalogTools.length);
+  assert.equal(localTools.length, catalogTools.length);
   assert.equal(phaseThreeCNewSlugs.length, 9);
   assert.deepEqual(phaseThreeCExpandedSlugs, ['bmi', 'pregnancy-conception']);
   assert.equal(new Set(publishedTools.map((tool) => tool.href)).size, publishedTools.length);
