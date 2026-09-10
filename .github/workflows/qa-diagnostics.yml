@@ -1,0 +1,43 @@
+name: Expansion QA Diagnostics
+
+on:
+  push:
+    branches: [expansion/batch-1-business-marketing]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc -b lib/api-client-react
+      - name: Capture unit test output
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter @workspace/calcstride test 2>&1 | tee qa-unit.log
+          status=${PIPESTATUS[0]}
+          echo "test_exit=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+        id: tests
+      - name: Upload QA log
+        uses: actions/upload-artifact@v4
+        with:
+          name: expansion-qa-unit-log
+          path: qa-unit.log
+          if-no-files-found: error
+      - name: Preserve failing status
+        if: steps.tests.outputs.test_exit != '0'
+        run: exit 1
