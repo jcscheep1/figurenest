@@ -23,6 +23,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec tsc -b lib/api-client-react
+      - run: pnpm --filter @workspace/calcstride typecheck
+      - run: pnpm --filter @workspace/calcstride generate:seo
       - name: Capture unit test output
         shell: bash
         run: |
