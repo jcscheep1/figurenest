@@ -28,6 +28,7 @@ import {
   phaseThreeCNewSlugs,
 } from "../../../calcstride/src/lib/phase-three-c";
 import { phaseFourRoutes } from "../../../calcstride/src/lib/phase-four-routes";
+import { FILE_TOOLS_CATEGORY, fileToolCatalog } from "../../../calcstride/src/lib/file-tools-catalog";
 
 export type CatalogTool = {
   slug: string;
@@ -644,6 +645,17 @@ catalogTools.push(...phaseFourRoutes.map((entry) => ({
   featured: false,
   lastUpdated: CATALOG_LAST_UPDATED,
 })));
+catalogTools.push(...fileToolCatalog.map((entry) => ({
+  slug: entry.slug,
+  name: entry.name,
+  description: entry.description,
+  category: entry.category,
+  categorySlug: entry.categorySlug,
+  href: entry.href,
+  tags: [...entry.tags],
+  featured: entry.featured,
+  lastUpdated: CATALOG_LAST_UPDATED,
+})));
 
 for (const slug of phaseThreeCExpandedSlugs) {
   const index = catalogTools.findIndex((tool) => tool.slug === slug);
@@ -692,6 +704,7 @@ export const catalogCategories = [
   { slug: "printing-design", name: "Printing & Design", description: "Get the right size, resolution, and output for your work.", accent: "#788bd0" },
   { slug: "health", name: "Health", description: "Use transparent health, fitness, pregnancy, and wellbeing estimates with clear safety limits.", accent: "#5b9d83" },
   { slug: "education", name: "Education", description: "Check grades and weighted academic averages with clear, reproducible arithmetic.", accent: "#7b83c5" },
+  { ...FILE_TOOLS_CATEGORY },
 ].map((category) => ({
   ...category,
   toolCount: new Set(catalogTools
