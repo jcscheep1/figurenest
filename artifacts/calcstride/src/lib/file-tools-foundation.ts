@@ -3,13 +3,22 @@ export const FILE_INPUT_LIMITS = {
   desktop: 75 * 1024 * 1024,
 } as const;
 
+export const FILE_RESOURCE_LIMITS = {
+  pdfPages: 100,
+  spreadsheetSheets: 20,
+  presentationSlides: 50,
+  imagePixels: 40_000_000,
+} as const;
+
 export type FileDeviceClass = keyof typeof FILE_INPUT_LIMITS;
+export type FileResourceKind = keyof typeof FILE_RESOURCE_LIMITS;
 export type FileJobStatus = 'idle' | 'validating' | 'ready' | 'processing' | 'succeeded' | 'failed' | 'cancelled';
 export type FileToolErrorCode =
   | 'empty-file'
   | 'unsupported-type'
   | 'type-mismatch'
   | 'oversized'
+  | 'resource-limit'
   | 'malformed'
   | 'cancelled'
   | 'worker-failed';
@@ -65,6 +74,8 @@ const allowedTransitions: Record<FileJobStatus, readonly FileJobEvent['type'][]>
   cancelled: ['reset', 'start-validation'],
 };
 
+const GENERIC_MIME_TYPES = new Set(['', 'application/octet-stream', 'binary/octet-stream']);
+
 export function transitionFileJob(state: FileJobState, event: FileJobEvent): FileJobState {
   if (!allowedTransitions[state.status].includes(event.type)) {
     throw new Error(`Invalid file-job transition: ${state.status} -> ${event.type}`);
@@ -78,6 +89,15 @@ export function transitionFileJob(state: FileJobState, event: FileJobEvent): Fil
     case 'failed': return { status: 'failed', error: event.error };
     case 'cancelled': return { status: 'cancelled', error: 'cancelled' };
     case 'reset': return { status: 'idle' };
+  }
+}
+
+export function assertFileResourceLimit(kind: FileResourceKind, count: number): void {
+  if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) {
+    throw new FileToolError('malformed', `Invalid ${kind} resource count.`);
+  }
+  if (count > FILE_RESOURCE_LIMITS[kind]) {
+    throw new FileToolError('resource-limit', `The file exceeds the supported ${kind} resource limit.`);
   }
 }
 
@@ -161,13 +181,20 @@ export async function validateLocalFile(
 
   const extension = fileExtension(file.name);
   const mime = file.type.trim().toLowerCase();
+  const mimeIsGeneric = GENERIC_MIME_TYPES.has(mime);
   const extensionMatches = extension
     ? rules.filter((rule) => rule.extensions.some((item) => normalizeExtension(item) === extension))
     : [];
-  const mimeMatches = mime
+  const mimeMatches = !mimeIsGeneric
     ? rules.filter((rule) => rule.mimeTypes.some((item) => item.trim().toLowerCase() === mime))
     : [];
 
+  if (extension && extensionMatches.length === 0 && mimeMatches.length > 0) {
+    throw new FileToolError('type-mismatch', 'The file extension does not match the reported content type.');
+  }
+  if (extensionMatches.length > 0 && !mimeIsGeneric && mimeMatches.length === 0) {
+    throw new FileToolError('type-mismatch', 'The reported content type does not match the file extension.');
+  }
   if (extensionMatches.length === 0 && mimeMatches.length === 0) {
     throw new FileToolError('unsupported-type', 'The selected file type is not supported.');
   }
@@ -268,18 +295,60 @@ export type LocalWorkerLike = {
   terminate(): void;
 };
 
+export type LocalWorkerSessionOptions = {
+  timeoutMs?: number;
+  signal?: AbortSignal;
+  onFailure?(error: FileToolError): void;
+};
+
 export class LocalWorkerSession {
   private closed = false;
+  private currentJobId: string | undefined;
+  private timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  private aborted = false;
+  private readonly timeoutMs: number | undefined;
+  private readonly signal: AbortSignal | undefined;
+  private readonly onFailure: ((error: FileToolError) => void) | undefined;
+  private readonly abortListener = () => {
+    this.aborted = true;
+    if (this.currentJobId) this.cancel(this.currentJobId);
+  };
 
-  constructor(private readonly worker: LocalWorkerLike) {}
+  constructor(private readonly worker: LocalWorkerLike, options: LocalWorkerSessionOptions = {}) {
+    if (options.timeoutMs !== undefined && (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0)) {
+      throw new FileToolError('worker-failed', 'Worker timeout must be a positive finite duration.');
+    }
+    this.timeoutMs = options.timeoutMs;
+    this.signal = options.signal;
+    this.onFailure = options.onFailure;
+    if (this.signal?.aborted) this.aborted = true;
+    else this.signal?.addEventListener('abort', this.abortListener, { once: true });
+  }
 
   start(jobId: string, buffer: ArrayBuffer): void {
     if (this.closed) throw new FileToolError('worker-failed', 'The local worker session is already closed.');
+    if (this.aborted || this.signal?.aborted) {
+      this.dispose();
+      throw abortError();
+    }
+    if (this.currentJobId) throw new FileToolError('worker-failed', 'A local worker job is already running.');
+
+    this.currentJobId = jobId;
     this.worker.postMessage({ type: 'start', jobId, buffer }, [buffer]);
+    if (this.timeoutMs !== undefined) {
+      this.timeoutHandle = setTimeout(() => {
+        if (this.closed || this.currentJobId !== jobId) return;
+        const error = new FileToolError('worker-failed', 'Local file processing timed out.');
+        this.worker.postMessage({ type: 'cancel', jobId });
+        this.onFailure?.(error);
+        this.dispose();
+      }, this.timeoutMs);
+    }
   }
 
   cancel(jobId: string): void {
     if (this.closed) return;
+    if (this.currentJobId && this.currentJobId !== jobId) return;
     this.worker.postMessage({ type: 'cancel', jobId });
     this.dispose();
   }
@@ -287,6 +356,10 @@ export class LocalWorkerSession {
   dispose(): void {
     if (this.closed) return;
     this.closed = true;
+    if (this.timeoutHandle !== undefined) clearTimeout(this.timeoutHandle);
+    this.timeoutHandle = undefined;
+    this.signal?.removeEventListener('abort', this.abortListener);
+    this.currentJobId = undefined;
     this.worker.terminate();
   }
 
