@@ -3,8 +3,18 @@ import assert from 'node:assert/strict';
 import {
   STUDENT_LOAN_MIN_YEARS,
   STUDENT_LOAN_YEAR_STEP,
+  studentLoanHasBlankRequiredInput,
   studentLoanTermMonths,
 } from './student-loan-validation';
+
+test('Student Loan required inputs reject blanks without rejecting explicit zero', () => {
+  assert.equal(studentLoanHasBlankRequiredInput(['25000', '6.5', '5']), false);
+  assert.equal(studentLoanHasBlankRequiredInput(['0', '6.5', '5']), false);
+  assert.equal(studentLoanHasBlankRequiredInput(['25000', '0', '5']), false);
+  assert.equal(studentLoanHasBlankRequiredInput(['', '6.5', '5']), true);
+  assert.equal(studentLoanHasBlankRequiredInput(['   ', '6.5', '5']), true);
+  assert.equal(studentLoanHasBlankRequiredInput(['25000', '', '5']), true);
+});
 
 test('Student Loan term accepts positive whole monthly payment counts', () => {
   assert.equal(studentLoanTermMonths('5'), 60);
