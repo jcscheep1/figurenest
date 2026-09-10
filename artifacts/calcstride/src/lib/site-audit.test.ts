@@ -83,7 +83,7 @@ test('every public non-construction category has substantive visible guide conte
 });
 
 test('new category guides describe every published tool in their category', () => {
-  const expandedCategories = ['electrical', 'technology', 'science-engineering', 'health', 'education'] as const;
+  const expandedCategories = ['electrical', 'technology', 'science-engineering', 'health', 'education', 'file-tools'] as const;
   for (const slug of expandedCategories) {
     const described = new Set(categoryContent[slug].toolDescriptions.map((item) => item.slug));
     for (const tool of publishedTools.filter((item) => item.categorySlug === slug)) {
@@ -347,7 +347,7 @@ test('percentage change and date duration remain sitemap-listed and internally d
 });
 
 test('every catalog destination matches its slug and route family', () => {
-  for (const item of localTools) { const expected = item.href.startsWith('/converters/') ? `/converters/${item.slug}` : `/calculators/${item.categorySlug}/${item.slug}`; assert.equal(item.href, expected, `${item.name} has a mismatched destination`); }
+  for (const item of localTools) { const expected = item.href.startsWith('/converters/') ? `/converters/${item.slug}` : item.href.startsWith('/file-tools/') ? `/file-tools/${item.slug}` : `/calculators/${item.categorySlug}/${item.slug}`; assert.equal(item.href, expected, `${item.name} has a mismatched destination`); }
 });
 
 test('construction related links all resolve to published construction tools', () => {
@@ -359,7 +359,7 @@ test('sitemap exactly matches all indexable app pages', () => {
 });
 
 test('every literal internal link points to an indexable route or the home search anchor', () => {
-  const sourceFiles = ['src/components/FigureNestShell.tsx', 'src/pages/AppPages.tsx', 'src/pages/TrustPages.tsx', 'src/pages/ConstructionPages.tsx', 'src/pages/ArticlePages.tsx', 'src/pages/FinanceCalculatorPage.tsx']; const allowed = new Set([...sitemapPaths, '/#search']); for (const path of sourceFiles) { const source = fs.readFileSync(new URL(path, artifactRoot), 'utf8'); const hrefs = [...source.matchAll(/href="(\/[^"]*)"/g)].map((match) => match[1]); for (const href of hrefs) assert.ok(allowed.has(toPublicPath(href)), `${path} links to an unindexed or missing route: ${href}`); }
+  const sourceFiles = ['src/components/FigureNestShell.tsx', 'src/pages/AppPages.tsx', 'src/pages/TrustPages.tsx', 'src/pages/ConstructionPages.tsx', 'src/pages/ArticlePages.tsx', 'src/pages/FinanceCalculatorPage.tsx', 'src/pages/PdfSignEditPage.tsx']; const allowed = new Set([...sitemapPaths, '/#search']); for (const path of sourceFiles) { const source = fs.readFileSync(new URL(path, artifactRoot), 'utf8'); const hrefs = [...source.matchAll(/href="(\/[^"]*)"/g)].map((match) => match[1]); for (const href of hrefs) assert.ok(allowed.has(toPublicPath(href)), `${path} links to an unindexed or missing route: ${href}`); }
 });
 
 test('article registry is substantial, unique, connected, and metadata-safe', () => {
