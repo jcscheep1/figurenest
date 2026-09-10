@@ -36,6 +36,7 @@ import {
   type PdfViewportTransform,
 } from '@/lib/pdf-sign-edit-core';
 import { fileToolDefinitions } from '@/lib/file-tools-catalog';
+import { getRelatedTools } from '@/lib/related-tools';
 import '@/styles/file-tools.css';
 
 type PdfJsPage = {
@@ -134,6 +135,7 @@ export function PdfSignEditPage() {
   const selected = objects.find((item) => item.id === selectedId) ?? null;
   const currentObjects = useMemo(() => objects.filter((item) => item.pageIndex === pageIndex), [objects, pageIndex]);
   const deviceClass = currentDeviceClass();
+  const relatedTools = useMemo(() => getRelatedTools('pdf-sign-edit', 3), []);
 
   const setObjectPreview = (next: PdfEditObject[]) => {
     objectsRef.current = next;
@@ -658,6 +660,11 @@ export function PdfSignEditPage() {
           <h2>Common questions.</h2>
           {definition.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}
         </aside>
+      </section>
+
+      <section className="section-block" aria-labelledby="pdf-related-tools">
+        <div className="section-heading"><div><div className="eyebrow">RELATED TOOLS</div><h2 id="pdf-related-tools">Useful image and sizing tools.</h2></div></div>
+        <div className="tool-list-grid">{relatedTools.map((tool) => <Link key={tool.slug} href={tool.href} className="home-article-card"><span className="mono">{tool.category}</span><h3>{tool.name}</h3><p>Open this related FigureNest tool.</p></Link>)}</div>
       </section>
     </main>
   </Shell>;
