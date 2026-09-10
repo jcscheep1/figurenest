@@ -464,12 +464,14 @@ export function PdfSignEditPage() {
   const uploadSignature = async (file: File | undefined) => {
     if (!file || !pageView) return;
     setError('');
+    let previewUrl: string | null = null;
+    let bytes: Uint8Array | null = null;
     try {
       if (file.size > MAX_SIGNATURE_IMAGE_BYTES) throw new FileToolError('oversized', 'Signature images are limited to 10 MB.');
       const validation = await validateLocalFile(file, SIGNATURE_IMAGE_RULES, deviceClass);
       const buffer = await readBlobArrayBuffer(file);
-      const bytes = new Uint8Array(buffer);
-      const previewUrl = urlRegistryRef.current.create(new Blob([buffer], { type: file.type || (validation.ruleId === 'png' ? 'image/png' : 'image/jpeg') }));
+      bytes = new Uint8Array(buffer);
+      previewUrl = urlRegistryRef.current.create(new Blob([buffer], { type: file.type || (validation.ruleId === 'png' ? 'image/png' : 'image/jpeg') }));
       const dimensions = await imageDimensions(previewUrl);
       validateSignatureImageDimensions(dimensions.width, dimensions.height);
       const asset: UiSignatureAsset = {
@@ -481,8 +483,13 @@ export function PdfSignEditPage() {
       assetsRef.current = [...assetsRef.current, asset];
       setAssets(assetsRef.current);
       addObject('signature-image', { assetId: asset.id });
+      previewUrl = null;
+      bytes = null;
       if (signatureInputRef.current) signatureInputRef.current.value = '';
     } catch (caught) {
+      if (previewUrl) urlRegistryRef.current.release(previewUrl);
+      bytes?.fill(0);
+      if (signatureInputRef.current) signatureInputRef.current.value = '';
       setError(errorMessage(caught));
     }
   };
