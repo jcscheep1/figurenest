@@ -1137,6 +1137,24 @@ export const phaseThreeBCatalog = [
     "href": "/calculators/math/permutation-combination"
   },
   {
+    "slug": "big-number",
+    "name": "Big Number Calculator",
+    "description": "Perform exact arbitrary-precision integer addition, subtraction, multiplication, and division with quotient and remainder.",
+    "category": "Math",
+    "categorySlug": "math",
+    "tags": ["big number calculator", "large integer calculator", "arbitrary precision", "BigInt", "integer arithmetic"],
+    "href": "/calculators/math/big-number"
+  },
+  {
+    "slug": "distance",
+    "name": "Distance Calculator",
+    "description": "Calculate straight-line Euclidean distance between two 2D coordinate points and review the horizontal and vertical differences.",
+    "category": "Math",
+    "categorySlug": "math",
+    "tags": ["distance calculator", "distance between two points", "coordinate distance", "Euclidean distance", "2D geometry"],
+    "href": "/calculators/math/distance"
+  },
+  {
     "slug": "probability",
     "name": "Probability Calculator",
     "description": "Calculate simple, complementary, or independent-event probability with explicit sample-space assumptions.",
@@ -1150,7 +1168,7 @@ export const phaseThreeBCatalog = [
       "statistics"
     ],
     "href": "/calculators/math/probability"
-  }
+  },
 ] as const satisfies readonly CatalogEntry[];
 
 export const phaseThreeCCatalog = [
