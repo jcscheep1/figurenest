@@ -16,3 +16,9 @@ jobs:
           python-version: '3.12'
       - run: pip install selenium
       - run: python scripts/one-time-live-audit-student-loan.py
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-loan-live-audit-report
+          path: student-loan-audit.txt
