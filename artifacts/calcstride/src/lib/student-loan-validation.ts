@@ -3,6 +3,11 @@ const WHOLE_MONTH_TOLERANCE = 1e-9;
 export const STUDENT_LOAN_MONTHS_PER_YEAR = 12;
 export const STUDENT_LOAN_MIN_YEARS = 1 / STUDENT_LOAN_MONTHS_PER_YEAR;
 export const STUDENT_LOAN_YEAR_STEP = String(STUDENT_LOAN_MIN_YEARS);
+export const STUDENT_LOAN_REQUIRED_ERROR = 'Complete every field; blank values cannot be calculated.';
+
+export function studentLoanHasBlankRequiredInput(values: readonly string[]): boolean {
+  return values.some((value) => !value.trim());
+}
 
 export function studentLoanTermMonths(rawYears: string): number | null {
   if (!rawYears.trim()) return null;
