@@ -1,4 +1,4 @@
-export type ShoeGroup = 'baby' | 'kids' | 'women' | 'men';
+export type ShoeGroup = 'baby' | 'toddler' | 'littleKid' | 'bigKid' | 'women' | 'men';
 export type ShoeRegion = 'US' | 'UK' | 'EU';
 export type ShoeRow = { us: number; uk: number; eu: number; cm: number };
 
@@ -6,14 +6,18 @@ export const shoeSizeTables: Record<ShoeGroup, readonly ShoeRow[]> = {
   baby: [
     { us: 1, uk: 0.5, eu: 16, cm: 9.5 }, { us: 2, uk: 1, eu: 17, cm: 10.2 },
     { us: 3, uk: 2, eu: 18, cm: 10.8 }, { us: 4, uk: 3, eu: 19, cm: 11.4 },
+  ],
+  toddler: [
     { us: 5, uk: 4, eu: 20, cm: 12.1 }, { us: 5.5, uk: 4.5, eu: 21, cm: 12.7 },
     { us: 6, uk: 5, eu: 22, cm: 13.3 }, { us: 7, uk: 6, eu: 23, cm: 14.0 },
   ],
-  kids: [
+  littleKid: [
     { us: 8, uk: 7, eu: 24, cm: 14.6 }, { us: 9, uk: 8, eu: 25, cm: 15.2 },
     { us: 9.5, uk: 8.5, eu: 26, cm: 15.9 }, { us: 10, uk: 9, eu: 27, cm: 16.5 },
     { us: 11, uk: 10, eu: 28, cm: 17.1 }, { us: 11.5, uk: 10.5, eu: 29, cm: 17.8 },
     { us: 12, uk: 11, eu: 30, cm: 18.4 }, { us: 13, uk: 12, eu: 31, cm: 19.1 },
+  ],
+  bigKid: [
     { us: 1, uk: 13, eu: 32, cm: 19.7 }, { us: 2, uk: 1, eu: 33, cm: 20.3 },
     { us: 3, uk: 2, eu: 34, cm: 21.0 }, { us: 3.5, uk: 2.5, eu: 35, cm: 21.6 },
     { us: 4, uk: 3, eu: 36, cm: 22.2 }, { us: 5, uk: 4, eu: 37, cm: 22.9 },
@@ -41,8 +45,10 @@ export const shoeSizeTables: Record<ShoeGroup, readonly ShoeRow[]> = {
 };
 
 export const shoeGroupLabels: Record<ShoeGroup, string> = {
-  baby: 'Baby / toddler',
-  kids: 'Children / youth',
+  baby: 'Baby',
+  toddler: 'Toddler',
+  littleKid: 'Little kid',
+  bigKid: 'Big kid / youth',
   women: 'Women',
   men: 'Men',
 };
