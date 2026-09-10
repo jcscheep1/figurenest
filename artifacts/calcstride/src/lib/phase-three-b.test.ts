@@ -24,8 +24,8 @@ test('Phase 3B catalog metadata stays synchronized from the canonical source', (
 });
 
 test('all Phase 3B routes have unique registry, substantive content, metadata, and schema', () => {
-  assert.equal(phaseThreeBSlugs.length, 16);
-  assert.equal(new Set(phaseThreeBSlugs.map((slug) => phaseThreeBDefinitions[slug].href)).size, 16);
+  assert.equal(phaseThreeBSlugs.length, 18);
+  assert.equal(new Set(phaseThreeBSlugs.map((slug) => phaseThreeBDefinitions[slug].href)).size, 18);
   for (const slug of phaseThreeBSlugs) {
     const definition = phaseThreeBDefinitions[slug];
     assert.ok(definition.seoDescription.length >= 100 && definition.seoDescription.length <= 160, slug);

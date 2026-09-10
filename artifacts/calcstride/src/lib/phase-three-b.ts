@@ -3,7 +3,7 @@ export type PhaseThreeBSlug =
   | 'exponent' | 'prime-factorization' | 'half-life' | 'hex'
   | 'least-common-multiple' | 'log' | 'long-division' | 'matrix'
   | 'mean-median-mode-range' | 'number-sequence' | 'permutation-combination'
-  | 'probability';
+  | 'probability' | 'big-number' | 'distance';
 
 export type PhaseThreeBField = {
   key: string;
@@ -176,6 +176,20 @@ const facts: Record<PhaseThreeBSlug, ContentFact> = {
     edge: 'n and r must be whole numbers with 0 ≤ r ≤ n; values are limited to keep exact integer results displayable.',
     limits: 'The formulas assume distinct selectable items and no replacement. Repeated objects, replacement, restrictions, and conditional arrangements require a different model.',
   },
+  'big-number': {
+    method: 'Arbitrary-precision integer arithmetic keeps every decimal digit exact instead of converting large operands to floating-point numbers.',
+    example: 'Adding 9,007,199,254,740,993 and 1 gives exactly 9,007,199,254,740,994, even though the first value is beyond JavaScript Number safe-integer precision.',
+    interpretation: 'Addition, subtraction, and multiplication return the exact integer result. Division returns an integer quotient that truncates toward zero together with the signed remainder.',
+    edge: 'Each operand must be a signed whole integer containing at most 1,000 digits. Blank values, decimals, exponent notation, malformed signs, and division by zero are rejected.',
+    limits: 'The calculator handles integer arithmetic only. It does not evaluate decimal fractions, rational expressions, roots, powers, symbolic algebra, or cryptographic big-number operations.',
+  },
+  distance: {
+    method: 'The Euclidean distance between two 2D points is the square root of the squared horizontal difference plus the squared vertical difference.',
+    example: 'From (0, 0) to (3, 4), the differences are 3 and 4, so the distance is √(3² + 4²) = 5 coordinate units.',
+    interpretation: 'The result is the straight-line distance in the same generic coordinate units used by both axes, with Δx and Δy shown as supporting details.',
+    edge: 'All four coordinates must be finite values within the supported ±10¹⁵ numeric range. Signed values, decimals, identical points, and zero differences are valid.',
+    limits: 'This is flat 2D Euclidean geometry. It does not calculate road distance, geographic great-circle distance, 3D distance, map projections, or mixed physical units.',
+  },
   probability: {
     method: 'Simple probability is favorable outcomes divided by total outcomes; complements are 1−P(A), and independent conjunctions multiply P(A) by P(B).',
     example: 'Drawing one red card from 4 red cards among 10 equally likely cards gives probability 0.4, or 40%.',
@@ -203,6 +217,8 @@ const specs: Record<PhaseThreeBSlug, Spec> = {
   'mean-median-mode-range': { slug: 'mean-median-mode-range', name: 'Mean, Median, Mode & Range Calculator', description: 'Calculate four descriptive statistics from a list of numbers and explain what each summary means.', category: 'Math', categorySlug: 'math', tags: ['mean median mode range calculator', 'statistics calculator', 'average median', 'mode range'], fields: [text('values','Numbers','2, 3, 3, 8, 10','textarea')], formula: 'mean = Σx ÷ n; range = max(x) − min(x)', variables: 'The dataset contains finite real numbers separated by commas, spaces, semicolons, or line breaks.', sourceLinks: [{ label: 'NIST Engineering Statistics Handbook', href: 'https://www.itl.nist.gov/div898/handbook/' }], relatedRoutes: ['/calculators/math/average','/calculators/math/confidence-interval','/calculators/math/probability'], ...facts['mean-median-mode-range'] },
   'number-sequence': { slug: 'number-sequence', name: 'Number Sequence Calculator', description: 'Generate arithmetic, geometric, or Fibonacci sequence terms from a transparent selected rule.', category: 'Math', categorySlug: 'math', tags: ['number sequence calculator', 'arithmetic sequence', 'geometric sequence', 'Fibonacci sequence'], fields: [select('mode','Sequence rule','arithmetic',[['arithmetic','Arithmetic'],['geometric','Geometric'],['fibonacci','Fibonacci']]),n('first','First term','4',-1e9,1e9),n('secondOrStep','Difference, ratio, or second term','3',-1e9,1e9),n('count','Terms to generate','6',1,100)], formula: 'arithmetic: aₙ = a₁ + (n−1)d; geometric: aₙ = a₁rⁿ⁻¹; Fibonacci: aₙ = aₙ₋₁ + aₙ₋₂', variables: 'The second input is a difference, ratio, or second starting term depending on the selected rule.', sourceLinks: [{ label: 'NIST Mathematics and Statistics', href: 'https://www.nist.gov/pml/mathematics-statistics' }], relatedRoutes: ['/calculators/math/exponent','/calculators/math/mean-median-mode-range','/calculators/math/half-life'], ...facts['number-sequence'] },
   'permutation-combination': { slug: 'permutation-combination', name: 'Permutation & Combination Calculator', description: 'Calculate nPr when order matters or nCr when it does not, using exact integer arithmetic.', category: 'Math', categorySlug: 'math', tags: ['permutation calculator', 'combination calculator', 'nPr', 'nCr', 'combinatorics'], fields: [select('mode','Counting method','npr',[['npr','Permutation nPr'],['ncr','Combination nCr']]),n('n','Total items','5',0,1000),n('r','Selected items','2',0,1000)], formula: 'nPr = n!/(n−r)!; nCr = n!/(r!(n−r)!)', variables: 'n is the total number of distinct items and r is the number selected without replacement.', sourceLinks: [{ label: 'NIST Mathematics and Statistics', href: 'https://www.nist.gov/pml/mathematics-statistics' }], relatedRoutes: ['/calculators/math/probability','/calculators/math/prime-factorization','/calculators/math/mean-median-mode-range'], ...facts['permutation-combination'] },
+  'big-number': { slug: 'big-number', name: 'Big Number Calculator', description: 'Perform exact arbitrary-precision integer addition, subtraction, multiplication, and division with quotient and remainder.', category: 'Math', categorySlug: 'math', tags: ['big number calculator', 'large integer calculator', 'arbitrary precision', 'BigInt', 'integer arithmetic'], fields: [select('operation','Operation','add',[['add','Add (+)'],['subtract','Subtract (−)'],['multiply','Multiply (×)'],['divide','Integer divide (quotient + remainder)']]),text('a','Integer A','9007199254740993'),text('b','Integer B','1')], formula: 'addition: A + B; subtraction: A − B; multiplication: A × B; division: A = Bq + r', variables: 'A and B are signed whole integers containing at most 1,000 digits; q is the integer quotient truncated toward zero and r is the remainder.', sourceLinks: [{ label: 'NIST Mathematics and Statistics', href: 'https://www.nist.gov/pml/mathematics-statistics' }], relatedRoutes: ['/calculators/math/long-division','/calculators/math/prime-factorization','/calculators/math/exponent'], ...facts['big-number'] },
+  distance: { slug: 'distance', name: 'Distance Calculator', description: 'Calculate straight-line Euclidean distance between two 2D coordinate points and review the horizontal and vertical differences.', category: 'Math', categorySlug: 'math', tags: ['distance calculator', 'distance between two points', 'coordinate distance', 'Euclidean distance', '2D geometry'], fields: [n('x1','Point 1 x','0',-1e15,1e15),n('y1','Point 1 y','0',-1e15,1e15),n('x2','Point 2 x','3',-1e15,1e15),n('y2','Point 2 y','4',-1e15,1e15)], formula: 'd = √((x₂ − x₁)² + (y₂ − y₁)²)', variables: 'x₁ and y₁ locate the first point; x₂ and y₂ locate the second point. The result uses generic coordinate units shared by both axes.', sourceLinks: [{ label: 'NIST Mathematics and Statistics', href: 'https://www.nist.gov/pml/mathematics-statistics' }], relatedRoutes: ['/calculators/math/circle','/calculators/math/area','/calculators/math/exponent'], ...facts.distance },
   probability: { slug: 'probability', name: 'Probability Calculator', description: 'Calculate simple, complementary, or independent-event probability with explicit sample-space assumptions.', category: 'Math', categorySlug: 'math', tags: ['probability calculator', 'chance calculator', 'complement probability', 'independent events', 'statistics'], fields: [select('mode','Probability model','simple',[['simple','Favorable ÷ total'],['complement','Complement of A'],['independent','Independent A and B']]),n('first','Favorable count or P(A)','4',0,1e12),n('second','Total count or P(B)','10',0,1e12)], formula: 'P(A) = favorable ÷ total; P(not A) = 1−P(A); P(A∩B) = P(A)P(B)', variables: 'Simple mode uses counts; complement and independent modes use probabilities from 0 through 1.', sourceLinks: [{ label: 'NIST Engineering Statistics Handbook', href: 'https://www.itl.nist.gov/div898/handbook/' }], relatedRoutes: ['/calculators/math/confidence-interval','/calculators/math/mean-median-mode-range','/calculators/math/permutation-combination'], ...facts.probability },
 };
 
@@ -294,6 +310,14 @@ const finite = (value: string) => {
 const format = (value: number, digits = 6) => value.toLocaleString('en-US', { maximumFractionDigits: digits });
 const result = (primary: string, summary: string, details: PhaseThreeBResult['details'] = []): PhaseThreeBResult => ({ primary, summary, details });
 const integer = (value: string) => /^[-+]?\d+$/.test(value.trim()) ? BigInt(value.trim()) : null;
+const BIG_NUMBER_DIGIT_LIMIT = 1000;
+const bigIntegerOperand = (value: string): bigint | null => {
+  const trimmed = value.trim();
+  if (!/^[-+]?\d+$/.test(trimmed)) return null;
+  const digits = trimmed.replace(/^[-+]/, '');
+  if (digits.length > BIG_NUMBER_DIGIT_LIMIT) return null;
+  return BigInt(trimmed.startsWith('+') ? trimmed.slice(1) : trimmed);
+};
 const positiveIntegerList = (value: string) => {
   const items = value.split(/[\s,;]+/).filter(Boolean).map((item) => integer(item));
   return items.length >= 2 && items.length <= 100 && items.every((item) => item !== null && item > 0n && item <= 1000000000000n) ? items as bigint[] : null;
@@ -425,6 +449,31 @@ export function calculatePhaseThreeB(slug: PhaseThreeBSlug, values: readonly str
   if (requiredValues.some((value) => !value.trim())) return bad('Complete every field before calculating.');
   const at = (index: number) => finite(values[index]);
   try {
+    if (slug === 'big-number') {
+      const a = bigIntegerOperand(values[1]);
+      const b = bigIntegerOperand(values[2]);
+      if (a === null || b === null) return bad(`Enter signed whole integers containing no more than ${BIG_NUMBER_DIGIT_LIMIT.toLocaleString('en-US')} digits each.`);
+      if (values[0] === 'add') return result((a + b).toString(), 'Exact arbitrary-precision integer sum.', [{ label: 'Operation', value: 'Addition' }]);
+      if (values[0] === 'subtract') return result((a - b).toString(), 'Exact arbitrary-precision integer difference.', [{ label: 'Operation', value: 'Subtraction' }]);
+      if (values[0] === 'multiply') return result((a * b).toString(), 'Exact arbitrary-precision integer product.', [{ label: 'Operation', value: 'Multiplication' }]);
+      if (values[0] === 'divide') {
+        if (b === 0n) return bad('The divisor must be a nonzero integer.');
+        const quotient = a / b;
+        const remainder = a % b;
+        return result(quotient.toString(), 'Exact integer quotient with division truncated toward zero.', [{ label: 'Remainder', value: remainder.toString() }, { label: 'Identity check', value: 'A = B × quotient + remainder' }]);
+      }
+      return bad('Choose a valid arithmetic operation.');
+    }
+    if (slug === 'distance') {
+      const x1 = at(0), y1 = at(1), x2 = at(2), y2 = at(3);
+      if (x1 === null || y1 === null || x2 === null || y2 === null) return bad('Enter four finite coordinates between -1,000,000,000,000,000 and 1,000,000,000,000,000.');
+      const deltaX = x2 - x1;
+      const deltaY = y2 - y1;
+      const distance = Math.hypot(deltaX, deltaY);
+      if (!Number.isFinite(distance)) return bad('The coordinate distance is outside the supported numeric range.');
+      const clean = (value: number) => Object.is(value, -0) ? 0 : value;
+      return result(format(clean(distance)), 'Straight-line Euclidean distance in coordinate units.', [{ label: 'Δx', value: format(clean(deltaX)) }, { label: 'Δy', value: format(clean(deltaY)) }]);
+    }
     if (slug === 'binary' || slug === 'hex') {
       const radix = slug === 'binary' ? 2 : 16;
       const width = at(3);

@@ -202,6 +202,8 @@ export const categoryContent: Record<
       { slug: 'percentage-increase-decrease', description: 'Calculate percentage increases, decreases, differences, and reverse changes from a pair of values or a selected rate.' },
       { slug: 'area', description: 'Find rectangular area by multiplying length by width, with a result expressed in square units.' },
       { slug: 'volume', description: 'Find rectangular volume by multiplying length, width, and height, with a result expressed in cubic units.' },
+      { slug: 'big-number', description: 'Perform exact signed-integer arithmetic on values far beyond ordinary floating-point safe-integer precision.' },
+      { slug: 'distance', description: 'Find straight-line Euclidean distance between two points from their x and y coordinates.' },
     ],
     choosingTools: [
       'Use Percentage Change Calculator when two values are being compared over time or before and after an adjustment. Use its percentage-difference option when neither value should be treated as the starting baseline.',
