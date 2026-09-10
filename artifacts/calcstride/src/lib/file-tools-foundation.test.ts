@@ -3,9 +3,11 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   FILE_INPUT_LIMITS,
+  FILE_RESOURCE_LIMITS,
   FileToolError,
   LocalWorkerSession,
   ObjectUrlRegistry,
+  assertFileResourceLimit,
   clearArrayBuffer,
   loadValidatedLocalFile,
   transitionFileJob,
@@ -65,12 +67,32 @@ test('FT-01 file-job state machine permits only deterministic lifecycle transiti
   );
 });
 
+test('FT-01 central resource caps enforce published starting safety limits', () => {
+  assert.equal(FILE_RESOURCE_LIMITS.pdfPages, 100);
+  assert.equal(FILE_RESOURCE_LIMITS.spreadsheetSheets, 20);
+  assert.equal(FILE_RESOURCE_LIMITS.presentationSlides, 50);
+  assert.equal(FILE_RESOURCE_LIMITS.imagePixels, 40_000_000);
+  assert.doesNotThrow(() => assertFileResourceLimit('pdfPages', 100));
+  assert.throws(
+    () => assertFileResourceLimit('pdfPages', 101),
+    (error: unknown) => error instanceof FileToolError && error.code === 'resource-limit',
+  );
+  assert.throws(
+    () => assertFileResourceLimit('imagePixels', 1.5),
+    (error: unknown) => error instanceof FileToolError && error.code === 'malformed',
+  );
+});
+
 test('FT-01 validates extension, MIME, magic bytes, empty files and device limits locally', async () => {
   const validPdf = makeFile('private-sentinel.pdf', 'application/pdf', [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]);
   assert.deepEqual(await validateLocalFile(validPdf, [pdfRule, pngRule], 'mobile'), { ruleId: 'pdf', size: 8 });
+  assert.equal((await validateLocalFile(makeFile('generic.pdf', 'application/octet-stream', [0x25, 0x50, 0x44, 0x46, 0x2d]), [pdfRule], 'desktop')).ruleId, 'pdf');
+  assert.equal((await validateLocalFile(makeFile('extensionless', 'application/pdf', [0x25, 0x50, 0x44, 0x46, 0x2d]), [pdfRule], 'desktop')).ruleId, 'pdf');
 
   await expectCode(validateLocalFile(makeFile('empty.pdf', 'application/pdf', []), [pdfRule], 'desktop'), 'empty-file');
   await expectCode(validateLocalFile(makeFile('wrong.png', 'application/pdf', [0x25, 0x50, 0x44, 0x46, 0x2d]), [pdfRule, pngRule], 'desktop'), 'type-mismatch');
+  await expectCode(validateLocalFile(makeFile('wrong.txt', 'application/pdf', [0x25, 0x50, 0x44, 0x46, 0x2d]), [pdfRule, pngRule], 'desktop'), 'type-mismatch');
+  await expectCode(validateLocalFile(makeFile('wrong.pdf', 'text/plain', [0x25, 0x50, 0x44, 0x46, 0x2d]), [pdfRule, pngRule], 'desktop'), 'type-mismatch');
   await expectCode(validateLocalFile(makeFile('fake.pdf', 'application/pdf', [1, 2, 3, 4, 5]), [pdfRule], 'desktop'), 'type-mismatch');
   await expectCode(validateLocalFile(makeFile('notes.txt', 'text/plain', [65]), [pdfRule, pngRule], 'desktop'), 'unsupported-type');
 
@@ -116,7 +138,7 @@ test('FT-01 object URL registry revokes every tracked URL exactly once', () => {
   assert.equal(registry.size, 0);
 });
 
-test('FT-01 worker session transfers in-memory bytes and terminates idempotently', () => {
+test('FT-01 worker session transfers bytes, obeys AbortSignal, times out and terminates idempotently', async () => {
   const messages: unknown[] = [];
   const transfers: Transferable[][] = [];
   let terminations = 0;
@@ -127,16 +149,36 @@ test('FT-01 worker session transfers in-memory bytes and terminates idempotently
     },
     terminate: () => { terminations += 1; },
   };
-  const session = new LocalWorkerSession(worker);
+  const controller = new AbortController();
+  const session = new LocalWorkerSession(worker, { signal: controller.signal });
   const buffer = new ArrayBuffer(4);
   session.start('job-1', buffer);
   assert.equal(transfers[0]?.[0], buffer);
-  session.cancel('job-1');
+  controller.abort();
   session.dispose();
   assert.deepEqual(messages.map((message) => (message as { type: string }).type), ['start', 'cancel']);
   assert.equal(terminations, 1);
   assert.equal(session.isClosed, true);
   assert.throws(() => session.start('job-2', new ArrayBuffer(1)), FileToolError);
+
+  const timeoutMessages: unknown[] = [];
+  const failures: FileToolError[] = [];
+  let timeoutTerminations = 0;
+  const timeoutWorker: LocalWorkerLike = {
+    postMessage: (message) => timeoutMessages.push(message),
+    terminate: () => { timeoutTerminations += 1; },
+  };
+  const timeoutSession = new LocalWorkerSession(timeoutWorker, {
+    timeoutMs: 5,
+    onFailure: (error) => failures.push(error),
+  });
+  timeoutSession.start('job-timeout', new ArrayBuffer(1));
+  await new Promise((resolve) => setTimeout(resolve, 15));
+  assert.deepEqual(timeoutMessages.map((message) => (message as { type: string }).type), ['start', 'cancel']);
+  assert.equal(failures[0]?.code, 'worker-failed');
+  assert.match(failures[0]?.message ?? '', /timed out/i);
+  assert.equal(timeoutTerminations, 1);
+  assert.equal(timeoutSession.isClosed, true);
 });
 
 test('FT-01 production foundation has no network, persistence or logging surface', () => {
@@ -165,6 +207,8 @@ test('FT-01 shared picker keeps native file input, keyboard buttons, live status
   assert.match(source, /onDrop=/);
   assert.match(source, /aria-live="polite"/);
   assert.match(source, /role="alert"/);
+  assert.match(source, /chooseButtonRef\.current\?\.focus\(\)/);
+  assert.match(source, /inputRef\.current\.value = ''/);
   assert.match(source, />Cancel</);
   assert.match(source, />\s*Reset\s*</);
 });
