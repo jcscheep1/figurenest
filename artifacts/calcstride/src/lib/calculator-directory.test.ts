@@ -24,9 +24,9 @@ test('directory has exact published-tool coverage and unique links', () => {
   assert.equal(sortByName(localTools).length, localTools.length);
 });
 
-test('directory destinations use valid calculator or converter route shapes', () => {
+test('directory destinations use valid calculator, converter, or file-tool route shapes', () => {
   for (const tool of localTools) {
-    assert.match(tool.href, /^\/(?:calculators\/[^/]+\/[^/]+|converters\/[^/]+)$/);
+    assert.match(tool.href, /^\/(?:calculators\/[^/]+\/[^/]+|converters\/[^/]+|file-tools\/[^/]+)$/);
   }
 });
 
