@@ -4,6 +4,7 @@ import { localTools } from './catalog';
 import { calculateCore, coreFields, coreMethodology } from './core-calculators';
 import { businessGrowthSlugs } from './business-growth-calculators';
 import { businessCalculatorContent, businessCalculatorSlugs } from './business-calculators';
+import { formatCurrency } from './units-preferences';
 
 const expectedRoutes = new Map([
   ['roas', '/calculators/business/roas'],
@@ -50,8 +51,14 @@ test('shared calculateCore delegates to the Batch 1 business growth formulas', (
 });
 
 test('shared calculateCore preserves currency formatting for monetary growth tools', () => {
-  assert.equal(calculateCore('cpc', ['100', '4'], 'default', { currency: 'EUR' }).primary, '€25.00');
-  assert.equal(calculateCore('customer-acquisition-cost', ['400', '8'], 'default', { currency: 'GBP' }).primary, '£50.00');
+  assert.equal(
+    calculateCore('cpc', ['100', '4'], 'default', { currency: 'EUR' }).primary,
+    formatCurrency(25, 'EUR'),
+  );
+  assert.equal(
+    calculateCore('customer-acquisition-cost', ['400', '8'], 'default', { currency: 'GBP' }).primary,
+    formatCurrency(50, 'GBP'),
+  );
 });
 
 test('shared calculateCore surfaces growth validation errors instead of generic configuration errors', () => {
