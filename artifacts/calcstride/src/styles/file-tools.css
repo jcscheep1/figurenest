@@ -1,0 +1,209 @@
+.file-tool-page {
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 80px;
+}
+
+.file-tool-hero {
+  max-width: 850px;
+  padding: 42px 0 30px;
+}
+
+.file-tool-hero h1 {
+  margin: 10px 0 14px;
+  font-size: clamp(2.4rem, 6vw, 5.5rem);
+  line-height: .94;
+  letter-spacing: -.055em;
+}
+
+.file-tool-hero h1 span { color: var(--accent, #ed7a45); }
+.file-tool-hero > p { max-width: 720px; font-size: 1.08rem; line-height: 1.7; color: var(--muted-foreground); }
+
+.file-privacy-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 24px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--background) 92%, #d8f5e8 8%);
+}
+
+.file-privacy-card svg { flex: 0 0 auto; margin-top: 2px; }
+.file-privacy-card strong, .file-privacy-card span { display: block; }
+.file-privacy-card span { margin-top: 3px; color: var(--muted-foreground); line-height: 1.55; font-size: .92rem; }
+
+.file-upload-panel {
+  max-width: 800px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+}
+
+.file-upload-panel section > div[aria-describedby] {
+  min-height: 210px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 28px;
+  border: 2px dashed color-mix(in srgb, var(--foreground) 22%, transparent);
+  border-radius: 16px;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+.file-upload-panel section > div[data-drag-active="true"] {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+.file-upload-panel button,
+.pdf-editor-shell button,
+.pdf-editor-shell select,
+.pdf-editor-shell input {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.file-upload-panel button, .pdf-editor-shell button { padding: 8px 13px; font-weight: 700; cursor: pointer; }
+.file-upload-panel button:disabled, .pdf-editor-shell button:disabled { opacity: .45; cursor: not-allowed; }
+.file-limit-note { color: var(--muted-foreground); font-size: .88rem; line-height: 1.55; }
+
+.pdf-editor-shell {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--card);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 7%);
+}
+
+.pdf-editor-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  flex-wrap: wrap;
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 60%, var(--background));
+}
+
+.pdf-editor-toolbar label,
+.pdf-signature-panel label,
+.selected-edit-panel label,
+.pdf-page-controls label {
+  display: grid;
+  gap: 5px;
+  font-size: .76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.pdf-editor-toolbar input { width: 145px; padding: 7px 9px; }
+.pdf-workspace-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 720px; }
+
+.pdf-signature-panel {
+  padding: 18px;
+  border-right: 1px solid var(--border);
+  background: var(--background);
+}
+
+.pdf-signature-panel h2, .selected-edit-panel h2 { margin: 0 0 7px; font-size: 1rem; }
+.pdf-signature-panel > p { margin: 0 0 12px; color: var(--muted-foreground); font-size: .86rem; }
+
+.signature-pad {
+  width: 100%;
+  height: 160px;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.signature-actions, .size-actions { display: flex; gap: 8px; margin-top: 9px; }
+.signature-actions button { flex: 1; }
+.signature-upload { display: grid; gap: 7px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.signature-upload input { width: 100%; padding: 6px; font-size: .8rem; }
+.signature-upload small { color: var(--muted-foreground); }
+
+.selected-edit-panel { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
+.selected-edit-panel input { width: 100%; padding: 7px 9px; }
+.nudge-grid { display: grid; grid-template-columns: repeat(3, 44px); gap: 6px; justify-content: center; margin: 14px 0; }
+.nudge-grid button:first-child { grid-column: 2; }
+.nudge-grid button:nth-child(2) { grid-column: 1; grid-row: 2; }
+.nudge-grid button:nth-child(3) { grid-column: 3; grid-row: 2; }
+.nudge-grid button:nth-child(4) { grid-column: 2; grid-row: 3; }
+.size-actions button { flex: 1; }
+.danger-action { width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 10px; }
+
+.pdf-stage-column { min-width: 0; background: color-mix(in srgb, var(--muted) 74%, #c8d0d7); }
+.pdf-page-controls { min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--background); position: sticky; top: 0; z-index: 5; }
+.pdf-page-controls select { min-height: 38px; padding: 5px 8px; }
+.file-tool-error { margin: 12px; padding: 10px 12px; border: 1px solid #b42318; border-radius: 10px; background: #fff0ed; color: #7a271a; }
+.pdf-stage-scroll { overflow: auto; padding: 32px; min-height: 650px; max-height: 82vh; }
+.pdf-page-stage { position: relative; margin: 0 auto; background: white; box-shadow: 0 4px 24px rgb(0 0 0 / 18%); }
+.pdf-page-canvas { display: block; background: white; }
+.pdf-object-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+.pdf-edit-object {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0 !important;
+  padding: 0 4px !important;
+  border: 1px dashed #2c6db2 !important;
+  border-radius: 3px !important;
+  background: rgb(224 239 255 / 38%) !important;
+  color: #101828 !important;
+  overflow: hidden;
+  touch-action: none;
+  pointer-events: auto;
+  user-select: none;
+  cursor: move !important;
+}
+
+.pdf-edit-object.is-selected { outline: 2px solid #175cd3; outline-offset: 2px; }
+.pdf-edit-object span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdf-edit-object svg, .pdf-edit-object img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.pdf-edit-object polyline { fill: none; stroke: #101828; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.pdf-check-mark { font-size: 1.45rem; color: #067647; }
+
+.pdf-export-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 16px; border-top: 1px solid var(--border); background: var(--background); }
+.pdf-export-bar > div { display: flex; gap: 10px; align-items: center; margin-right: auto; min-width: 0; }
+.pdf-export-bar > div span { min-width: 0; }
+.pdf-export-bar strong, .pdf-export-bar small { display: block; }
+.pdf-export-bar strong { max-width: 330px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pdf-export-bar small { color: var(--muted-foreground); }
+.pdf-export-bar .primary-export { display: inline-flex; align-items: center; gap: 7px; border-color: transparent; background: var(--foreground); color: var(--background); }
+
+.file-tool-content { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 50px; padding: 64px 0 0; }
+.file-tool-content article { max-width: 760px; }
+.file-tool-content h2 { margin: 9px 0 13px; font-size: clamp(1.45rem, 3vw, 2.2rem); letter-spacing: -.025em; }
+.file-tool-content p { line-height: 1.75; color: var(--muted-foreground); }
+.file-tool-content .advanced-faq details { border-top: 1px solid var(--border); padding: 12px 0; }
+.file-tool-content .advanced-faq summary { font-weight: 750; cursor: pointer; }
+
+@media (max-width: 900px) {
+  .file-tool-page { width: min(100% - 20px, 1440px); padding-top: 16px; }
+  .pdf-workspace-grid { grid-template-columns: 1fr; }
+  .pdf-signature-panel { border-right: 0; border-bottom: 1px solid var(--border); }
+  .pdf-stage-scroll { padding: 18px 10px; max-height: 70vh; }
+  .file-tool-content { grid-template-columns: 1fr; gap: 30px; }
+  .pdf-export-bar > div { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .file-tool-hero { padding-top: 28px; }
+  .file-upload-panel { padding: 12px; }
+  .pdf-editor-toolbar { align-items: stretch; }
+  .pdf-editor-toolbar label, .pdf-editor-toolbar input, .pdf-editor-toolbar button { width: 100%; }
+  .pdf-page-controls button { flex: 1; }
+  .pdf-export-bar button { width: 100%; justify-content: center; }
+}
