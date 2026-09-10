@@ -71,6 +71,11 @@ export const calculatorSeoCapabilities: Record<string, CalculatorSeoCapability> 
     seoDescription: 'Estimate voltage drop in volts from amperes, one-way conductor length in feet, resistance per 1,000 feet, and single- or three-phase configuration.',
     visibleNote: 'Enter current in amperes, one-way length in feet, and conductor resistance in ohms per 1,000 feet; verify wire data and code requirements before design use.',
   },
+  'cable-fuse-size': {
+    seoTitle: 'Cable & Fuse Size Calculator — mm², Amps & Voltage Drop',
+    seoDescription: 'Estimate cable cross-section, fuse current, and voltage drop from amps, volts, run length, and metric or imperial length inputs.',
+    visibleNote: 'Enter current in A, supply voltage in V, and cable run length in metres or feet. Results show cable size in mm², fuse current in A, and estimated voltage drop.',
+  },
   'percent-off': {
     seoTitle: 'Percent Off Calculator | FigureNest',
     seoDescription: 'Calculate sale price and savings with EUR, USD, GBP, or ZAR formatting from an original price and discount percent; currency is not live FX conversion.',
