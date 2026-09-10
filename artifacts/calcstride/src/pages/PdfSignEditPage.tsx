@@ -54,6 +54,11 @@ type PdfJsDocument = {
   destroy(): Promise<void>;
 };
 
+type PdfJsLoadingTask = {
+  promise: Promise<PdfJsDocument>;
+  destroy(): Promise<void>;
+};
+
 type PageView = {
   pdfBounds: PdfPageBounds;
   viewportWidth: number;
@@ -123,6 +128,7 @@ export function PdfSignEditPage() {
   const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
   const pdfDocumentRef = useRef<PdfJsDocument | null>(null);
+  const pdfLoadingTaskRef = useRef<PdfJsLoadingTask | null>(null);
   const originalBufferRef = useRef<ArrayBuffer | null>(null);
   const urlRegistryRef = useRef(new ObjectUrlRegistry());
   const historyRef = useRef(new PdfEditHistory());
@@ -148,18 +154,31 @@ export function PdfSignEditPage() {
     if (message) setAnnouncement(message);
   };
 
+  const destroyLoadingTask = async () => {
+    const loadingTask = pdfLoadingTaskRef.current;
+    pdfLoadingTaskRef.current = null;
+    if (loadingTask) await loadingTask.destroy().catch(() => undefined);
+  };
+
   const destroyDocument = async () => {
     const document = pdfDocumentRef.current;
     pdfDocumentRef.current = null;
     if (document) await document.destroy().catch(() => undefined);
   };
 
+  const clearOriginalBuffer = (expected?: ArrayBuffer) => {
+    const buffer = originalBufferRef.current;
+    if (!buffer || (expected && buffer !== expected)) return;
+    originalBufferRef.current = null;
+    clearArrayBuffer(buffer);
+  };
+
   const resetDocument = () => {
     loadAbortRef.current?.abort();
     loadAbortRef.current = null;
+    void destroyLoadingTask();
     void destroyDocument();
-    clearArrayBuffer(originalBufferRef.current);
-    originalBufferRef.current = null;
+    clearOriginalBuffer();
     for (const asset of assetsRef.current) asset.bytes.fill(0);
     assetsRef.current = [];
     urlRegistryRef.current.clear();
@@ -179,9 +198,10 @@ export function PdfSignEditPage() {
 
   useEffect(() => () => {
     loadAbortRef.current?.abort();
+    loadAbortRef.current = null;
+    void destroyLoadingTask();
     void destroyDocument();
-    clearArrayBuffer(originalBufferRef.current);
-    originalBufferRef.current = null;
+    clearOriginalBuffer();
     for (const asset of assetsRef.current) asset.bytes.fill(0);
     assetsRef.current = [];
     urlRegistryRef.current.clear();
@@ -261,25 +281,37 @@ export function PdfSignEditPage() {
     loadAbortRef.current = controller;
     setFileName(file.name);
     setStatus('validating');
+    let buffer: ArrayBuffer | null = null;
     try {
-      const { buffer } = await loadValidatedLocalFile(file, [PDF_FILE_RULE], deviceClass, controller.signal);
-      if (controller.signal.aborted) return;
+      const loaded = await loadValidatedLocalFile(file, [PDF_FILE_RULE], deviceClass, controller.signal);
+      buffer = loaded.buffer;
+      if (controller.signal.aborted) {
+        clearArrayBuffer(buffer);
+        return;
+      }
       originalBufferRef.current = buffer;
       setStatus('processing');
       const [{ getDocument, GlobalWorkerOptions }, workerModule] = await Promise.all([
         import('pdfjs-dist'),
         import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
       ]);
+      if (controller.signal.aborted) {
+        clearOriginalBuffer(buffer);
+        return;
+      }
       GlobalWorkerOptions.workerSrc = workerModule.default;
       const loadingTask = getDocument({
         data: new Uint8Array(copiedBuffer(buffer)),
         useWorkerFetch: false,
         disableAutoFetch: true,
         disableStream: true,
-      });
-      const document = await loadingTask.promise as unknown as PdfJsDocument;
+      }) as unknown as PdfJsLoadingTask;
+      pdfLoadingTaskRef.current = loadingTask;
+      const document = await loadingTask.promise;
+      if (pdfLoadingTaskRef.current === loadingTask) pdfLoadingTaskRef.current = null;
       if (controller.signal.aborted) {
-        await document.destroy();
+        await document.destroy().catch(() => undefined);
+        clearOriginalBuffer(buffer);
         return;
       }
       validatePdfPageCount(document.numPages);
@@ -289,18 +321,25 @@ export function PdfSignEditPage() {
       setStatus('ready');
       setAnnouncement(`PDF ready. ${document.numPages} ${document.numPages === 1 ? 'page' : 'pages'}.`);
     } catch (caught) {
-      clearArrayBuffer(originalBufferRef.current);
-      originalBufferRef.current = null;
-      setStatus(controller.signal.aborted ? 'cancelled' : 'failed');
-      setError(controller.signal.aborted ? 'PDF loading cancelled.' : errorMessage(caught));
+      if (buffer) clearOriginalBuffer(buffer);
+      if (loadAbortRef.current === controller) {
+        setStatus(controller.signal.aborted ? 'cancelled' : 'failed');
+        setError(controller.signal.aborted ? 'PDF loading cancelled.' : errorMessage(caught));
+      }
     } finally {
       if (loadAbortRef.current === controller) loadAbortRef.current = null;
     }
   };
 
   const cancelLoad = () => {
-    loadAbortRef.current?.abort();
+    const controller = loadAbortRef.current;
+    loadAbortRef.current = null;
+    controller?.abort();
+    void destroyLoadingTask();
+    void destroyDocument();
+    clearOriginalBuffer();
     setStatus('cancelled');
+    setError('PDF loading cancelled.');
     setAnnouncement('PDF loading cancelled.');
   };
 
