@@ -139,3 +139,14 @@ test('FT-02 core contains no upload, persistence, analytics or runtime CDN calls
   }
   assert.match(source, /await import\('pdf-lib'\)/);
 });
+
+
+test('FT-02 cancellation destroys the active PDF.js task and releases retained bytes', () => {
+  const source = readFileSync(new URL('../pages/PdfSignEditPage.tsx', import.meta.url), 'utf8');
+  assert.match(source, /pdfLoadingTaskRef = useRef<PdfJsLoadingTask \| null>\(null\)/);
+  assert.match(source, /await loadingTask\.destroy\(\)\.catch/);
+  assert.match(source, /controller\?\.abort\(\);[\s\S]*void destroyLoadingTask\(\);[\s\S]*clearOriginalBuffer\(\);/);
+  assert.match(source, /if \(controller\.signal\.aborted\) \{\s*clearArrayBuffer\(buffer\);\s*return;/);
+  assert.match(source, /if \(pdfLoadingTaskRef\.current === loadingTask\) pdfLoadingTaskRef\.current = null;/);
+  assert.match(source, /if \(loadAbortRef\.current === controller\) \{\s*setStatus/);
+});
