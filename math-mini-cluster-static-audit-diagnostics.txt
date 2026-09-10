@@ -1,0 +1,53 @@
+
+> @workspace/calcstride@0.0.0 audit:static /home/runner/work/figurenest/figurenest/artifacts/calcstride
+> tsx scripts/audit-built-site.ts
+
+/calculators/electrical/cable-fuse-size/: title exceeds 60 characters
+/calculators/electrical/cable-fuse-size/: 3 visible FAQs do not match 0 FAQ schema questions
+/calculators/date-time/time-duration/: main content has 318 words; 500 required
+/calculators/date-time/time-duration/: 5 visible FAQs do not match 2 FAQ schema questions
+/calculators/date-time/hours/: main content has 315 words; 500 required
+/calculators/date-time/hours/: 5 visible FAQs do not match 2 FAQ schema questions
+/calculators/date-time/time-card/: 8 visible FAQs do not match 2 FAQ schema questions
+/converters/shoe-size/: main content has 395 words; 500 required
+/calculators/construction/paint/: 9 visible FAQs do not match 7 FAQ schema questions
+/calculators/construction/tile/: 8 visible FAQs do not match 7 FAQ schema questions
+/calculators/construction/flooring/: 8 visible FAQs do not match 7 FAQ schema questions
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: duration = end instant − start instant
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: shifts, travel, events, study sessions, and other intervals
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: Convert each clock time to minutes after midnight on its selected date
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: For 09:35 to 14:20, the start is 575 minutes after midnight and the end is 860 minutes after midnight
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: The difference is 285 minutes, or 4 hours 45 minutes
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: that is 4.75 decimal hours, not 4.45
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: For an overnight interval such as 22:30 to 01:15, select the following date for the end time
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: Equal entries produce zero
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: breaks or pauses are not deducted automatically
+/calculators/date-time/time-duration/: production HTML is missing required calculator-specific content: timesheet rounding policies, time-zone changes, daylight-saving transitions, or employer-specific payroll rules
+/calculators/date-time/time-duration/: related link /calculators/date-time/date-difference must use the readable published tool name
+/calculators/date-time/time-duration/: related published tool is not rendered: /calculators/date-time/hours
+/calculators/date-time/hours/: related published tool is not rendered: /calculators/salary-work/salary
+/calculators/date-time/time-card/: missing related tools section
+/converters/shoe-size/: missing related tools section
+/calculators/finance/social-security/: missing related tools section
+/calculators/business/roas/: repeats the same educational paragraph 2 times
+/calculators/business/roas/: repeats the same educational paragraph 2 times
+/calculators/business/conversion-rate/: repeats the same educational paragraph 2 times
+/calculators/business/conversion-rate/: repeats the same educational paragraph 2 times
+/calculators/business/cpc/: repeats the same educational paragraph 2 times
+/calculators/business/cpc/: repeats the same educational paragraph 2 times
+/calculators/business/cpm/: repeats the same educational paragraph 2 times
+/calculators/business/cpm/: repeats the same educational paragraph 2 times
+/calculators/business/customer-acquisition-cost/: repeats the same educational paragraph 2 times
+/calculators/business/customer-acquisition-cost/: repeats the same educational paragraph 2 times
+duplicate calculator prose across /calculators/date-time/time-duration/, /calculators/date-time/hours/: "The calculator keeps the input assumptions visible so you can verify the result. Advanced mode adds planning details wit"
+duplicate calculator prose across /calculators/date-time/time-duration/, /calculators/date-time/hours/: "Check that dates, clock times, breaks, non-working weekday rules and any pay assumptions match the situation you are mea"
+duplicate calculator prose across /calculators/date-time/time-duration/, /calculators/date-time/hours/: "Avoid mixing decimal hours with hours-and-minutes notation, forgetting unpaid breaks, using the wrong end date for an ov"
+/calculators/finance/loan: prerendered HTML is missing its route stylesheet
+/calculators/math/average: prerendered HTML is missing its route stylesheet
+/calculators/technology/bandwidth: prerendered HTML is missing its route stylesheet
+/calculators/math/binary: prerendered HTML is missing its route stylesheet
+/calculators/health/bac: prerendered HTML is missing its route stylesheet
+/calculators/automotive/mileage: prerendered HTML is missing its route stylesheet
+/home/runner/work/figurenest/figurenest/artifacts/calcstride:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/calcstride@0.0.0 audit:static: `tsx scripts/audit-built-site.ts`
+Exit status 1
