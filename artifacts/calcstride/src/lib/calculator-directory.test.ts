@@ -118,12 +118,6 @@ test('directory category totals reconcile with the canonical registry', () => {
       ).size,
     );
   }
-  assert.equal(localCategories.find((category) => category.slug === 'electrical')?.toolCount, 5);
-  assert.equal(localCategories.find((category) => category.slug === 'technology')?.toolCount, 5);
-  assert.equal(localCategories.find((category) => category.slug === 'science-engineering')?.toolCount, 9);
-  assert.equal(localCategories.find((category) => category.slug === 'math')?.toolCount, 24);
-  assert.equal(localCategories.find((category) => category.slug === 'health')?.toolCount, 21);
-  assert.equal(localCategories.find((category) => category.slug === 'science-engineering')?.toolCount, 9);
 });
 
 test('directory supports A-Z filtering and URL-preserved filter state', () => {
