@@ -42,11 +42,23 @@ jobs:
         run: pnpm --filter @workspace/calcstride test
       - name: Production build
         run: pnpm --filter @workspace/calcstride build
-      - name: Static built-site audit
-        run: pnpm --filter @workspace/calcstride audit:static
+      - name: Static built-site audit with diagnostics
+        run: |
+          set +e
+          pnpm --filter @workspace/calcstride audit:static 2>&1 | tee /tmp/math-static-audit.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/math-static-audit.log math-mini-cluster-static-audit-diagnostics.txt
+            git config user.name 'FigureNest Build Bot'
+            git config user.email 'actions@users.noreply.github.com'
+            git add math-mini-cluster-static-audit-diagnostics.txt
+            git commit -m 'Record Math mini-cluster static audit failure'
+            git push origin HEAD:expansion/math-big-number-distance
+          fi
+          exit "$status"
       - name: Commit verified mini-cluster
         run: |
-          rm -f scripts/one-time-add-math-big-number-distance.py scripts/one-time-fix-math-metadata-order.py .github/workflows/one-time-build-math-big-number-distance.yml math-mini-cluster-build-diagnostics.txt math-mini-cluster-full-unit-diagnostics.txt
+          rm -f scripts/one-time-add-math-big-number-distance.py scripts/one-time-fix-math-metadata-order.py .github/workflows/one-time-build-math-big-number-distance.yml math-mini-cluster-build-diagnostics.txt math-mini-cluster-full-unit-diagnostics.txt math-mini-cluster-static-audit-diagnostics.txt
           git config user.name 'FigureNest Build Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add -A
