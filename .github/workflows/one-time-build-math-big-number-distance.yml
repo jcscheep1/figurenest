@@ -36,15 +36,27 @@ jobs:
         run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/math-mini-cluster.test.ts src/lib/phase-three-b.test.ts src/lib/site-audit.test.ts
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
-      - name: Full unit tests
-        run: pnpm --filter @workspace/calcstride test
+      - name: Full unit tests with diagnostics
+        run: |
+          set +e
+          pnpm --filter @workspace/calcstride test 2>&1 | tee /tmp/math-full-unit.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/math-full-unit.log math-mini-cluster-full-unit-diagnostics.txt
+            git config user.name 'FigureNest Build Bot'
+            git config user.email 'actions@users.noreply.github.com'
+            git add math-mini-cluster-full-unit-diagnostics.txt
+            git commit -m 'Record Math mini-cluster full unit failure'
+            git push origin HEAD:expansion/math-big-number-distance
+          fi
+          exit "$status"
       - name: Production build
         run: pnpm --filter @workspace/calcstride build
       - name: Static built-site audit
         run: pnpm --filter @workspace/calcstride audit:static
       - name: Commit verified mini-cluster
         run: |
-          rm -f scripts/one-time-add-math-big-number-distance.py .github/workflows/one-time-build-math-big-number-distance.yml math-mini-cluster-build-diagnostics.txt
+          rm -f scripts/one-time-add-math-big-number-distance.py .github/workflows/one-time-build-math-big-number-distance.yml math-mini-cluster-build-diagnostics.txt math-mini-cluster-full-unit-diagnostics.txt
           git config user.name 'FigureNest Build Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add -A
