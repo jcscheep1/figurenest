@@ -30,12 +30,12 @@ jobs:
         run: python scripts/one-time-add-math-big-number-distance.py
       - name: Build workspace type dependency
         run: pnpm exec tsc -b lib/api-client-react
-      - name: Focused Math mini-cluster tests
+      - name: Generate SEO files
+        run: pnpm --filter @workspace/calcstride generate:seo
+      - name: Focused Math mini-cluster and site-audit tests
         run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/math-mini-cluster.test.ts src/lib/phase-three-b.test.ts src/lib/site-audit.test.ts
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
-      - name: Generate SEO files
-        run: pnpm --filter @workspace/calcstride generate:seo
       - name: Full unit tests
         run: pnpm --filter @workspace/calcstride test
       - name: Production build
