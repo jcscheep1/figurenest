@@ -1,0 +1,90 @@
+name: One-time Student Loan split production audit
+
+on:
+  push:
+    branches:
+      - audit/student-loan-live-reverify2
+
+jobs:
+  live-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install selenium
+
+      - name: Reference result and breakdown
+        run: |
+          python - <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+          from selenium.webdriver.chrome.options import Options
+          import time
+          o=Options(); o.add_argument('--headless=new'); o.add_argument('--no-sandbox'); o.add_argument('--disable-dev-shm-usage'); o.add_argument('--window-size=390,844')
+          d=webdriver.Chrome(options=o); d.get('https://figurenest.com/calculators/finance/student-loan'); WebDriverWait(d,20).until(EC.presence_of_element_located((By.CSS_SELECTOR,'[data-testid="page-student-loan"]')))
+          def f(sel,v): e=d.find_element(By.CSS_SELECTOR,sel); e.clear(); e.send_keys(v); time.sleep(.15)
+          f('[data-testid="input-student-loan-principal"]','25000'); f('[data-testid="input-student-loan-rate"]','6.5'); f('[data-testid="input-student-loan-years"]','5')
+          assert '$489.15' in d.find_element(By.CSS_SELECTOR,'[data-testid="result-student-loan"]').text
+          body=d.find_element(By.TAG_NAME,'body').text
+          assert '$29,349.22' in body and '$4,349.22' in body
+          d.quit()
+          PY
+
+      - name: Blank versus explicit zero
+        run: |
+          python - <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+          from selenium.webdriver.chrome.options import Options
+          import time
+          o=Options(); o.add_argument('--headless=new'); o.add_argument('--no-sandbox'); o.add_argument('--disable-dev-shm-usage')
+          d=webdriver.Chrome(options=o); d.get('https://figurenest.com/calculators/finance/student-loan'); WebDriverWait(d,20).until(EC.presence_of_element_located((By.CSS_SELECTOR,'[data-testid="page-student-loan"]')))
+          a=d.find_element(By.CSS_SELECTOR,'[data-testid="input-student-loan-principal"]'); a.clear(); time.sleep(.2)
+          s=d.find_element(By.CSS_SELECTOR,'[data-testid="status-student-loan"]').text
+          assert 'Complete every field; blank values cannot be calculated.' in s and 'CHECK THE VALUES' in s
+          a.send_keys('0'); time.sleep(.2)
+          assert '$0.00' in d.find_element(By.CSS_SELECTOR,'[data-testid="result-student-loan"]').text
+          d.quit()
+          PY
+
+      - name: Zero rate invalid term and reset
+        run: |
+          python - <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+          from selenium.webdriver.chrome.options import Options
+          import time
+          o=Options(); o.add_argument('--headless=new'); o.add_argument('--no-sandbox'); o.add_argument('--disable-dev-shm-usage')
+          d=webdriver.Chrome(options=o); d.get('https://figurenest.com/calculators/finance/student-loan'); WebDriverWait(d,20).until(EC.presence_of_element_located((By.CSS_SELECTOR,'[data-testid="page-student-loan"]')))
+          rate=d.find_element(By.CSS_SELECTOR,'[data-testid="input-student-loan-rate"]'); years=d.find_element(By.CSS_SELECTOR,'[data-testid="input-student-loan-years"]')
+          rate.clear(); rate.send_keys('0'); time.sleep(.2)
+          assert '$416.67' in d.find_element(By.CSS_SELECTOR,'[data-testid="result-student-loan"]').text
+          rate.clear(); rate.send_keys('6.5'); years.clear(); years.send_keys('5.1'); time.sleep(.2)
+          assert 'whole number of monthly payments' in d.find_element(By.CSS_SELECTOR,'[data-testid="status-student-loan"]').text.lower()
+          d.find_element(By.CSS_SELECTOR,'[data-testid="button-reset-student-loan"]').click(); time.sleep(.2)
+          assert d.find_element(By.CSS_SELECTOR,'[data-testid="input-student-loan-principal"]').get_attribute('value')=='25000'
+          assert rate.get_attribute('value')=='6.5' and years.get_attribute('value')=='5'
+          d.quit()
+          PY
+
+      - name: Mobile card containment
+        run: |
+          python - <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+          from selenium.webdriver.chrome.options import Options
+          o=Options(); o.add_argument('--headless=new'); o.add_argument('--no-sandbox'); o.add_argument('--disable-dev-shm-usage'); o.add_argument('--window-size=390,844')
+          d=webdriver.Chrome(options=o); d.get('https://figurenest.com/calculators/finance/student-loan'); WebDriverWait(d,20).until(EC.presence_of_element_located((By.CSS_SELECTOR,'.advanced-calculator-card')))
+          card=d.find_element(By.CSS_SELECTOR,'.advanced-calculator-card')
+          assert not d.execute_script('return arguments[0].scrollWidth > arguments[0].clientWidth + 1', card)
+          d.quit()
+          PY
