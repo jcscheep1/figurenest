@@ -9,7 +9,7 @@ test('Home & Construction exposes the published Electrical calculators as a rela
   assert.equal(btuTool?.slug, 'btu');
   assert.deepEqual(
     electricalTools.map((tool) => tool.slug).sort(),
-    ['electricity', 'ohms-law', 'resistor', 'voltage-drop'],
+    ['cable-fuse-size', 'electricity', 'ohms-law', 'resistor', 'voltage-drop'],
   );
   assert.ok(electricalTools.every((tool) => tool.categorySlug === 'electrical'));
   assert.ok(electricalTools.every((tool) => tool.href.startsWith('/calculators/electrical/')));

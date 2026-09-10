@@ -264,6 +264,11 @@ function Router() {
         <Route path="/calculators/business/profit-margin"><BusinessCalculatorPage key="profit-margin" slug="profit-margin" /></Route>
         <Route path="/calculators/business/markup"><BusinessCalculatorPage key="markup" slug="markup" /></Route>
         <Route path="/calculators/business/break-even"><BusinessCalculatorPage key="break-even" slug="break-even" /></Route>
+        <Route path="/calculators/business/roas"><BusinessCalculatorPage key="roas" slug="roas" /></Route>
+        <Route path="/calculators/business/conversion-rate"><BusinessCalculatorPage key="conversion-rate" slug="conversion-rate" /></Route>
+        <Route path="/calculators/business/cpc"><BusinessCalculatorPage key="cpc" slug="cpc" /></Route>
+        <Route path="/calculators/business/cpm"><BusinessCalculatorPage key="cpm" slug="cpm" /></Route>
+        <Route path="/calculators/business/customer-acquisition-cost"><BusinessCalculatorPage key="customer-acquisition-cost" slug="customer-acquisition-cost" /></Route>
         <Route path="/calculators/automotive/fuel-cost"><AutomotiveCalculatorPage key="fuel-cost" slug="fuel-cost" /></Route>
         <Route path="/calculators/automotive/fuel-economy"><AutomotiveCalculatorPage key="fuel-economy" slug="fuel-economy" /></Route>
         <Route path="/calculators/automotive/ev-charging-cost"><AutomotiveCalculatorPage key="ev-charging-cost" slug="ev-charging-cost" /></Route>

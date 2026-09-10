@@ -121,6 +121,11 @@ export const categoryContent: Record<
       { slug: 'profit-margin', description: 'Calculate gross profit, profit margin, and markup from the cost and selling price of an item or sale.' },
       { slug: 'markup', description: 'Set or check a selling price by applying a target markup percentage to a stated cost.' },
       { slug: 'break-even', description: 'Estimate the sales volume and revenue needed to cover fixed costs using the price and variable-cost assumptions entered.' },
+      { slug: 'roas', description: 'Compare attributed advertising revenue with ad spend as a revenue-efficiency multiple and percentage.' },
+      { slug: 'conversion-rate', description: 'Measure completed conversions as a percentage of a consistently defined opportunity count.' },
+      { slug: 'cpc', description: 'Calculate average advertising spend per recorded click for a consistent campaign scope.' },
+      { slug: 'cpm', description: 'Standardize advertising spend as cost per one thousand delivered impressions.' },
+      { slug: 'customer-acquisition-cost', description: 'Average a defined acquisition-cost pool across the corresponding new customers.' },
     ],
     choosingTools: [
       'Use Profit Margin Calculator when you already know both cost and selling price and want to inspect the relationship. Use Markup Calculator when cost is known and you are setting a price from a markup target.',
@@ -340,6 +345,7 @@ export const categoryContent: Record<
       { slug: 'ohms-law', description: 'Solve one of voltage, current, resistance, or power from two known electrical quantities using the idealized Ohm’s-law relationships.' },
       { slug: 'resistor', description: 'Calculate equivalent resistance for ideal resistors arranged in series or parallel.' },
       { slug: 'voltage-drop', description: 'Estimate conductor voltage loss from entered current, one-way length, resistance, and single- or three-phase circuit assumptions.' },
+      { slug: 'cable-fuse-size', description: 'Estimate design current, cable cross-section, protective-device rating, and voltage drop for common low-voltage circuits, with metric or imperial cable-length input.' },
     ],
     choosingTools: [
       'Use Ohm’s Law Calculator for a basic relationship between known circuit quantities. Use Resistor Calculator when the question is specifically the equivalent resistance of a resistor network.',

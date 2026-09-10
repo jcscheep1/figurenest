@@ -1,7 +1,18 @@
 import { coreFields, type CoreField } from './core-calculators';
+import {
+  businessGrowthContent,
+  businessGrowthSlugs,
+  type BusinessGrowthSlug,
+} from './business-growth-calculators';
 import { syncRegistrySeoCapabilities } from './seo-capabilities';
 
-export const businessCalculatorSlugs = ['roi', 'profit-margin', 'markup', 'break-even'] as const;
+export const businessCalculatorSlugs = [
+  'roi',
+  'profit-margin',
+  'markup',
+  'break-even',
+  ...businessGrowthSlugs,
+] as const;
 export type BusinessCalculatorSlug = typeof businessCalculatorSlugs[number];
 
 type BusinessExample = {
@@ -367,11 +378,212 @@ const breakEven: BusinessCalculatorContent = {
   ],
 };
 
+const growthSupplement: Record<BusinessGrowthSlug, {
+  updatedNote: string;
+  distinction: string;
+  examples: BusinessExample[];
+  edgeCases: { title: string; explanation: string }[];
+  limitations: string;
+}> = {
+  roas: {
+    updatedNote: 'ADVERTISING REVENUE EFFICIENCY',
+    distinction: 'ROAS compares attributed revenue with advertising spend. ROI compares net gain with an investment, CPC compares spend with clicks, CPM compares spend with impressions, and CAC compares acquisition spend with customers acquired.',
+    examples: [
+      {
+        title: 'Paid search campaign',
+        inputs: '$2,500 advertising spend and $10,000 attributed revenue',
+        working: '$10,000 ÷ $2,500',
+        result: '4.00× ROAS and 400% ROAS',
+        interpretation: 'The campaign produced four dollars of attributed revenue for each dollar of advertising spend before product cost and other operating expenses.',
+      },
+      {
+        title: 'Below-spend revenue',
+        inputs: '$4,000 advertising spend and $3,000 attributed revenue',
+        working: '$3,000 ÷ $4,000',
+        result: '0.75× ROAS and 75% ROAS',
+        interpretation: 'Attributed revenue is below advertising spend, but the full business decision still depends on attribution quality and downstream customer value.',
+      },
+      {
+        title: 'Scaled campaign',
+        inputs: '$12,500 advertising spend and $62,500 attributed revenue',
+        working: '$62,500 ÷ $12,500',
+        result: '5.00× ROAS and 500% ROAS',
+        interpretation: 'The campaign produced five units of attributed revenue per unit of ad spend before non-advertising costs.',
+      },
+    ],
+    edgeCases: [
+      { title: 'Zero advertising spend', explanation: 'ROAS is undefined because advertising spend is the denominator, so the calculator returns an error.' },
+      { title: 'Zero attributed revenue', explanation: 'The result is 0.00× ROAS when advertising spend is positive.' },
+      { title: 'Very large campaign values', explanation: 'Inputs are capped at the shared trillion-unit safety bound to avoid unreliable numeric output.' },
+    ],
+    limitations: 'ROAS is an attribution-based revenue metric, not a profit measure. It does not subtract product cost, fulfillment, payroll, platform fees, taxes, refunds outside the entered revenue figure, or the cost of retaining the customer. Attribution models can also assign different revenue to the same campaign.',
+  },
+  'conversion-rate': {
+    updatedNote: 'FUNNEL CONVERSION EFFICIENCY',
+    distinction: 'Conversion rate measures completed outcomes as a share of an opportunity count. CPC measures the price of clicks, CPM measures the price of impressions, ROAS connects ad spend with attributed revenue, and CAC connects acquisition spend with new customers.',
+    examples: [
+      {
+        title: 'Ecommerce sessions',
+        inputs: '5,000 eligible sessions and 175 purchases',
+        working: '175 ÷ 5,000 × 100',
+        result: '3.5% conversion rate',
+        interpretation: 'About 3.5 of every 100 counted sessions completed the defined conversion action during the measured period.',
+      },
+      {
+        title: 'Lead follow-up',
+        inputs: '800 qualified leads and 96 completed sales',
+        working: '96 ÷ 800 × 100',
+        result: '12% conversion rate',
+        interpretation: 'The result is meaningful only if the lead and sale counts use the same funnel definition and time window.',
+      },
+      {
+        title: 'Signup funnel',
+        inputs: '2,400 eligible visitors and 72 completed signups',
+        working: '72 ÷ 2,400 × 100',
+        result: '3% conversion rate',
+        interpretation: 'Three of every one hundred eligible visitors completed the defined action for this reporting window.',
+      },
+    ],
+    edgeCases: [
+      { title: 'Zero opportunities', explanation: 'A conversion rate cannot be calculated because the opportunity count is the denominator.' },
+      { title: 'Zero conversions', explanation: 'The result is a valid 0% conversion rate when the opportunity count is positive.' },
+      { title: 'Conversions above opportunities', explanation: 'The calculator can display an event-based rate above 100%, but that result should only be used when multiple conversions per opportunity are possible.' },
+    ],
+    limitations: 'A single conversion rate does not explain why people converted, the statistical significance of changes, customer quality, revenue, margin, or retention. Different denominators such as users, sessions, leads, or clicks produce different rates, so comparisons require a stable definition.',
+  },
+  cpc: {
+    updatedNote: 'PAID TRAFFIC COST',
+    distinction: 'CPC divides advertising spend by clicks. CPM prices impression delivery, conversion rate measures what share of opportunities complete an action, ROAS compares spend with attributed revenue, and CAC averages acquisition spend across new customers.',
+    examples: [
+      {
+        title: 'Search ads',
+        inputs: '$1,250 spend and 2,500 clicks',
+        working: '$1,250 ÷ 2,500',
+        result: '$0.50 average CPC',
+        interpretation: 'The campaign paid an average of fifty cents per recorded click before considering whether those clicks converted.',
+      },
+      {
+        title: 'Higher-cost traffic',
+        inputs: '$3,600 spend and 1,200 clicks',
+        working: '$3,600 ÷ 1,200',
+        result: '$3.00 average CPC',
+        interpretation: 'A higher CPC can still be economically stronger if the traffic converts better or produces higher-value customers.',
+      },
+      {
+        title: 'Low-cost social traffic',
+        inputs: '$840 spend and 2,100 clicks',
+        working: '$840 ÷ 2,100',
+        result: '$0.40 average CPC',
+        interpretation: 'The average click cost is forty cents before considering conversion quality or customer value.',
+      },
+    ],
+    edgeCases: [
+      { title: 'Zero clicks', explanation: 'Average CPC is undefined because clicks are the denominator, so the calculator returns an error.' },
+      { title: 'Zero spend', explanation: 'The result is a valid zero CPC when at least one click is recorded.' },
+      { title: 'Mixed reporting periods', explanation: 'Spend and click counts from different date ranges can produce a mathematically valid but operationally misleading result.' },
+    ],
+    limitations: 'Average CPC does not show click quality, bid distribution, impression volume, conversion rate, revenue, or profitability. Platform adjustments and attribution timing can change spend and click counts, so use consistent reporting scopes when comparing campaigns.',
+  },
+  cpm: {
+    updatedNote: 'MEDIA EXPOSURE COST',
+    distinction: 'CPM standardizes spend per one thousand impressions. CPC measures cost per click, conversion rate measures completed outcomes, ROAS compares spend with attributed revenue, and CAC measures average cost per new customer.',
+    examples: [
+      {
+        title: 'Display campaign',
+        inputs: '$3,000 spend and 600,000 impressions',
+        working: '$3,000 ÷ 600,000 × 1,000',
+        result: '$5.00 CPM',
+        interpretation: 'The campaign paid five dollars for each one thousand delivered impressions before considering viewability or response quality.',
+      },
+      {
+        title: 'Premium inventory',
+        inputs: '$8,400 spend and 350,000 impressions',
+        working: '$8,400 ÷ 350,000 × 1,000',
+        result: '$24.00 CPM',
+        interpretation: 'The higher exposure cost may or may not be justified by better audience fit, placement quality, reach, or downstream results.',
+      },
+      {
+        title: 'Broad awareness buy',
+        inputs: '$1,800 spend and 900,000 impressions',
+        working: '$1,800 ÷ 900,000 × 1,000',
+        result: '$2.00 CPM',
+        interpretation: 'The campaign paid two dollars per thousand delivered impressions without implying unique reach or conversions.',
+      },
+    ],
+    edgeCases: [
+      { title: 'Zero impressions', explanation: 'CPM cannot be calculated because impressions are the denominator.' },
+      { title: 'Zero spend', explanation: 'The result is a valid zero CPM when impressions are positive.' },
+      { title: 'Repeated impressions', explanation: 'CPM counts delivered impressions rather than unique people, so repeated exposure can be included in the denominator.' },
+    ],
+    limitations: 'CPM measures exposure cost only. It does not measure unique reach, frequency, viewability, clicks, conversions, attribution, revenue, or profit. Inventory quality and audience relevance can differ substantially even when two campaigns report the same CPM.',
+  },
+  'customer-acquisition-cost': {
+    updatedNote: 'CUSTOMER ACQUISITION EFFICIENCY',
+    distinction: 'CAC divides acquisition spend by new customers acquired. ROAS focuses on attributed revenue from advertising, CPC focuses on clicks, CPM focuses on impressions, and conversion rate focuses on completed outcomes relative to opportunities.',
+    examples: [
+      {
+        title: 'Blended acquisition program',
+        inputs: '$20,000 acquisition spend and 125 new customers',
+        working: '$20,000 ÷ 125',
+        result: '$160.00 CAC',
+        interpretation: 'The modeled acquisition program spent an average of $160 for each new customer before considering contribution margin and retention.',
+      },
+      {
+        title: 'Channel-specific acquisition',
+        inputs: '$7,500 channel spend and 60 new customers',
+        working: '$7,500 ÷ 60',
+        result: '$125.00 CAC',
+        interpretation: 'Compare this channel CAC with a consistently defined benchmark and with the value created by customers from the same channel.',
+      },
+      {
+        title: 'Referral acquisition cohort',
+        inputs: '$9,600 acquisition spend and 80 new customers',
+        working: '$9,600 ÷ 80',
+        result: '$120.00 CAC',
+        interpretation: 'The cohort averages $120 of acquisition spend per new customer before retention and lifetime value.',
+      },
+    ],
+    edgeCases: [
+      { title: 'Zero new customers', explanation: 'CAC is undefined because new customers are the denominator, so the calculator returns an error.' },
+      { title: 'Zero acquisition spend', explanation: 'The result is a valid zero CAC when at least one new customer is recorded.' },
+      { title: 'Inconsistent cost definitions', explanation: 'Leaving payroll or sales costs out of one period but including them in another makes the comparison unreliable even when the arithmetic is correct.' },
+    ],
+    limitations: 'CAC is an average based on the cost definition and customer cohort entered. It does not calculate customer lifetime value, payback period, retention, contribution margin, channel incrementality, or cohort variation. Finance and marketing teams should agree on which acquisition costs belong in the numerator before using CAC for decisions.',
+  },
+};
+
+const growthBusinessCalculatorContent = {} as Record<BusinessGrowthSlug, BusinessCalculatorContent>;
+for (const slug of businessGrowthSlugs) {
+  const source = businessGrowthContent[slug];
+  const supplement = growthSupplement[slug];
+  const relatedTools: BusinessLink[] = source.relatedSlugs.map((relatedSlug) => ({
+    slug: relatedSlug,
+    label: businessGrowthContent[relatedSlug].title,
+    context: `Use ${businessGrowthContent[relatedSlug].title.replace(' Calculator', '')} alongside ${source.title.replace(' Calculator', '')} when you need the connected marketing metric.`,
+  }));
+  growthBusinessCalculatorContent[slug] = {
+    ...source,
+    fields: coreFields[slug] ?? [...source.fields],
+    updatedNote: supplement.updatedNote,
+    whenUseful: [...source.guidance],
+    distinction: supplement.distinction,
+    examples: supplement.examples,
+    interpretation: [...source.guidance],
+    assumptions: [...source.assumptions],
+    commonMistakes: [...source.commonMistakes],
+    edgeCases: supplement.edgeCases,
+    limitations: supplement.limitations,
+    faqs: [...source.faqs],
+    relatedTools,
+  };
+}
+
 export const businessCalculatorContent: Record<BusinessCalculatorSlug, BusinessCalculatorContent> = {
   roi,
   'profit-margin': profitMargin,
   markup,
   'break-even': breakEven,
+  ...growthBusinessCalculatorContent,
 };
 syncRegistrySeoCapabilities(businessCalculatorContent);
 

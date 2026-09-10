@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { catalogTools } from '../../../api-server/src/routes/catalog';
-import { publishedTools } from './catalog';
+import { localTools, publishedTools } from './catalog';
 import { calculatePhaseFour, phaseFourDefinitions, phaseFourSlugs, phaseFourUsefulWordCount } from './phase-four';
 import { phaseFourRoutes } from './phase-four-routes';
 import { getSeoForPath, publicRouteKeys, renderSeoHead } from './seo';
 
 test('phase four publishes 15 canonical definition-driven tools with API parity', () => {
-  assert.equal(publishedTools.length, 163);
+  assert.equal(localTools.length, catalogTools.length);
   assert.equal(phaseFourSlugs.length, 15);
   assert.deepEqual(phaseFourRoutes.map(({ slug }) => slug), phaseFourSlugs);
   assert.equal(new Set(publishedTools.map((tool) => tool.href)).size, publishedTools.length);

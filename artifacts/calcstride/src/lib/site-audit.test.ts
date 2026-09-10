@@ -129,9 +129,8 @@ test('every public meta description is complete, unique, and snippet-safe', () =
 
 test('all site-wide tool and category counts derive from published tool pages', () => {
   const canonicalHrefs = localTools.map(canonicalToolHref);
-  assert.equal(publishedToolCount, 163);
   assert.equal(publishedToolCount, new Set(canonicalHrefs).size);
-  assert.equal(localTools.length, 163);
+  assert.equal(localTools.length, publishedToolCount);
   assert.ok(!localTools.some((tool) => tool.slug === 'unit'));
   assert.equal(localCategories.reduce((total, category) => total + category.toolCount, 0), publishedToolCount);
   for (const category of localCategories) {
@@ -174,7 +173,7 @@ test('tool metadata has no malformed, generic, or duplicated descriptions', () =
 });
 
 test('canonical related-tool graph covers every published tool with reciprocal semantic links', () => {
-  assert.equal(publishedTools.length, 163);
+  assert.equal(localTools.length, publishedToolCount);
   assert.equal(relatedToolGraph.size, publishedTools.length);
   const publishedSlugs = new Set(publishedTools.map((tool) => tool.slug));
   const explicitCrossCategoryPairs = new Set(crossCategoryToolComplements.flatMap(([left, right]) => [`${left}:${right}`, `${right}:${left}`]));
