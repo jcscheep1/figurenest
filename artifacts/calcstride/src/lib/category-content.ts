@@ -345,6 +345,7 @@ export const categoryContent: Record<
       { slug: 'ohms-law', description: 'Solve one of voltage, current, resistance, or power from two known electrical quantities using the idealized Ohm’s-law relationships.' },
       { slug: 'resistor', description: 'Calculate equivalent resistance for ideal resistors arranged in series or parallel.' },
       { slug: 'voltage-drop', description: 'Estimate conductor voltage loss from entered current, one-way length, resistance, and single- or three-phase circuit assumptions.' },
+      { slug: 'cable-fuse-size', description: 'Estimate design current, cable cross-section, protective-device rating, and voltage drop for common low-voltage circuits, with metric or imperial cable-length input.' },
     ],
     choosingTools: [
       'Use Ohm’s Law Calculator for a basic relationship between known circuit quantities. Use Resistor Calculator when the question is specifically the equivalent resistance of a resistor network.',

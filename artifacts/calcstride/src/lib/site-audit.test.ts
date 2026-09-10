@@ -173,7 +173,7 @@ test('tool metadata has no malformed, generic, or duplicated descriptions', () =
 });
 
 test('canonical related-tool graph covers every published tool with reciprocal semantic links', () => {
-  assert.equal(publishedTools.length, publishedToolCount);
+  assert.equal(localTools.length, publishedToolCount);
   assert.equal(relatedToolGraph.size, publishedTools.length);
   const publishedSlugs = new Set(publishedTools.map((tool) => tool.slug));
   const explicitCrossCategoryPairs = new Set(crossCategoryToolComplements.flatMap(([left, right]) => [`${left}:${right}`, `${right}:${left}`]));
