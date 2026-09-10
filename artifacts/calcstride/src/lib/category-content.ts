@@ -1,3 +1,5 @@
+import { fileToolsCategoryContent } from './file-tools-category-content';
+
 export type CategoryFaq = {
   question: string;
   answer: string;
@@ -20,7 +22,7 @@ export type CategoryContent = {
 };
 
 export const categoryContent: Record<
-  'finance' | 'salary-work' | 'business' | 'electrical' | 'technology' | 'science-engineering' | 'automotive' | 'math' | 'converters' | 'date-time' | 'printing-design' | 'health' | 'education',
+  'finance' | 'salary-work' | 'business' | 'electrical' | 'technology' | 'science-engineering' | 'automotive' | 'math' | 'converters' | 'date-time' | 'printing-design' | 'health' | 'education' | 'file-tools',
   CategoryContent
 > = {
   finance: {
@@ -526,4 +528,5 @@ export const categoryContent: Record<
       { question: 'Do repeated courses count twice?', answer: 'Policies differ. Check the institution’s repeat, withdrawal, and replacement rules.' },
     ],
   },
+  'file-tools': fileToolsCategoryContent,
 };
