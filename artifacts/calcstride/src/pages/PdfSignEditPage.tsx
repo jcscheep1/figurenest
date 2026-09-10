@@ -129,6 +129,7 @@ export function PdfSignEditPage() {
   const dragRef = useRef<DragState | null>(null);
   const drawingRef = useRef(false);
   const activeStrokeRef = useRef<PdfPoint[]>([]);
+  const assetsRef = useRef<UiSignatureAsset[]>([]);
   const loadAbortRef = useRef<AbortController | null>(null);
   const selected = objects.find((item) => item.id === selectedId) ?? null;
   const currentObjects = useMemo(() => objects.filter((item) => item.pageIndex === pageIndex), [objects, pageIndex]);
@@ -157,7 +158,8 @@ export function PdfSignEditPage() {
     void destroyDocument();
     clearArrayBuffer(originalBufferRef.current);
     originalBufferRef.current = null;
-    for (const asset of assets) asset.bytes.fill(0);
+    for (const asset of assetsRef.current) asset.bytes.fill(0);
+    assetsRef.current = [];
     urlRegistryRef.current.clear();
     setAssets([]);
     setStatus('idle');
@@ -178,7 +180,8 @@ export function PdfSignEditPage() {
     void destroyDocument();
     clearArrayBuffer(originalBufferRef.current);
     originalBufferRef.current = null;
-    for (const asset of assets) asset.bytes.fill(0);
+    for (const asset of assetsRef.current) asset.bytes.fill(0);
+    assetsRef.current = [];
     urlRegistryRef.current.clear();
   }, []);
 
@@ -207,7 +210,7 @@ export function PdfSignEditPage() {
         pdfBounds: { width: rawWidth, height: rawHeight },
         viewportWidth: viewport.width,
         viewportHeight: viewport.height,
-        transform: transform as PdfViewportTransform,
+        transform: transform as unknown as PdfViewportTransform,
       });
       renderTask = page.render({
         canvasContext: context,
@@ -268,7 +271,6 @@ export function PdfSignEditPage() {
       GlobalWorkerOptions.workerSrc = workerModule.default;
       const loadingTask = getDocument({
         data: new Uint8Array(copiedBuffer(buffer)),
-        isEvalSupported: false,
         useWorkerFetch: false,
         disableAutoFetch: true,
         disableStream: true,
@@ -423,24 +425,31 @@ export function PdfSignEditPage() {
   const beginSignature = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingRef.current = true;
-    activeStrokeRef.current = [signaturePoint(event)];
+    const point = signaturePoint(event);
+    activeStrokeRef.current = [point];
+    const context = event.currentTarget.getContext('2d');
+    if (context) {
+      context.beginPath();
+      context.moveTo(point.x * event.currentTarget.clientWidth, point.y * event.currentTarget.clientHeight);
+    }
   };
 
   const continueSignature = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!drawingRef.current) return;
-    activeStrokeRef.current = [...activeStrokeRef.current, signaturePoint(event)];
-    setSignatureStrokes((current) => [...current.slice(0, -1), activeStrokeRef.current]);
+    const point = signaturePoint(event);
+    activeStrokeRef.current = [...activeStrokeRef.current, point];
+    const context = event.currentTarget.getContext('2d');
+    if (context) {
+      context.lineTo(point.x * event.currentTarget.clientWidth, point.y * event.currentTarget.clientHeight);
+      context.stroke();
+    }
   };
 
   const endSignature = () => {
     if (!drawingRef.current) return;
     drawingRef.current = false;
-    if (activeStrokeRef.current.length >= 2) {
-      setSignatureStrokes((current) => {
-        const withoutPreview = current.length ? current.slice(0, -1) : current;
-        return [...withoutPreview, activeStrokeRef.current];
-      });
-    }
+    const completed = activeStrokeRef.current.map((point) => ({ ...point }));
+    if (completed.length >= 2) setSignatureStrokes((current) => [...current, completed]);
     activeStrokeRef.current = [];
   };
 
@@ -458,7 +467,7 @@ export function PdfSignEditPage() {
       const validation = await validateLocalFile(file, SIGNATURE_IMAGE_RULES, deviceClass);
       const buffer = await readBlobArrayBuffer(file);
       const bytes = new Uint8Array(buffer);
-      const previewUrl = urlRegistryRef.current.create(new Blob([bytes], { type: file.type || (validation.ruleId === 'png' ? 'image/png' : 'image/jpeg') }));
+      const previewUrl = urlRegistryRef.current.create(new Blob([buffer], { type: file.type || (validation.ruleId === 'png' ? 'image/png' : 'image/jpeg') }));
       const dimensions = await imageDimensions(previewUrl);
       validateSignatureImageDimensions(dimensions.width, dimensions.height);
       const asset: UiSignatureAsset = {
@@ -467,7 +476,8 @@ export function PdfSignEditPage() {
         bytes,
         previewUrl,
       };
-      setAssets((current) => [...current, asset]);
+      assetsRef.current = [...assetsRef.current, asset];
+      setAssets(assetsRef.current);
       addObject('signature-image', { assetId: asset.id });
       if (signatureInputRef.current) signatureInputRef.current.value = '';
     } catch (caught) {
@@ -483,7 +493,8 @@ export function PdfSignEditPage() {
     setStatus('processing');
     try {
       const output = await exportEditedPdf(copiedBuffer(original), objectsRef.current, assets);
-      const url = urlRegistryRef.current.create(new Blob([output], { type: 'application/pdf' }));
+      const outputBuffer = output.slice().buffer as ArrayBuffer;
+      const url = urlRegistryRef.current.create(new Blob([outputBuffer], { type: 'application/pdf' }));
       const anchor = document.createElement('a');
       anchor.href = url;
       anchor.download = 'figurenest-edited.pdf';
