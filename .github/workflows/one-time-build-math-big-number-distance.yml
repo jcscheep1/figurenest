@@ -31,7 +31,23 @@ jobs:
       - name: Build workspace type dependency
         run: pnpm exec tsc -b lib/api-client-react
       - name: Focused Math mini-cluster tests
-        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/math-mini-cluster.test.ts src/lib/phase-three-b.test.ts src/lib/site-audit.test.ts
+        id: focused
+        run: |
+          set +e
+          pnpm --filter @workspace/calcstride exec tsx --test src/lib/math-mini-cluster.test.ts src/lib/phase-three-b.test.ts src/lib/site-audit.test.ts 2>&1 | tee /tmp/math-mini-cluster-test.log
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Persist focused-test diagnostics
+        if: steps.focused.outputs.status != '0'
+        run: |
+          cp /tmp/math-mini-cluster-test.log math-mini-cluster-build-diagnostics.txt
+          git config user.name 'FigureNest Build Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add math-mini-cluster-build-diagnostics.txt
+          git commit -m 'Record Math mini-cluster test failure'
+          git push origin HEAD:expansion/math-big-number-distance
+          exit 1
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
       - name: Generate SEO files
@@ -44,7 +60,7 @@ jobs:
         run: pnpm --filter @workspace/calcstride audit:static
       - name: Commit verified mini-cluster
         run: |
-          rm -f scripts/one-time-add-math-big-number-distance.py .github/workflows/one-time-build-math-big-number-distance.yml
+          rm -f scripts/one-time-add-math-big-number-distance.py .github/workflows/one-time-build-math-big-number-distance.yml math-mini-cluster-build-diagnostics.txt
           git config user.name 'FigureNest Build Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add -A
