@@ -1,0 +1,75 @@
+name: One-time Student Loan production audit
+
+on:
+  push:
+    branches:
+      - audit/student-loan-live-reverify
+
+jobs:
+  live-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install selenium
+      - name: Exercise live Student Loan calculator
+        run: |
+          python - <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+          from selenium.webdriver.chrome.options import Options
+          import time
+
+          URL='https://figurenest.com/calculators/finance/student-loan'
+          opts=Options()
+          opts.add_argument('--headless=new')
+          opts.add_argument('--no-sandbox')
+          opts.add_argument('--disable-dev-shm-usage')
+          opts.add_argument('--window-size=390,844')
+          d=webdriver.Chrome(options=opts)
+          w=WebDriverWait(d,20)
+          d.get(URL)
+          w.until(EC.presence_of_element_located((By.CSS_SELECTOR,'[data-testid="page-student-loan"]')))
+
+          amount=d.find_element(By.CSS_SELECTOR,'[data-testid="input-student-loan-principal"]')
+          rate=d.find_element(By.CSS_SELECTOR,'[data-testid="input-student-loan-rate"]')
+          years=d.find_element(By.CSS_SELECTOR,'[data-testid="input-student-loan-years"]')
+          result=lambda: d.find_element(By.CSS_SELECTOR,'[data-testid="result-student-loan"]').text.strip()
+          status=lambda: d.find_element(By.CSS_SELECTOR,'[data-testid="status-student-loan"]').text
+
+          def fill(el,val):
+              el.clear(); el.send_keys(val); time.sleep(.15)
+
+          fill(amount,'25000'); fill(rate,'6.5'); fill(years,'5')
+          assert '$489.15' in result(), result()
+          body=d.find_element(By.TAG_NAME,'body').text
+          assert '$29,349.22' in body and '$4,349.22' in body, body
+
+          amount.clear(); time.sleep(.2)
+          assert 'Complete every field; blank values cannot be calculated.' in status(), status()
+          assert 'CHECK THE VALUES' in status(), status()
+
+          fill(amount,'0')
+          assert '$0.00' in result(), result()
+
+          fill(amount,'25000'); fill(rate,'0'); fill(years,'5')
+          assert '$416.67' in result(), result()
+
+          fill(rate,'6.5'); fill(years,'5.1')
+          assert 'whole number of monthly payments' in status().lower(), status()
+
+          d.find_element(By.CSS_SELECTOR,'[data-testid="button-reset-student-loan"]').click(); time.sleep(.2)
+          assert amount.get_attribute('value')=='25000'
+          assert rate.get_attribute('value')=='6.5'
+          assert years.get_attribute('value')=='5'
+
+          card=d.find_element(By.CSS_SELECTOR,'.advanced-calculator-card')
+          overflow=d.execute_script('return arguments[0].scrollWidth > arguments[0].clientWidth + 1', card)
+          assert not overflow, f'result/card overflow at 390px: {card.size}'
+          print('STUDENT_LOAN_LIVE_AUDIT_PASS')
+          d.quit()
+          PY
