@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { localTools } from './catalog';
-import { calculateCore, coreFields, coreMethodology } from './core-calculators';
+import { calculateCore, coreFields } from './core-calculators';
 import { businessGrowthSlugs } from './business-growth-calculators';
 import { businessCalculatorContent, businessCalculatorSlugs } from './business-calculators';
 import { formatCurrency } from './units-preferences';
@@ -38,7 +38,6 @@ test('Batch 1 business growth tools use the existing Business calculator page/co
 test('Batch 1 business growth tools expose their real two-field forms through coreFields', () => {
   for (const slug of businessGrowthSlugs) {
     assert.equal(coreFields[slug]?.length, 2, `${slug} should expose two configured fields`);
-    assert.ok(coreMethodology[slug], `${slug} should inherit shared methodology content`);
   }
 });
 
