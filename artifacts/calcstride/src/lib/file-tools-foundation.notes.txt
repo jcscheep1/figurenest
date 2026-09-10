@@ -1,3 +1,0 @@
-FT-01 branch marker: expansion/ft-01-local-file-foundation
-Base main: d06bb7009788e3256a153ba53d37ad488af3dc81
-Scope: shared local file foundation only; no public route/category/dependency.
