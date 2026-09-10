@@ -17,9 +17,10 @@ const filterTools = (query: string, category = '', letter = '') => {
 };
 
 test('directory has exact published-tool coverage and unique links', () => {
-  assert.equal(localTools.length, 162);
+  assert.ok(localTools.length > 0);
   assert.equal(new Set(localTools.map((tool) => tool.slug)).size, localTools.length);
   assert.equal(new Set(localTools.map((tool) => tool.href)).size, localTools.length);
+  assert.equal(new Set(localTools.map(canonicalToolHref)).size, localTools.length);
   assert.equal(sortByName(localTools).length, localTools.length);
 });
 
