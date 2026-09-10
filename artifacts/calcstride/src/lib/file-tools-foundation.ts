@@ -334,13 +334,28 @@ export class LocalWorkerSession {
     if (this.currentJobId) throw new FileToolError('worker-failed', 'A local worker job is already running.');
 
     this.currentJobId = jobId;
-    this.worker.postMessage({ type: 'start', jobId, buffer }, [buffer]);
+    try {
+      this.worker.postMessage({ type: 'start', jobId, buffer }, [buffer]);
+    } catch {
+      this.currentJobId = undefined;
+      this.dispose();
+      throw new FileToolError('worker-failed', 'The local worker could not start.');
+    }
+
     if (this.timeoutMs !== undefined) {
       this.timeoutHandle = setTimeout(() => {
         if (this.closed || this.currentJobId !== jobId) return;
         const error = new FileToolError('worker-failed', 'Local file processing timed out.');
-        this.worker.postMessage({ type: 'cancel', jobId });
-        this.onFailure?.(error);
+        try {
+          this.worker.postMessage({ type: 'cancel', jobId });
+        } catch {
+          // Cancellation is best-effort; termination below is the hard cleanup boundary.
+        }
+        try {
+          this.onFailure?.(error);
+        } catch {
+          // Observer failures must never prevent local worker cleanup.
+        }
         this.dispose();
       }, this.timeoutMs);
     }
@@ -349,8 +364,13 @@ export class LocalWorkerSession {
   cancel(jobId: string): void {
     if (this.closed) return;
     if (this.currentJobId && this.currentJobId !== jobId) return;
-    this.worker.postMessage({ type: 'cancel', jobId });
-    this.dispose();
+    try {
+      this.worker.postMessage({ type: 'cancel', jobId });
+    } catch {
+      // Cancellation is best-effort; termination below is the hard cleanup boundary.
+    } finally {
+      this.dispose();
+    }
   }
 
   dispose(): void {
