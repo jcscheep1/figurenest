@@ -12,6 +12,7 @@ import {
 } from '@/lib/expansion-metadata';
 import { phaseFourRoutes } from '@/lib/phase-four-routes';
 import { CATALOG_LAST_UPDATED } from '@/lib/catalog-metadata';
+import { FILE_TOOLS_CATEGORY, fileToolCatalog } from '@/lib/file-tools-catalog';
 
 const tool = (
   slug: string,
@@ -126,11 +127,14 @@ const phaseThreeCExpansionTools = expansionTools(
 const phaseFourExpansionTools: Tool[] = phaseFourRoutes.map((entry) =>
   tool(entry.slug, entry.name, entry.description, entry.category, entry.categorySlug, [...entry.tags], false, entry.href),
 );
+const fileToolCatalogTools: Tool[] = fileToolCatalog.map((entry) =>
+  tool(entry.slug, entry.name, entry.description, entry.category, entry.categorySlug, [...entry.tags], entry.featured, entry.href),
+);
 
 // This exported collection is the source of truth for every public tool page.
 // Adding or removing a published tool here automatically updates site counts,
 // category totals, search, internal category links, SEO routes, and the sitemap.
-const allPublishedTools: Tool[] = [...coreTools, ...priorityOneExpansionTools, ...phaseTwoExpansionTools, ...phaseThreeAExpansionTools, ...phaseThreeBExpansionTools, ...phaseThreeCExpansionTools, ...phaseFourExpansionTools, ...constructionCatalogTools];
+const allPublishedTools: Tool[] = [...coreTools, ...priorityOneExpansionTools, ...phaseTwoExpansionTools, ...phaseThreeAExpansionTools, ...phaseThreeBExpansionTools, ...phaseThreeCExpansionTools, ...phaseFourExpansionTools, ...fileToolCatalogTools, ...constructionCatalogTools];
 export const publishedTools: Tool[] = allPublishedTools.map((item) => {
   const expandedSlug = phaseThreeCExpandedSlugs.find((slug) => slug === item.slug);
   if (!expandedSlug) return item;
@@ -170,6 +174,7 @@ const categoryDefinitions = [
   { slug: 'printing-design', name: 'Printing & Design', description: 'Get the right size, resolution, and output for your work.', accent: '#788bd0' },
   { slug: 'health', name: 'Health', description: 'Use transparent health, fitness, pregnancy, and wellbeing estimates with clear safety limits.', accent: '#5b9d83' },
   { slug: 'education', name: 'Education', description: 'Check grades and weighted academic averages with clear, reproducible arithmetic.', accent: '#7b83c5' },
+  { ...FILE_TOOLS_CATEGORY },
 ];
 
 export const localCategories: Category[] = categoryDefinitions.map((category) => ({
