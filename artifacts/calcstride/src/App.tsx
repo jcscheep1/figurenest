@@ -50,6 +50,7 @@ const phaseFourPages = import.meta.env.SSR ? await import('@/pages/PhaseFourCalc
 const cableFusePages = import.meta.env.SSR ? await import('@/pages/CableFuseSizeCalculatorPage') : null;
 const directoryPages = import.meta.env.SSR ? await import('@/pages/CalculatorDirectoryPage') : null;
 const articlePages = import.meta.env.SSR ? await import('@/pages/ArticlePages') : null;
+const fileToolPages = import.meta.env.SSR ? await import('@/pages/PdfSignEditPage') : null;
 const notFoundPage = import.meta.env.SSR ? await import('@/pages/not-found') : null;
 
 const HomePage = homePages?.HomePage
@@ -100,6 +101,8 @@ const ArticleIndexPage = articlePages?.ArticleIndexPage
   ?? lazy(() => import('@/pages/ArticlePages').then(({ ArticleIndexPage: page }) => ({ default: page })));
 const ArticlePage = articlePages?.ArticlePage
   ?? lazy(() => import('@/pages/ArticlePages').then(({ ArticlePage: page }) => ({ default: page })));
+const PdfSignEditPage = fileToolPages?.PdfSignEditPage
+  ?? lazy(() => import('@/pages/PdfSignEditPage').then(({ PdfSignEditPage: page }) => ({ default: page })));
 const NotFound = notFoundPage?.default ?? lazy(() => import('@/pages/not-found'));
 const PrivateApp = lazy(() => import('./PrivateApp'));
 
@@ -278,6 +281,7 @@ function Router() {
             <PriorityOneCalculatorPage slug={slug as PriorityOneExpansionSlug} />
           </Route>
         ))}
+        <Route path="/file-tools/pdf-sign-edit" component={PdfSignEditPage} />
         <Route path="/articles" component={ArticleIndexPage} />
         <Route path="/articles/:slug"><ArticlePage /></Route>
         <Route path="/calculators/:category/:slug"><ToolDetailPage /></Route>
