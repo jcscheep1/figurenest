@@ -517,32 +517,31 @@ const growthSupplement: Record<BusinessGrowthSlug, {
   },
 };
 
-const growthBusinessCalculatorContent = Object.fromEntries(
-  businessGrowthSlugs.map((slug) => {
-    const source = businessGrowthContent[slug];
-    const supplement = growthSupplement[slug];
-    const relatedTools: BusinessLink[] = source.relatedSlugs.map((relatedSlug) => ({
-      slug: relatedSlug,
-      label: businessGrowthContent[relatedSlug].title,
-      context: `Use ${businessGrowthContent[relatedSlug].title.replace(' Calculator', '')} alongside ${source.title.replace(' Calculator', '')} when you need the connected marketing metric.`,
-    }));
-    return [slug, {
-      ...source,
-      fields: coreFields[slug] ?? [...source.fields],
-      updatedNote: supplement.updatedNote,
-      whenUseful: [...source.guidance],
-      distinction: supplement.distinction,
-      examples: supplement.examples,
-      interpretation: [...source.guidance],
-      assumptions: [...source.assumptions],
-      commonMistakes: [...source.commonMistakes],
-      edgeCases: supplement.edgeCases,
-      limitations: supplement.limitations,
-      faqs: [...source.faqs],
-      relatedTools,
-    } satisfies BusinessCalculatorContent];
-  }),
-) as Record<BusinessGrowthSlug, BusinessCalculatorContent>;
+const growthBusinessCalculatorContent = {} as Record<BusinessGrowthSlug, BusinessCalculatorContent>;
+for (const slug of businessGrowthSlugs) {
+  const source = businessGrowthContent[slug];
+  const supplement = growthSupplement[slug];
+  const relatedTools: BusinessLink[] = source.relatedSlugs.map((relatedSlug) => ({
+    slug: relatedSlug,
+    label: businessGrowthContent[relatedSlug].title,
+    context: `Use ${businessGrowthContent[relatedSlug].title.replace(' Calculator', '')} alongside ${source.title.replace(' Calculator', '')} when you need the connected marketing metric.`,
+  }));
+  growthBusinessCalculatorContent[slug] = {
+    ...source,
+    fields: coreFields[slug] ?? [...source.fields],
+    updatedNote: supplement.updatedNote,
+    whenUseful: [...source.guidance],
+    distinction: supplement.distinction,
+    examples: supplement.examples,
+    interpretation: [...source.guidance],
+    assumptions: [...source.assumptions],
+    commonMistakes: [...source.commonMistakes],
+    edgeCases: supplement.edgeCases,
+    limitations: supplement.limitations,
+    faqs: [...source.faqs],
+    relatedTools,
+  };
+}
 
 export const businessCalculatorContent: Record<BusinessCalculatorSlug, BusinessCalculatorContent> = {
   roi,
