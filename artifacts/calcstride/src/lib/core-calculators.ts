@@ -1,4 +1,10 @@
 import { formatCurrency, type CurrencyCode } from './units-preferences';
+import {
+  businessGrowthContent,
+  businessGrowthSlugs,
+  calculateBusinessGrowth,
+  isBusinessGrowthSlug,
+} from './business-growth-calculators';
 
 export type CoreField = { key: string; label: string; value: string; prefix?: string; suffix?: string; type?: 'number' | 'date' };
 export type CalculationResult = { primary: string; details?: { label: string; value: string }[]; error?: string };
@@ -33,6 +39,10 @@ export const coreFields: Record<string, CoreField[]> = {
   'pixels-to-cm': [{ key: 'pixels', label: 'Pixels', value: '1200', suffix: 'px' }, { key: 'ppi', label: 'Resolution', value: '300', suffix: 'PPI' }],
   'image-scaling': [{ key: 'width', label: 'Original width', value: '2400', suffix: 'px' }, { key: 'height', label: 'Original height', value: '1600', suffix: 'px' }, { key: 'newWidth', label: 'New width', value: '1200', suffix: 'px' }],
 };
+
+for (const slug of businessGrowthSlugs) {
+  coreFields[slug] = [...businessGrowthContent[slug].fields];
+}
 
 const invalid = (message: string): CalculationResult => ({ primary: message, error: message });
 const numbers = (values: string[]) => values.map((v) => v.trim() === '' ? Number.NaN : Number(v));
@@ -116,6 +126,7 @@ const parseDate = (value: string) => {
 
 export function calculateCore(slug: string, inputs: string[], mode = 'default', options: CalculationOptions = {}): CalculationResult {
   const currency = options.currency ?? 'USD';
+  if (isBusinessGrowthSlug(slug)) return calculateBusinessGrowth(slug, inputs, currency);
   const formatMoney = (value: number) => formatCurrency(value, currency);
   if (['age', 'working-days'].includes(slug)) return calculateDates(slug, inputs);
   if (slug === 'percentage' && inputs.some((value) => !value.trim())) return invalid('Complete every field with a valid non-negative value');
