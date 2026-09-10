@@ -5,6 +5,7 @@ import {
   businessGrowthSlugs,
   calculateBusinessGrowth,
 } from './business-growth-calculators';
+import { formatCurrency } from './units-preferences';
 
 test('Batch 1 business growth calculators have unique SEO and connected content', () => {
   const titles = new Set<string>();
@@ -47,7 +48,7 @@ test('conversion rate calculates completed conversions over opportunities', () =
 
 test('CPC calculates spend per click', () => {
   assert.equal(calculateBusinessGrowth('cpc', ['1250', '2500']).primary, '$0.50');
-  assert.equal(calculateBusinessGrowth('cpc', ['100', '4'], 'EUR').primary, '€25.00');
+  assert.equal(calculateBusinessGrowth('cpc', ['100', '4'], 'EUR').primary, formatCurrency(25, 'EUR'));
 });
 
 test('CPM calculates spend per thousand impressions', () => {
