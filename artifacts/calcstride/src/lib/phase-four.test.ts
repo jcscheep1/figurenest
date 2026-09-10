@@ -92,9 +92,9 @@ test('phase four known outputs and invalid input handling are deterministic', ()
   assert.ok(calculatePhaseFour('apr', ['10000', '200', '9900', '220', '60']).error);
 });
 
-test('shoe size shared engine covers baby, youth, women and men without silent rounding', () => {
-  const baby = calculatePhaseFour('shoe-size', ['baby', 'US', '5.5']);
-  assert.equal(baby.primary, 'Baby / toddler · EU 21');
+test('shoe size shared engine covers child stages, women and men without silent rounding', () => {
+  const baby = calculatePhaseFour('shoe-size', ['toddler', 'US', '5.5']);
+  assert.equal(baby.primary, 'Toddler · EU 21');
   assert.deepEqual(baby.details, [
     { label: 'US size', value: '5.5' },
     { label: 'UK size', value: '4.5' },
@@ -102,7 +102,7 @@ test('shoe size shared engine covers baby, youth, women and men without silent r
     { label: 'Approx. foot length', value: '12.7 cm' },
   ]);
 
-  assert.equal(calculatePhaseFour('shoe-size', ['kids', 'EU', '35']).primary, 'Children / youth · EU 35');
+  assert.equal(calculatePhaseFour('shoe-size', ['bigKid', 'EU', '35']).primary, 'Big kid / youth · EU 35');
   assert.equal(calculatePhaseFour('shoe-size', ['women', 'UK', '7.5']).primary, 'Women · EU 41');
   assert.equal(calculatePhaseFour('shoe-size', ['men', 'EU', '42.5']).primary, 'Men · EU 42.5');
   assert.ok(calculatePhaseFour('shoe-size', ['men', 'EU', '42.7']).error, 'unsupported in-between sizes must not be rounded');
