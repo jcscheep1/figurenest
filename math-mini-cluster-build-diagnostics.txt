@@ -1,0 +1,793 @@
+TAP version 13
+# Subtest: Big Number Calculator preserves exact arbitrary-precision integer arithmetic
+ok 1 - Big Number Calculator preserves exact arbitrary-precision integer arithmetic
+  ---
+  duration_ms: 1.686898
+  type: 'test'
+  ...
+# Subtest: Big Number Calculator rejects malformed, blank, over-limit, decimal, exponent and zero-divisor input
+ok 2 - Big Number Calculator rejects malformed, blank, over-limit, decimal, exponent and zero-divisor input
+  ---
+  duration_ms: 35.550592
+  type: 'test'
+  ...
+# Subtest: Distance Calculator covers reference, signed, decimal, zero-distance and axis-aligned cases
+ok 3 - Distance Calculator covers reference, signed, decimal, zero-distance and axis-aligned cases
+  ---
+  duration_ms: 0.914027
+  type: 'test'
+  ...
+# Subtest: Distance Calculator rejects blank, non-finite and out-of-bound coordinates
+ok 4 - Distance Calculator rejects blank, non-finite and out-of-bound coordinates
+  ---
+  duration_ms: 0.16535
+  type: 'test'
+  ...
+# Subtest: Math mini-cluster is published through the existing registries and remains unitless
+ok 5 - Math mini-cluster is published through the existing registries and remains unitless
+  ---
+  duration_ms: 0.774623
+  type: 'test'
+  ...
+# Subtest: Phase 3B catalog metadata stays synchronized from the canonical source
+ok 6 - Phase 3B catalog metadata stays synchronized from the canonical source
+  ---
+  duration_ms: 1.086397
+  type: 'test'
+  ...
+# Subtest: all Phase 3B routes have unique registry, substantive content, metadata, and schema
+ok 7 - all Phase 3B routes have unique registry, substantive content, metadata, and schema
+  ---
+  duration_ms: 3.221322
+  type: 'test'
+  ...
+# Subtest: binary and hexadecimal conversions validate signed width and exact integer representations
+ok 8 - binary and hexadecimal conversions validate signed width and exact integer representations
+  ---
+  duration_ms: 1.128326
+  type: 'test'
+  ...
+# Subtest: circle, factors, GCF, LCM, and prime factorization cover their formulas and domain errors
+ok 9 - circle, factors, GCF, LCM, and prime factorization cover their formulas and domain errors
+  ---
+  duration_ms: 0.851509
+  type: 'test'
+  ...
+# Subtest: confidence, exponent, half-life, logarithm, division, statistics, sequences, and combinatorics validate known results
+ok 10 - confidence, exponent, half-life, logarithm, division, statistics, sequences, and combinatorics validate known results
+  ---
+  duration_ms: 1.026986
+  type: 'test'
+  ...
+# Subtest: matrix multiplication supports valid rectangular dimensions
+ok 11 - matrix multiplication supports valid rectangular dimensions
+  ---
+  duration_ms: 0.405517
+  type: 'test'
+  ...
+# Subtest: matrix multiplication rejects incompatible dimensions and malformed shapes
+ok 12 - matrix multiplication rejects incompatible dimensions and malformed shapes
+  ---
+  duration_ms: 0.144426
+  type: 'test'
+  ...
+# Subtest: matrix addition and subtraction require and handle equal dimensions
+ok 13 - matrix addition and subtraction require and handle equal dimensions
+  ---
+  duration_ms: 0.383769
+  type: 'test'
+  ...
+# Subtest: matrix determinant and inverse enforce square A and reject singular matrices
+ok 14 - matrix determinant and inverse enforce square A and reject singular matrices
+  ---
+  duration_ms: 0.803333
+  type: 'test'
+  ...
+# Subtest: every Probability Calculator mode has valid explanatory defaults
+ok 15 - every Probability Calculator mode has valid explanatory defaults
+  ---
+  duration_ms: 0.890123
+  type: 'test'
+  ...
+# Subtest: API and local fallback catalogs expose the same published tools
+ok 16 - API and local fallback catalogs expose the same published tools
+  ---
+  duration_ms: 1.814414
+  type: 'test'
+  ...
+# Subtest: API and local fallback catalogs expose the same non-empty categories
+ok 17 - API and local fallback catalogs expose the same non-empty categories
+  ---
+  duration_ms: 0.340169
+  type: 'test'
+  ...
+# Subtest: every public non-construction category has substantive visible guide content and FAQ schema
+ok 18 - every public non-construction category has substantive visible guide content and FAQ schema
+  ---
+  duration_ms: 1.618512
+  type: 'test'
+  ...
+# Subtest: new category guides describe every published tool in their category
+ok 19 - new category guides describe every published tool in their category
+  ---
+  duration_ms: 0.308313
+  type: 'test'
+  ...
+# Subtest: category guide tool descriptions use published tool identities
+ok 20 - category guide tool descriptions use published tool identities
+  ---
+  duration_ms: 0.41722
+  type: 'test'
+  ...
+# Subtest: homepage and finance category metadata describe the current catalogue
+ok 21 - homepage and finance category metadata describe the current catalogue
+  ---
+  duration_ms: 0.391797
+  type: 'test'
+  ...
+# Subtest: every public meta description is complete, unique, and snippet-safe
+ok 22 - every public meta description is complete, unique, and snippet-safe
+  ---
+  duration_ms: 8.615946
+  type: 'test'
+  ...
+# Subtest: all site-wide tool and category counts derive from published tool pages
+ok 23 - all site-wide tool and category counts derive from published tool pages
+  ---
+  duration_ms: 0.251639
+  type: 'test'
+  ...
+# Subtest: every catalog category has one indexable discovery route in the sitemap
+ok 24 - every catalog category has one indexable discovery route in the sitemap
+  ---
+  duration_ms: 0.245873
+  type: 'test'
+  ...
+# Subtest: homepage inventory metadata is dynamic and contains no stale legacy totals
+ok 25 - homepage inventory metadata is dynamic and contains no stale legacy totals
+  ---
+  duration_ms: 0.338819
+  type: 'test'
+  ...
+# Subtest: tool slugs, names, descriptions, and destinations are unique
+ok 26 - tool slugs, names, descriptions, and destinations are unique
+  ---
+  duration_ms: 0.132352
+  type: 'test'
+  ...
+# Subtest: tool metadata has no malformed, generic, or duplicated descriptions
+ok 27 - tool metadata has no malformed, generic, or duplicated descriptions
+  ---
+  duration_ms: 4.657945
+  type: 'test'
+  ...
+# Subtest: canonical related-tool graph covers every published tool with reciprocal semantic links
+ok 28 - canonical related-tool graph covers every published tool with reciprocal semantic links
+  ---
+  duration_ms: 0.987488
+  type: 'test'
+  ...
+# Subtest: voltage drop has one electrical canonical route and no unpublished math duplicate
+ok 29 - voltage drop has one electrical canonical route and no unpublished math duplicate
+  ---
+  duration_ms: 0.213957
+  type: 'test'
+  ...
+# Subtest: public URLs use a stable trailing-slash convention without changing route keys
+ok 30 - public URLs use a stable trailing-slash convention without changing route keys
+  ---
+  duration_ms: 0.085233
+  type: 'test'
+  ...
+# Subtest: only the canonical production hostname is indexable
+ok 31 - only the canonical production hostname is indexable
+  ---
+  duration_ms: 0.057838
+  type: 'test'
+  ...
+# Subtest: legacy and hostname redirects collapse into one query-preserving 301 target
+ok 32 - legacy and hostname redirects collapse into one query-preserving 301 target
+  ---
+  duration_ms: 0.269173
+  type: 'test'
+  ...
+# Subtest: public SEO includes one production-host-gated AdSense publisher tag after denied consent defaults
+ok 33 - public SEO includes one production-host-gated AdSense publisher tag after denied consent defaults
+  ---
+  duration_ms: 0.28647
+  type: 'test'
+  ...
+# Subtest: recognized private routes stay noindex without becoming 404 pages
+ok 34 - recognized private routes stay noindex without becoming 404 pages
+  ---
+  duration_ms: 0.182663
+  type: 'test'
+  ...
+# Subtest: every SEO head uses the absolute accessible 1200 by 630 social card
+ok 35 - every SEO head uses the absolute accessible 1200 by 630 social card
+  ---
+  duration_ms: 0.153662
+  type: 'test'
+  ...
+# Subtest: percentage and image scaling pages have distinct specific metadata
+ok 36 - percentage and image scaling pages have distinct specific metadata
+  ---
+  duration_ms: 0.24328
+  type: 'test'
+  ...
+# Subtest: PWA metadata uses the FigureNest identity without changing public routes
+ok 37 - PWA metadata uses the FigureNest identity without changing public routes
+  ---
+  duration_ms: 0.196484
+  type: 'test'
+  ...
+# Subtest: PWA offline behavior is network-first and bypasses private, auth, and API requests
+ok 38 - PWA offline behavior is network-first and bypasses private, auth, and API requests
+  ---
+  duration_ms: 1.698301
+  type: 'test'
+  ...
+# Subtest: SEO accepts legacy slash variants and redirects the retired construction category
+ok 39 - SEO accepts legacy slash variants and redirects the retired construction category
+  ---
+  duration_ms: 0.086573
+  type: 'test'
+  ...
+# Subtest: percentage change has dedicated indexable SEO and FAQ schema
+ok 40 - percentage change has dedicated indexable SEO and FAQ schema
+  ---
+  duration_ms: 0.101021
+  type: 'test'
+  ...
+# Subtest: date duration has dedicated indexable SEO and shared FAQ schema
+ok 41 - date duration has dedicated indexable SEO and shared FAQ schema
+  ---
+  duration_ms: 0.15996
+  type: 'test'
+  ...
+# Subtest: loan, mortgage, and compound interest have distinct indexable SEO and visible FAQ schema
+ok 42 - loan, mortgage, and compound interest have distinct indexable SEO and visible FAQ schema
+  ---
+  duration_ms: 0.153806
+  type: 'test'
+  ...
+# Subtest: age, working days, salary, and overtime have distinct indexable SEO and visible FAQ schema
+ok 43 - age, working days, salary, and overtime have distinct indexable SEO and visible FAQ schema
+  ---
+  duration_ms: 0.152693
+  type: 'test'
+  ...
+# Subtest: core converter cluster has distinct indexable SEO and schema synchronized with visible FAQs
+ok 44 - core converter cluster has distinct indexable SEO and schema synchronized with visible FAQs
+  ---
+  duration_ms: 0.298421
+  type: 'test'
+  ...
+# Subtest: business calculator cluster has distinct indexable SEO and visible FAQ schema
+ok 45 - business calculator cluster has distinct indexable SEO and visible FAQ schema
+  ---
+  duration_ms: 0.520962
+  type: 'test'
+  ...
+# Subtest: automotive energy cluster has distinct indexable SEO and visible FAQ schema
+ok 46 - automotive energy cluster has distinct indexable SEO and visible FAQ schema
+  ---
+  duration_ms: 0.31859
+  type: 'test'
+  ...
+# Subtest: percentage change and date duration remain sitemap-listed and internally discoverable
+ok 47 - percentage change and date duration remain sitemap-listed and internally discoverable
+  ---
+  duration_ms: 0.199498
+  type: 'test'
+  ...
+# Subtest: every catalog destination matches its slug and route family
+ok 48 - every catalog destination matches its slug and route family
+  ---
+  duration_ms: 0.135898
+  type: 'test'
+  ...
+# Subtest: construction related links all resolve to published construction tools
+ok 49 - construction related links all resolve to published construction tools
+  ---
+  duration_ms: 0.311439
+  type: 'test'
+  ...
+# Subtest: sitemap exactly matches all indexable app pages
+not ok 50 - sitemap exactly matches all indexable app pages
+  ---
+  duration_ms: 5.764432
+  type: 'test'
+  location: '/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:1:26051'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        '/',
+        '/about/',
+        '/articles/',
+        '/articles/business-pricing-profit-basics/',
+    ...
+        '/calculators/math/average/',
+    -   '/calculators/math/big-number/',
+        '/calculators/math/binary/',
+        '/calculators/math/circle/',
+        '/calculators/math/confidence-interval/',
+    -   '/calculators/math/distance/',
+        '/calculators/math/exponent/',
+        '/calculators/math/fraction/',
+        '/calculators/math/greatest-common-factor/',
+        '/calculators/math/half-life/',
+        '/calculators/math/hex/',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '/'
+    1: '/about/'
+    2: '/articles/'
+    3: '/articles/business-pricing-profit-basics/'
+    4: '/articles/compound-interest-guide/'
+    5: '/articles/construction-materials-estimating/'
+    6: '/articles/ev-charging-and-fuel-costs/'
+    7: '/articles/loan-payment-calculations/'
+    8: '/articles/mortgage-payment-basics/'
+    9: '/articles/refinancing-considerations/'
+    10: '/articles/salary-and-overtime-basics/'
+    11: '/articles/unit-conversion-basics/'
+    12: '/calculators/'
+    13: '/calculators/automotive/ev-charging-cost/'
+    14: '/calculators/automotive/ev-charging-time/'
+    15: '/calculators/automotive/fuel-cost/'
+    16: '/calculators/automotive/fuel-economy/'
+    17: '/calculators/automotive/gas-mileage/'
+    18: '/calculators/automotive/mileage/'
+    19: '/calculators/automotive/tire-size/'
+    20: '/calculators/business/break-even/'
+    21: '/calculators/business/commission/'
+    22: '/calculators/business/conversion-rate/'
+    23: '/calculators/business/cpc/'
+    24: '/calculators/business/cpm/'
+    25: '/calculators/business/customer-acquisition-cost/'
+    26: '/calculators/business/markup/'
+    27: '/calculators/business/profit-margin/'
+    28: '/calculators/business/roas/'
+    29: '/calculators/business/roi/'
+    30: '/calculators/construction/board-foot/'
+    31: '/calculators/construction/brick/'
+    32: '/calculators/construction/btu/'
+    33: '/calculators/construction/concrete-bag/'
+    34: '/calculators/construction/concrete-cost/'
+    35: '/calculators/construction/concrete-footing/'
+    36: '/calculators/construction/concrete-slab/'
+    37: '/calculators/construction/concrete/'
+    38: '/calculators/construction/cubic-yard/'
+    39: '/calculators/construction/deck-material/'
+    40: '/calculators/construction/drywall/'
+    41: '/calculators/construction/fence-material/'
+    42: '/calculators/construction/flooring/'
+    43: '/calculators/construction/gravel/'
+    44: '/calculators/construction/mulch/'
+    45: '/calculators/construction/paint/'
+    46: '/calculators/construction/roof-pitch/'
+    47: '/calculators/construction/roofing-material/'
+    48: '/calculators/construction/square-footage/'
+    49: '/calculators/construction/stair/'
+    50: '/calculators/construction/tile/'
+    51: '/calculators/date-time/age/'
+    52: '/calculators/date-time/date-difference/'
+    53: '/calculators/date-time/day-of-week/'
+    54: '/calculators/date-time/hours/'
+    55: '/calculators/date-time/time-card/'
+    56: '/calculators/date-time/time-duration/'
+    57: '/calculators/date-time/time-zone/'
+    58: '/calculators/date-time/time/'
+    59: '/calculators/date-time/working-days/'
+    60: '/calculators/education/gpa/'
+    61: '/calculators/education/grade/'
+    62: '/calculators/electrical/cable-fuse-size/'
+    63: '/calculators/electrical/electricity/'
+    64: '/calculators/electrical/ohms-law/'
+    65: '/calculators/electrical/resistor/'
+    66: '/calculators/electrical/voltage-drop/'
+    67: '/calculators/finance/401k/'
+    68: '/calculators/finance/annuity/'
+    69: '/calculators/finance/apr/'
+    70: '/calculators/finance/auto-lease/'
+    71: '/calculators/finance/auto-loan/'
+    72: '/calculators/finance/average-return/'
+    73: '/calculators/finance/boat-loan/'
+    74: '/calculators/finance/bond/'
+    75: '/calculators/finance/budget/'
+    76: '/calculators/finance/business-loan/'
+    77: '/calculators/finance/canadian-mortgage/'
+    78: '/calculators/finance/cash-back-or-low-interest/'
+    79: '/calculators/finance/compound-interest/'
+    80: '/calculators/finance/credit-card/'
+    81: '/calculators/finance/debt-consolidation/'
+    82: '/calculators/finance/discount/'
+    83: '/calculators/finance/estate-tax/'
+    84: '/calculators/finance/fha-loan/'
+    85: '/calculators/finance/home-equity-loan/'
+    86: '/calculators/finance/interest-rate/'
+    87: '/calculators/finance/interest/'
+    88: '/calculators/finance/investment/'
+    89: '/calculators/finance/loan/'
+    90: '/calculators/finance/marriage-tax/'
+    91: '/calculators/finance/mortgage-amortization/'
+    92: '/calculators/finance/mortgage-payoff/'
+    93: '/calculators/finance/mortgage/'
+    94: '/calculators/finance/percent-off/'
+    95: '/calculators/finance/percentage/'
+    96: '/calculators/finance/personal-loan/'
+    97: '/calculators/finance/retirement/'
+    98: '/calculators/finance/sales-tax/'
+    99: '/calculators/finance/savings/'
+    100: '/calculators/finance/simple-interest/'
+    101: '/calculators/finance/social-security/'
+    102: '/calculators/finance/student-loan/'
+    103: '/calculators/finance/tax/'
+    104: '/calculators/finance/tip/'
+    105: '/calculators/finance/uk-mortgage/'
+    106: '/calculators/finance/va-mortgage/'
+    107: '/calculators/finance/vat/'
+    108: '/calculators/health/anorexic-bmi/'
+    109: '/calculators/health/army-body-fat/'
+    110: '/calculators/health/bac/'
+    111: '/calculators/health/bmi/'
+    112: '/calculators/health/bmr/'
+    113: '/calculators/health/body-fat/'
+    114: '/calculators/health/body-surface-area/'
+    115: '/calculators/health/calorie/'
+    116: '/calculators/health/calories-burned/'
+    117: '/calculators/health/due-date/'
+    118: '/calculators/health/gfr/'
+    119: '/calculators/health/ideal-weight/'
+    120: '/calculators/health/lean-body-mass/'
+    121: '/calculators/health/macro/'
+    122: '/calculators/health/pace/'
+    123: '/calculators/health/pregnancy-conception/'
+    124: '/calculators/health/pregnancy-weight-gain/'
+    125: '/calculators/health/pregnancy/'
+    126: '/calculators/health/sleep/'
+    127: '/calculators/health/target-heart-rate/'
+    128: '/calculators/health/tdee/'
+    129: '/calculators/math/area/'
+    130: '/calculators/math/average/'
+    131: '/calculators/math/big-number/'
+    132: '/calculators/math/binary/'
+    133: '/calculators/math/circle/'
+    134: '/calculators/math/confidence-interval/'
+    135: '/calculators/math/distance/'
+    136: '/calculators/math/exponent/'
+    137: '/calculators/math/fraction/'
+    138: '/calculators/math/greatest-common-factor/'
+    139: '/calculators/math/half-life/'
+    140: '/calculators/math/hex/'
+    141: '/calculators/math/least-common-multiple/'
+    142: '/calculators/math/log/'
+    143: '/calculators/math/long-division/'
+    144: '/calculators/math/matrix/'
+    145: '/calculators/math/mean-median-mode-range/'
+    146: '/calculators/math/number-sequence/'
+    147: '/calculators/math/percent-error/'
+    148: '/calculators/math/percentage-increase-decrease/'
+    149: '/calculators/math/permutation-combination/'
+    150: '/calculators/math/prime-factorization/'
+    151: '/calculators/math/probability/'
+    152: '/calculators/math/scientific-notation/'
+    153: '/calculators/math/scientific/'
+    154: '/calculators/math/volume/'
+    155: '/calculators/printing-design/dpi-ppi/'
+    156: '/calculators/printing-design/image-scaling/'
+    157: '/calculators/printing-design/pixels-to-cm/'
+    158: '/calculators/salary-work/overtime/'
+    159: '/calculators/salary-work/salary/'
+    160: '/calculators/salary-work/take-home-pay/'
+    161: '/calculators/science-engineering/density/'
+    162: '/calculators/science-engineering/dew-point/'
+    163: '/calculators/science-engineering/heat-index/'
+    164: '/calculators/science-engineering/horsepower/'
+    165: '/calculators/science-engineering/mass/'
+    166: '/calculators/science-engineering/molarity/'
+    167: '/calculators/science-engineering/molecular-weight/'
+    168: '/calculators/science-engineering/speed-calculator/'
+    169: '/calculators/science-engineering/wind-chill/'
+    170: '/calculators/technology/bandwidth/'
+    171: '/calculators/technology/base64/'
+    172: '/calculators/technology/ip-subnet/'
+    173: '/calculators/technology/password-generator/'
+    174: '/calculators/technology/url-encode-decode/'
+    175: '/category/automotive/'
+    176: '/category/business/'
+    177: '/category/converters/'
+    178: '/category/date-time/'
+    179: '/category/education/'
+    180: '/category/electrical/'
+    181: '/category/finance/'
+    182: '/category/health/'
+    183: '/category/math/'
+    184: '/category/printing-design/'
+    185: '/category/salary-work/'
+    186: '/category/science-engineering/'
+    187: '/category/technology/'
+    188: '/contact/'
+    189: '/converters/currency/'
+    190: '/converters/length/'
+    191: '/converters/power/'
+    192: '/converters/roman-numeral/'
+    193: '/converters/shoe-size/'
+    194: '/converters/speed/'
+    195: '/converters/temperature/'
+    196: '/converters/unit/'
+    197: '/converters/weight/'
+    198: '/cookies/'
+    199: '/disclaimer/'
+    200: '/home-construction/'
+    201: '/methodology/'
+    202: '/privacy/'
+    203: '/terms/'
+  actual:
+    0: '/'
+    1: '/about/'
+    2: '/articles/'
+    3: '/articles/business-pricing-profit-basics/'
+    4: '/articles/compound-interest-guide/'
+    5: '/articles/construction-materials-estimating/'
+    6: '/articles/ev-charging-and-fuel-costs/'
+    7: '/articles/loan-payment-calculations/'
+    8: '/articles/mortgage-payment-basics/'
+    9: '/articles/refinancing-considerations/'
+    10: '/articles/salary-and-overtime-basics/'
+    11: '/articles/unit-conversion-basics/'
+    12: '/calculators/'
+    13: '/calculators/automotive/ev-charging-cost/'
+    14: '/calculators/automotive/ev-charging-time/'
+    15: '/calculators/automotive/fuel-cost/'
+    16: '/calculators/automotive/fuel-economy/'
+    17: '/calculators/automotive/gas-mileage/'
+    18: '/calculators/automotive/mileage/'
+    19: '/calculators/automotive/tire-size/'
+    20: '/calculators/business/break-even/'
+    21: '/calculators/business/commission/'
+    22: '/calculators/business/conversion-rate/'
+    23: '/calculators/business/cpc/'
+    24: '/calculators/business/cpm/'
+    25: '/calculators/business/customer-acquisition-cost/'
+    26: '/calculators/business/markup/'
+    27: '/calculators/business/profit-margin/'
+    28: '/calculators/business/roas/'
+    29: '/calculators/business/roi/'
+    30: '/calculators/construction/board-foot/'
+    31: '/calculators/construction/brick/'
+    32: '/calculators/construction/btu/'
+    33: '/calculators/construction/concrete-bag/'
+    34: '/calculators/construction/concrete-cost/'
+    35: '/calculators/construction/concrete-footing/'
+    36: '/calculators/construction/concrete-slab/'
+    37: '/calculators/construction/concrete/'
+    38: '/calculators/construction/cubic-yard/'
+    39: '/calculators/construction/deck-material/'
+    40: '/calculators/construction/drywall/'
+    41: '/calculators/construction/fence-material/'
+    42: '/calculators/construction/flooring/'
+    43: '/calculators/construction/gravel/'
+    44: '/calculators/construction/mulch/'
+    45: '/calculators/construction/paint/'
+    46: '/calculators/construction/roof-pitch/'
+    47: '/calculators/construction/roofing-material/'
+    48: '/calculators/construction/square-footage/'
+    49: '/calculators/construction/stair/'
+    50: '/calculators/construction/tile/'
+    51: '/calculators/date-time/age/'
+    52: '/calculators/date-time/date-difference/'
+    53: '/calculators/date-time/day-of-week/'
+    54: '/calculators/date-time/hours/'
+    55: '/calculators/date-time/time-card/'
+    56: '/calculators/date-time/time-duration/'
+    57: '/calculators/date-time/time-zone/'
+    58: '/calculators/date-time/time/'
+    59: '/calculators/date-time/working-days/'
+    60: '/calculators/education/gpa/'
+    61: '/calculators/education/grade/'
+    62: '/calculators/electrical/cable-fuse-size/'
+    63: '/calculators/electrical/electricity/'
+    64: '/calculators/electrical/ohms-law/'
+    65: '/calculators/electrical/resistor/'
+    66: '/calculators/electrical/voltage-drop/'
+    67: '/calculators/finance/401k/'
+    68: '/calculators/finance/annuity/'
+    69: '/calculators/finance/apr/'
+    70: '/calculators/finance/auto-lease/'
+    71: '/calculators/finance/auto-loan/'
+    72: '/calculators/finance/average-return/'
+    73: '/calculators/finance/boat-loan/'
+    74: '/calculators/finance/bond/'
+    75: '/calculators/finance/budget/'
+    76: '/calculators/finance/business-loan/'
+    77: '/calculators/finance/canadian-mortgage/'
+    78: '/calculators/finance/cash-back-or-low-interest/'
+    79: '/calculators/finance/compound-interest/'
+    80: '/calculators/finance/credit-card/'
+    81: '/calculators/finance/debt-consolidation/'
+    82: '/calculators/finance/discount/'
+    83: '/calculators/finance/estate-tax/'
+    84: '/calculators/finance/fha-loan/'
+    85: '/calculators/finance/home-equity-loan/'
+    86: '/calculators/finance/interest-rate/'
+    87: '/calculators/finance/interest/'
+    88: '/calculators/finance/investment/'
+    89: '/calculators/finance/loan/'
+    90: '/calculators/finance/marriage-tax/'
+    91: '/calculators/finance/mortgage-amortization/'
+    92: '/calculators/finance/mortgage-payoff/'
+    93: '/calculators/finance/mortgage/'
+    94: '/calculators/finance/percent-off/'
+    95: '/calculators/finance/percentage/'
+    96: '/calculators/finance/personal-loan/'
+    97: '/calculators/finance/retirement/'
+    98: '/calculators/finance/sales-tax/'
+    99: '/calculators/finance/savings/'
+    100: '/calculators/finance/simple-interest/'
+    101: '/calculators/finance/social-security/'
+    102: '/calculators/finance/student-loan/'
+    103: '/calculators/finance/tax/'
+    104: '/calculators/finance/tip/'
+    105: '/calculators/finance/uk-mortgage/'
+    106: '/calculators/finance/va-mortgage/'
+    107: '/calculators/finance/vat/'
+    108: '/calculators/health/anorexic-bmi/'
+    109: '/calculators/health/army-body-fat/'
+    110: '/calculators/health/bac/'
+    111: '/calculators/health/bmi/'
+    112: '/calculators/health/bmr/'
+    113: '/calculators/health/body-fat/'
+    114: '/calculators/health/body-surface-area/'
+    115: '/calculators/health/calorie/'
+    116: '/calculators/health/calories-burned/'
+    117: '/calculators/health/due-date/'
+    118: '/calculators/health/gfr/'
+    119: '/calculators/health/ideal-weight/'
+    120: '/calculators/health/lean-body-mass/'
+    121: '/calculators/health/macro/'
+    122: '/calculators/health/pace/'
+    123: '/calculators/health/pregnancy-conception/'
+    124: '/calculators/health/pregnancy-weight-gain/'
+    125: '/calculators/health/pregnancy/'
+    126: '/calculators/health/sleep/'
+    127: '/calculators/health/target-heart-rate/'
+    128: '/calculators/health/tdee/'
+    129: '/calculators/math/area/'
+    130: '/calculators/math/average/'
+    131: '/calculators/math/binary/'
+    132: '/calculators/math/circle/'
+    133: '/calculators/math/confidence-interval/'
+    134: '/calculators/math/exponent/'
+    135: '/calculators/math/fraction/'
+    136: '/calculators/math/greatest-common-factor/'
+    137: '/calculators/math/half-life/'
+    138: '/calculators/math/hex/'
+    139: '/calculators/math/least-common-multiple/'
+    140: '/calculators/math/log/'
+    141: '/calculators/math/long-division/'
+    142: '/calculators/math/matrix/'
+    143: '/calculators/math/mean-median-mode-range/'
+    144: '/calculators/math/number-sequence/'
+    145: '/calculators/math/percent-error/'
+    146: '/calculators/math/percentage-increase-decrease/'
+    147: '/calculators/math/permutation-combination/'
+    148: '/calculators/math/prime-factorization/'
+    149: '/calculators/math/probability/'
+    150: '/calculators/math/scientific-notation/'
+    151: '/calculators/math/scientific/'
+    152: '/calculators/math/volume/'
+    153: '/calculators/printing-design/dpi-ppi/'
+    154: '/calculators/printing-design/image-scaling/'
+    155: '/calculators/printing-design/pixels-to-cm/'
+    156: '/calculators/salary-work/overtime/'
+    157: '/calculators/salary-work/salary/'
+    158: '/calculators/salary-work/take-home-pay/'
+    159: '/calculators/science-engineering/density/'
+    160: '/calculators/science-engineering/dew-point/'
+    161: '/calculators/science-engineering/heat-index/'
+    162: '/calculators/science-engineering/horsepower/'
+    163: '/calculators/science-engineering/mass/'
+    164: '/calculators/science-engineering/molarity/'
+    165: '/calculators/science-engineering/molecular-weight/'
+    166: '/calculators/science-engineering/speed-calculator/'
+    167: '/calculators/science-engineering/wind-chill/'
+    168: '/calculators/technology/bandwidth/'
+    169: '/calculators/technology/base64/'
+    170: '/calculators/technology/ip-subnet/'
+    171: '/calculators/technology/password-generator/'
+    172: '/calculators/technology/url-encode-decode/'
+    173: '/category/automotive/'
+    174: '/category/business/'
+    175: '/category/converters/'
+    176: '/category/date-time/'
+    177: '/category/education/'
+    178: '/category/electrical/'
+    179: '/category/finance/'
+    180: '/category/health/'
+    181: '/category/math/'
+    182: '/category/printing-design/'
+    183: '/category/salary-work/'
+    184: '/category/science-engineering/'
+    185: '/category/technology/'
+    186: '/contact/'
+    187: '/converters/currency/'
+    188: '/converters/length/'
+    189: '/converters/power/'
+    190: '/converters/roman-numeral/'
+    191: '/converters/shoe-size/'
+    192: '/converters/speed/'
+    193: '/converters/temperature/'
+    194: '/converters/unit/'
+    195: '/converters/weight/'
+    196: '/cookies/'
+    197: '/disclaimer/'
+    198: '/home-construction/'
+    199: '/methodology/'
+    200: '/privacy/'
+    201: '/terms/'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/figurenest/figurenest/artifacts/calcstride/src/lib/site-audit.test.ts:358:591)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: every literal internal link points to an indexable route or the home search anchor
+ok 51 - every literal internal link points to an indexable route or the home search anchor
+  ---
+  duration_ms: 0.616461
+  type: 'test'
+  ...
+# Subtest: article registry is substantial, unique, connected, and metadata-safe
+ok 52 - article registry is substantial, unique, connected, and metadata-safe
+  ---
+  duration_ms: 0.726098
+  type: 'test'
+  ...
+# Subtest: article worked examples match their stated formulas and rounding convention
+ok 53 - article worked examples match their stated formulas and rounding convention
+  ---
+  duration_ms: 0.372741
+  type: 'test'
+  ...
+# Subtest: article and homepage schemas stay aligned with visible FAQ registries
+ok 54 - article and homepage schemas stay aligned with visible FAQ registries
+  ---
+  duration_ms: 2.749535
+  type: 'test'
+  ...
+# Subtest: homepage guide previews cover the complete article collection
+ok 55 - homepage guide previews cover the complete article collection
+  ---
+  duration_ms: 0.11287
+  type: 'test'
+  ...
+# Subtest: user-facing sources contain no retired demo or preview content
+ok 56 - user-facing sources contain no retired demo or preview content
+  ---
+  duration_ms: 1.799918
+  type: 'test'
+  ...
+1..56
+# tests 56
+# suites 0
+# pass 55
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 775.431165
+undefined
+/home/runner/work/figurenest/figurenest/artifacts/calcstride:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: tsx --test src/lib/math-mini-cluster.test.ts src/lib/phase-three-b.test.ts src/lib/site-audit.test.ts
