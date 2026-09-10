@@ -9,6 +9,7 @@ test('Big Number Calculator preserves exact arbitrary-precision integer arithmet
   assert.equal(calculatePhaseThreeB('big-number', ['add', '9007199254740993', '1']).primary, '9007199254740994');
   assert.equal(calculatePhaseThreeB('big-number', ['subtract', '-9007199254740993', '2']).primary, '-9007199254740995');
   assert.equal(calculatePhaseThreeB('big-number', ['multiply', '12345678901234567890', '-3']).primary, '-37037036703703703670');
+  assert.equal(calculatePhaseThreeB('big-number', ['add', '+42', '-2']).primary, '40');
   const division = calculatePhaseThreeB('big-number', ['divide', '-17', '5']);
   assert.equal(division.primary, '-3');
   assert.equal(division.details.find((item) => item.label === 'Remainder')?.value, '-2');
@@ -33,6 +34,9 @@ test('Distance Calculator covers reference, signed, decimal, zero-distance and a
   const vertical = calculatePhaseThreeB('distance', ['2', '-3', '2', '7']);
   assert.equal(vertical.primary, '10');
   assert.equal(vertical.details.find((item) => item.label === 'Δx')?.value, '0');
+  const signedZero = calculatePhaseThreeB('distance', ['-0', '-0', '0', '0']);
+  assert.equal(signedZero.primary, '0');
+  assert.ok(signedZero.details.every((item) => item.value !== '-0'));
 });
 
 test('Distance Calculator rejects blank, non-finite and out-of-bound coordinates', () => {
