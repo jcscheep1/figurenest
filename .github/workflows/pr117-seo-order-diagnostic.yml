@@ -1,0 +1,46 @@
+name: PR117 post-SEO diagnostic
+
+on:
+  push:
+    branches:
+      - expansion/batch-1-business-marketing
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: expansion/batch-1-business-marketing
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc -b lib/api-client-react
+      - run: pnpm --filter @workspace/calcstride typecheck
+      - run: pnpm --filter @workspace/calcstride generate:seo
+      - name: Capture full unit suite after SEO generation
+        id: tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm --filter @workspace/calcstride test |& tee pr117-post-seo-tests.log
+      - name: Commit diagnostic evidence
+        if: always()
+        shell: bash
+        run: |
+          git config user.name figurenest-forensics
+          git config user.email actions@users.noreply.github.com
+          git add pr117-post-seo-tests.log
+          git commit -m "qa: record PR117 post-SEO unit failure" || true
+          git push origin HEAD:expansion/batch-1-business-marketing
