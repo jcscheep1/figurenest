@@ -1,0 +1,42 @@
+name: PR117 Fix Tool Applicability
+
+on:
+  push:
+    branches:
+      - expansion/batch-1-business-marketing
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: expansion/batch-1-business-marketing
+      - name: Add missing Business/Marketing applicability entries
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('artifacts/calcstride/src/lib/units-preferences.ts')
+          text = path.read_text()
+          old = "roi: monetary(), 'profit-margin': monetary(), markup: monetary(), 'break-even': monetary(), vat: monetary()"
+          new = "roi: monetary(), 'profit-margin': monetary(), markup: monetary(), 'break-even': monetary(), roas: monetary(), 'conversion-rate': unitless(), cpc: monetary(), cpm: monetary(), 'customer-acquisition-cost': monetary(), vat: monetary()"
+          if new in text:
+              print('Applicability entries already present; no change needed.')
+          elif old in text:
+              path.write_text(text.replace(old, new, 1))
+          else:
+              raise SystemExit('Expected applicability anchor not found; refusing broad edit')
+      - name: Commit repair when needed
+        run: |
+          if git diff --quiet; then
+            echo "No repair commit needed."
+            exit 0
+          fi
+          git config user.name "figurenest-forensics"
+          git config user.email "actions@users.noreply.github.com"
+          git add artifacts/calcstride/src/lib/units-preferences.ts
+          git commit -m "Fix Business growth tool applicability"
+          git push origin HEAD:expansion/batch-1-business-marketing
