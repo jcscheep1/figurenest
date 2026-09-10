@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { FileJobStatus } from '../lib/file-tools-foundation';
 
 type LocalFileDropzoneProps = {
@@ -31,9 +31,14 @@ export function LocalFileDropzone({
 }: LocalFileDropzoneProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const chooseButtonRef = useRef<HTMLButtonElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const safeProgress = clampedProgress(progress);
   const busy = status === 'validating' || status === 'processing';
+
+  useEffect(() => {
+    if (error) chooseButtonRef.current?.focus();
+  }, [error]);
 
   const choose = (file: File | undefined) => {
     if (!file || disabled) return;
@@ -75,6 +80,7 @@ export function LocalFileDropzone({
           style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}
         />
         <button
+          ref={chooseButtonRef}
           type="button"
           disabled={disabled || busy}
           onClick={() => inputRef.current?.click()}
@@ -109,8 +115,9 @@ export function LocalFileDropzone({
           <button
             type="button"
             onClick={() => {
+              if (inputRef.current) inputRef.current.value = '';
               onReset();
-              inputRef.current?.focus();
+              chooseButtonRef.current?.focus();
             }}
           >
             Reset
