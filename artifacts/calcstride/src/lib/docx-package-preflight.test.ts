@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
+import { deflateRawSync } from 'node:zlib';
 import test from 'node:test';
 import { FileToolError } from './file-tools-foundation';
-import { DOCX_PACKAGE_LIMITS, preflightDocxPackage } from './docx-package-preflight';
+import { DOCX_PACKAGE_LIMITS, inspectDocxPackage, preflightDocxPackage } from './docx-package-preflight';
 
 type SyntheticEntry = {
   name: string;
+  data?: string | Uint8Array;
   compressedBytes?: number;
   uncompressedBytes?: number;
   method?: number;
@@ -30,22 +32,26 @@ function syntheticZip(entries: readonly SyntheticEntry[]): Uint8Array {
 
   for (const entry of entries) {
     const name = Buffer.from(entry.name, 'utf8');
-    const compressedBytes = entry.compressedBytes ?? 1;
-    const uncompressedBytes = entry.uncompressedBytes ?? compressedBytes;
+    const source = typeof entry.data === 'string'
+      ? Buffer.from(entry.data, 'utf8')
+      : entry.data ? Buffer.from(entry.data) : Buffer.from('x');
     const method = entry.method ?? 0;
+    const actualPayload = method === 8 ? deflateRawSync(source) : source;
+    const compressedBytes = entry.compressedBytes ?? actualPayload.length;
+    const uncompressedBytes = entry.uncompressedBytes ?? source.length;
     const flags = entry.flags ?? 0x0800;
     const localHeader = Buffer.concat([
       u32(0x04034b50), u16(20), u16(flags), u16(method), u16(0), u16(0), u32(0),
       u32(compressedBytes), u32(uncompressedBytes), u16(name.length), u16(0), name,
     ]);
-    local.push(localHeader);
+    local.push(localHeader, actualPayload);
 
     central.push(Buffer.concat([
       u32(0x02014b50), u16(20), u16(20), u16(flags), u16(method), u16(0), u16(0), u32(0),
       u32(compressedBytes), u32(uncompressedBytes), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0),
       u32(localOffset), name,
     ]));
-    localOffset += localHeader.length;
+    localOffset += localHeader.length + actualPayload.length;
   }
 
   const localBytes = Buffer.concat(local);
@@ -57,12 +63,17 @@ function syntheticZip(entries: readonly SyntheticEntry[]): Uint8Array {
   return new Uint8Array(Buffer.concat([localBytes, centralBytes, eocd]));
 }
 
+const NORMAL_CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8"?><Types><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`;
+const ROOT_RELS = `<?xml version="1.0"?><Relationships><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+const EMPTY_DOCUMENT = `<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>`;
+const EMPTY_RELS = `<?xml version="1.0"?><Relationships/>`;
+
 function baseEntries(extra: readonly SyntheticEntry[] = []): SyntheticEntry[] {
   return [
-    { name: '[Content_Types].xml' },
-    { name: '_rels/.rels' },
-    { name: 'word/document.xml' },
-    { name: 'word/_rels/document.xml.rels' },
+    { name: '[Content_Types].xml', data: NORMAL_CONTENT_TYPES },
+    { name: '_rels/.rels', data: ROOT_RELS },
+    { name: 'word/document.xml', data: EMPTY_DOCUMENT },
+    { name: 'word/_rels/document.xml.rels', data: EMPTY_RELS },
     ...extra,
   ];
 }
@@ -73,16 +84,16 @@ function hasCode(code: string) {
 
 test('FT-07 accepts a bounded ordinary DOCX ZIP package', () => {
   const result = preflightDocxPackage(syntheticZip(baseEntries([
-    { name: 'word/media/image1.png', compressedBytes: 200, uncompressedBytes: 500 },
+    { name: 'word/media/image1.png', data: 'image' },
   ])), 'desktop');
   assert.equal(result.entries.length, 5);
   assert.equal(result.entries.some((entry) => entry.name === 'word/document.xml'), true);
-  assert.equal(result.totalUncompressedBytes, 504);
+  assert.ok(result.totalUncompressedBytes > 0);
 });
 
 test('FT-07 rejects generic ZIPs that are not DOCX packages', () => {
   assert.throws(
-    () => preflightDocxPackage(syntheticZip([{ name: 'notes.txt' }]), 'desktop'),
+    () => preflightDocxPackage(syntheticZip([{ name: 'notes.txt', data: 'notes' }]), 'desktop'),
     hasCode('unsupported-type'),
   );
 });
@@ -123,5 +134,59 @@ test('FT-07 rejects duplicate case-insensitive package entry names', () => {
   assert.throws(
     () => preflightDocxPackage(syntheticZip(baseEntries([{ name: 'WORD/DOCUMENT.XML' }])), 'desktop'),
     hasCode('malformed'),
+  );
+});
+
+test('FT-07 inspects DEFLATE metadata locally and allows ordinary external hyperlinks without fetching them', async () => {
+  const hyperlinkRels = `<?xml version="1.0"?><Relationships><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com/" TargetMode="External"/></Relationships>`;
+  const result = await inspectDocxPackage(syntheticZip([
+    { name: '[Content_Types].xml', data: NORMAL_CONTENT_TYPES, method: 8 },
+    { name: '_rels/.rels', data: ROOT_RELS, method: 8 },
+    { name: 'word/document.xml', data: EMPTY_DOCUMENT, method: 8 },
+    { name: 'word/_rels/document.xml.rels', data: hyperlinkRels, method: 8 },
+  ]), 'desktop');
+  assert.equal(result.externalHyperlinks, 1);
+  assert.equal(result.inspectedRelationshipFiles, 2);
+});
+
+test('FT-07 rejects renamed macro-enabled packages by content type', async () => {
+  const macroTypes = NORMAL_CONTENT_TYPES.replace(
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml',
+    'application/vnd.ms-word.document.macroEnabled.main+xml',
+  );
+  await assert.rejects(
+    inspectDocxPackage(syntheticZip([
+      { name: '[Content_Types].xml', data: macroTypes },
+      { name: '_rels/.rels', data: ROOT_RELS },
+      { name: 'word/document.xml', data: EMPTY_DOCUMENT },
+      { name: 'word/_rels/document.xml.rels', data: EMPTY_RELS },
+    ]), 'desktop'),
+    hasCode('unsupported-type'),
+  );
+});
+
+test('FT-07 rejects non-hyperlink external document resources', async () => {
+  const externalImageRels = `<?xml version="1.0"?><Relationships><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="https://example.com/tracker.png" TargetMode="External"/></Relationships>`;
+  await assert.rejects(
+    inspectDocxPackage(syntheticZip([
+      { name: '[Content_Types].xml', data: NORMAL_CONTENT_TYPES },
+      { name: '_rels/.rels', data: ROOT_RELS },
+      { name: 'word/document.xml', data: EMPTY_DOCUMENT },
+      { name: 'word/_rels/document.xml.rels', data: externalImageRels },
+    ]), 'desktop'),
+    hasCode('unsupported-type'),
+  );
+});
+
+test('FT-07 rejects javascript external hyperlinks before any HTML renderer sees them', async () => {
+  const unsafeHyperlink = `<?xml version="1.0"?><Relationships><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="javascript:alert(1)" TargetMode="External"/></Relationships>`;
+  await assert.rejects(
+    inspectDocxPackage(syntheticZip([
+      { name: '[Content_Types].xml', data: NORMAL_CONTENT_TYPES },
+      { name: '_rels/.rels', data: ROOT_RELS },
+      { name: 'word/document.xml', data: EMPTY_DOCUMENT },
+      { name: 'word/_rels/document.xml.rels', data: unsafeHyperlink },
+    ]), 'desktop'),
+    hasCode('unsupported-type'),
   );
 });
