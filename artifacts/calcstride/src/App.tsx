@@ -119,7 +119,7 @@ const phaseFourRoutePaths: ReadonlyArray<[PhaseFourSlug, string]> = [
   ['roman-numeral', '/converters/roman-numeral'],
   ['shoe-size', '/converters/shoe-size'],
   ['social-security', '/calculators/finance/social-security'],
-  ['take-home-pay', '/calculators/finance/take-home-pay'],
+  ['take-home-pay', '/calculators/salary-work/take-home-pay'],
   ['tire-size', '/calculators/automotive/tire-size'],
   ['401k', '/calculators/finance/401k'],
   ['annuity', '/calculators/finance/annuity'],
