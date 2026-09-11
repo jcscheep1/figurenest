@@ -150,7 +150,7 @@ The same PR must update all relevant sources of truth together:
 
 ## Current implementation checkpoint
 
-PR #130 now contains a dependency-free package guard in `artifacts/calcstride/src/lib/docx-package-preflight.ts` plus hostile-input regression tests. The first security implementation passed FigureNest typecheck, unit tests and production build on `c2b87fbe3011d6732f1c49a7fb02f9306ef75e9a`; later heads added local metadata decompression/inspection, the explicit `.docx` file rule, strict XML encoding guards and prefixed relationship handling. Current security-preflight head before this documentation-only commit is `ba952fc250dd34e258d947e87ee5ae6a9abbcf0f`.
+PR #130 contains the dependency-free package guard in `artifacts/calcstride/src/lib/docx-package-preflight.ts` and hostile-input regression tests. The first security implementation passed FigureNest typecheck, unit tests and production build on `c2b87fbe3011d6732f1c49a7fb02f9306ef75e9a`. Subsequent security heads added local metadata decompression/inspection, explicit `.docx` extension/MIME/signature rules, strict UTF-8 metadata handling, prefixed relationship handling, renamed macro-package rejection, remote non-hyperlink relationship blocking and unsafe hyperlink-scheme rejection.
 
 The next Build step is not public-route integration. It is the exact-pinned Mammoth + DOMPurify + jsPDF/html2canvas spike with fixture evidence and lockfile-safe installation. Do not add the public route until the publication threshold passes.
 
