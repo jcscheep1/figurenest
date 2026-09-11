@@ -38,6 +38,9 @@ jobs:
           import { DOCX_PUBLICATION_FIXTURES } from './lib/docx-publication-fixtures';
           import { convertDocxToSanitizedHtml, exportSanitizedPreviewToPdf } from './lib/docx-to-pdf-spike';
           import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+          import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+
+          pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
           const app = document.querySelector<HTMLElement>('#app')!;
           const mode = new URLSearchParams(location.search).get('mode') === 'mobile' ? 'mobile' : 'desktop';
