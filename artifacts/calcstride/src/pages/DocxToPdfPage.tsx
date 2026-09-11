@@ -24,6 +24,8 @@ export function DocxToPdfPage() {
   const [pdf, setPdf] = useState<Blob | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const previewRef = useRef<HTMLElement | null>(null);
+  const downloadStepRef = useRef<HTMLElement | null>(null);
+  const downloadButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const reset = () => {
     abortRef.current?.abort();
@@ -31,6 +33,11 @@ export function DocxToPdfPage() {
     setStatus('idle'); setFileName(''); setHtml(''); setMessages([]); setError(''); setPdf(null);
   };
   useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(() => {
+    if (!html) return;
+    downloadStepRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.setTimeout(() => downloadButtonRef.current?.focus({ preventScroll: true }), 450);
+  }, [html]);
 
   const select = async (file: File) => {
     reset();
@@ -93,16 +100,16 @@ export function DocxToPdfPage() {
         <p className="docx-step-label"><span>1</span> Upload your Word document</p>
         <LocalFileDropzone accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" status={status} fileName={fileName || undefined} error={error || undefined} onSelect={select} onCancel={() => abortRef.current?.abort()} onReset={reset} />
       </section>
-      {html ? <section className="docx-preview-step docx-workflow-step" aria-labelledby="docx-preview-heading">
+      <section ref={downloadStepRef} className="docx-preview-step docx-workflow-step" aria-labelledby="docx-preview-heading">
         <p className="docx-step-label"><span>2</span> Review and download</p>
         <div className="docx-preview-heading-row">
-          <div><h2 id="docx-preview-heading">Document preview</h2><p>Check the document below, then use the blue button to download your PDF.</p></div>
-          <button className="docx-download-button" type="button" onClick={createAndDownloadPdf} disabled={status === 'processing'}><Download size={19} aria-hidden="true" /> {status === 'processing' ? 'Creating PDF…' : 'Convert and download PDF'}</button>
+          <div><h2 id="docx-preview-heading">{html ? 'Document preview' : 'Download your PDF'}</h2><p>{html ? 'Check the document below, then use the blue button to download your PDF.' : 'Upload a DOCX in Step 1. Your download button will activate here when the preview is ready.'}</p></div>
+          <button ref={downloadButtonRef} className="docx-download-button" type="button" onClick={createAndDownloadPdf} disabled={!html || status === 'processing'}><Download size={19} aria-hidden="true" /> {status === 'processing' ? 'Creating PDF…' : html ? 'Convert and download PDF' : 'Upload DOCX to enable download'}</button>
         </div>
-        <p className="docx-layout-note">Complex Word pagination, fonts, fields, tracked changes, headers and footers may differ from Word.</p>
-        <div className="docx-preview-frame"><article ref={previewRef} className="file-tool-preview" dangerouslySetInnerHTML={{ __html: html }} /></div>
-        {messages.length ? <details className="docx-conversion-notes"><summary>Conversion notes</summary><ul>{messages.map((message, index) => <li key={index}>{message}</li>)}</ul></details> : null}
-      </section> : null}
+        {html ? <><p className="docx-layout-note">Complex Word pagination, fonts, fields, tracked changes, headers and footers may differ from Word.</p>
+          <div className="docx-preview-frame"><article ref={previewRef} className="file-tool-preview" dangerouslySetInnerHTML={{ __html: html }} /></div>
+          {messages.length ? <details className="docx-conversion-notes"><summary>Conversion notes</summary><ul>{messages.map((message, index) => <li key={index}>{message}</li>)}</ul></details> : null}</> : <div className="docx-preview-placeholder" aria-hidden="true"><Download size={32} /><span>PDF download becomes available after upload</span></div>}
+      </section>
       {pdf ? <section className="docx-download-ready" aria-live="polite"><CheckCircle2 size={25} aria-hidden="true" /><div><h2>Your PDF has downloaded</h2><p>If the download did not open, tap the button again.</p></div><button type="button" onClick={download}><Download size={18} aria-hidden="true" /> Download PDF again</button></section> : null}
       <div className="docx-information-sections">
         <section><h2>Important limitations</h2><ul>{definition.limitations.map((item) => <li key={item}>{item}</li>)}</ul></section>
