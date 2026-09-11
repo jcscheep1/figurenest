@@ -11,6 +11,8 @@ type SyntheticEntry = {
   uncompressedBytes?: number;
   method?: number;
   flags?: number;
+  localExtra?: Uint8Array;
+  centralExtra?: Uint8Array;
 };
 
 function u16(value: number): Buffer {
@@ -23,6 +25,21 @@ function u32(value: number): Buffer {
   const buffer = Buffer.alloc(4);
   buffer.writeUInt32LE(value >>> 0);
   return buffer;
+}
+
+function crc32(bytes: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function unicodePathExtra(originalName: string, alias: string): Uint8Array {
+  const original = Buffer.from(originalName, 'utf8');
+  const value = Buffer.concat([Buffer.from([1]), u32(crc32(original)), Buffer.from(alias, 'utf8')]);
+  return new Uint8Array(Buffer.concat([u16(0x7075), u16(value.length), value]));
 }
 
 function syntheticZip(entries: readonly SyntheticEntry[]): Uint8Array {
@@ -40,16 +57,18 @@ function syntheticZip(entries: readonly SyntheticEntry[]): Uint8Array {
     const compressedBytes = entry.compressedBytes ?? actualPayload.length;
     const uncompressedBytes = entry.uncompressedBytes ?? source.length;
     const flags = entry.flags ?? 0x0800;
+    const localExtra = entry.localExtra ? Buffer.from(entry.localExtra) : Buffer.alloc(0);
+    const centralExtra = entry.centralExtra ? Buffer.from(entry.centralExtra) : Buffer.alloc(0);
     const localHeader = Buffer.concat([
       u32(0x04034b50), u16(20), u16(flags), u16(method), u16(0), u16(0), u32(0),
-      u32(compressedBytes), u32(uncompressedBytes), u16(name.length), u16(0), name,
+      u32(compressedBytes), u32(uncompressedBytes), u16(name.length), u16(localExtra.length), name, localExtra,
     ]);
     local.push(localHeader, actualPayload);
 
     central.push(Buffer.concat([
       u32(0x02014b50), u16(20), u16(20), u16(flags), u16(method), u16(0), u16(0), u32(0),
-      u32(compressedBytes), u32(uncompressedBytes), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0),
-      u32(localOffset), name,
+      u32(compressedBytes), u32(uncompressedBytes), u16(name.length), u16(centralExtra.length), u16(0), u16(0), u16(0), u32(0),
+      u32(localOffset), name, centralExtra,
     ]));
     localOffset += localHeader.length + actualPayload.length;
   }
@@ -146,6 +165,22 @@ test('FT-07 rejects duplicate case-insensitive package entry names', () => {
     () => preflightDocxPackage(syntheticZip(baseEntries([{ name: 'WORD/DOCUMENT.XML' }])), 'desktop'),
     hasCode('malformed'),
   );
+});
+
+test('FT-07 rejects ZIP Unicode-path aliases before a downstream ZIP reader can rename entries', async () => {
+  const safeName = 'word/safe.xml';
+  const alias = 'word/_rels/hidden.xml.rels';
+  for (const location of ['centralExtra', 'localExtra'] as const) {
+    await assert.rejects(
+      inspectDocxPackage(syntheticZip(baseEntries([{
+        name: safeName,
+        data: EMPTY_RELS,
+        [location]: unicodePathExtra(safeName, alias),
+      }])), 'desktop'),
+      hasCode('unsupported-type'),
+      location,
+    );
+  }
 });
 
 test('FT-07 inspects DEFLATE metadata locally and allows ordinary external hyperlinks without fetching them', async () => {
