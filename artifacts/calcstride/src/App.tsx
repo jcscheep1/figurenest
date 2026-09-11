@@ -51,6 +51,7 @@ const cableFusePages = import.meta.env.SSR ? await import('@/pages/CableFuseSize
 const directoryPages = import.meta.env.SSR ? await import('@/pages/CalculatorDirectoryPage') : null;
 const articlePages = import.meta.env.SSR ? await import('@/pages/ArticlePages') : null;
 const fileToolPages = import.meta.env.SSR ? await import('@/pages/PdfSignEditPage') : null;
+const pdfConversionPages = import.meta.env.SSR ? await import('@/pages/PdfConversionPages') : null;
 const notFoundPage = import.meta.env.SSR ? await import('@/pages/not-found') : null;
 
 const HomePage = homePages?.HomePage
@@ -103,6 +104,10 @@ const ArticlePage = articlePages?.ArticlePage
   ?? lazy(() => import('@/pages/ArticlePages').then(({ ArticlePage: page }) => ({ default: page })));
 const PdfSignEditPage = fileToolPages?.PdfSignEditPage
   ?? lazy(() => import('@/pages/PdfSignEditPage').then(({ PdfSignEditPage: page }) => ({ default: page })));
+const PdfToImagePage = pdfConversionPages?.PdfToImagePage
+  ?? lazy(() => import('@/pages/PdfConversionPages').then(({ PdfToImagePage: page }) => ({ default: page })));
+const PdfToTextPage = pdfConversionPages?.PdfToTextPage
+  ?? lazy(() => import('@/pages/PdfConversionPages').then(({ PdfToTextPage: page }) => ({ default: page })));
 const NotFound = notFoundPage?.default ?? lazy(() => import('@/pages/not-found'));
 const PrivateApp = lazy(() => import('./PrivateApp'));
 
@@ -282,6 +287,8 @@ function Router() {
           </Route>
         ))}
         <Route path="/file-tools/pdf-sign-edit" component={PdfSignEditPage} />
+        <Route path="/file-tools/pdf-to-image" component={PdfToImagePage} />
+        <Route path="/file-tools/pdf-to-text" component={PdfToTextPage} />
         <Route path="/articles" component={ArticleIndexPage} />
         <Route path="/articles/:slug"><ArticlePage /></Route>
         <Route path="/calculators/:category/:slug"><ToolDetailPage /></Route>
