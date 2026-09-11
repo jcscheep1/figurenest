@@ -45,6 +45,8 @@ jobs:
           NODE
       - name: Run FT-07 hostile package tests
         run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/docx-package-preflight.test.ts
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
       - name: Build
