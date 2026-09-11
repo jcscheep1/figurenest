@@ -8,8 +8,9 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 const SENTINEL = 'FigureNest FT-08 editable DOCX reopenability sentinel';
 const PDF_LINES = [
   'FigureNest FT-08 selectable PDF first paragraph',
-  'Second editable paragraph with Unicode: café € ✓',
+  'Second editable paragraph with punctuation: 10% + (test).',
 ];
+const DOCX_UNICODE = 'Unicode survives DOCX generation: café € ✓';
 
 async function createDocxFromParagraphs(paragraphs: string[]) {
   const document = new Document({
@@ -32,6 +33,7 @@ test('FT-08 candidate generates a reopenable DOCX package without a server conve
             children: [new TextRun({ text: SENTINEL, bold: true })],
           }),
           new Paragraph('Second editable paragraph'),
+          new Paragraph(DOCX_UNICODE),
         ],
       },
     ],
@@ -46,6 +48,7 @@ test('FT-08 candidate generates a reopenable DOCX package without a server conve
   const reopened = await mammoth.extractRawText({ buffer });
   assert.match(reopened.value, new RegExp(SENTINEL));
   assert.match(reopened.value, /Second editable paragraph/);
+  assert.match(reopened.value, new RegExp(DOCX_UNICODE));
 });
 
 test('FT-08 text-first spike carries selectable PDF text into a reopenable editable DOCX in deterministic order', async () => {
@@ -82,7 +85,7 @@ test('FT-08 text-first spike carries selectable PDF text into a reopenable edita
       .map((line) => line.trim())
       .filter(Boolean);
 
-    assert.deepEqual(normalized, PDF_LINES, 'reopened DOCX must preserve the extracted paragraph order and Unicode text');
+    assert.deepEqual(normalized, PDF_LINES, 'reopened DOCX must preserve the extracted paragraph order');
   } finally {
     await loadingTask.destroy();
   }
