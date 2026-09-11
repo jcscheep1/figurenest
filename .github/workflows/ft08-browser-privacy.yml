@@ -1,0 +1,230 @@
+name: FT-08 Browser Privacy Research Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/lib/ft08-**'
+      - 'artifacts/calcstride/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/ft08-browser-privacy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-privacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create unpublished browser harness
+        working-directory: artifacts/calcstride
+        run: |
+          cat > pdf-docx-qa.html <<'HTML'
+          <!doctype html><html><body><main id="app"></main><script type="module" src="/src/pdf-docx-qa.ts"></script></body></html>
+          HTML
+          cat > src/pdf-docx-qa.ts <<'TS'
+          import { Document, Packer, Paragraph } from 'docx';
+          import { PDFDocument, StandardFonts } from 'pdf-lib';
+          import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+          import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+
+          pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+          const app = document.querySelector<HTMLElement>('#app')!;
+          const mode = new URLSearchParams(location.search).get('mode') === 'mobile' ? 'mobile' : 'desktop';
+          const sentinel = 'FT08_PRIVATE_DOCUMENT_SENTINEL_8427';
+          const violations: string[] = [];
+          const beforeStorage = `${JSON.stringify({...localStorage})}${JSON.stringify({...sessionStorage})}`;
+
+          const originalFetch = window.fetch.bind(window);
+          window.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+            const request = input instanceof Request ? input : null;
+            const url = request?.url ?? String(input);
+            const method = (init?.method ?? request?.method ?? 'GET').toUpperCase();
+            if (new URL(url, location.href).origin !== location.origin || method !== 'GET' || init?.body != null) {
+              violations.push(`fetch:${method}:${url}`);
+            }
+            return originalFetch(input, init);
+          }) as typeof fetch;
+          const OriginalXHR = window.XMLHttpRequest;
+          class GuardedXHR extends OriginalXHR {
+            override send(body?: Document | XMLHttpRequestBodyInit | null): void {
+              if (body != null) violations.push('xhr-body');
+              super.send(body);
+            }
+          }
+          window.XMLHttpRequest = GuardedXHR as typeof XMLHttpRequest;
+          if (navigator.sendBeacon) navigator.sendBeacon = ((url: string | URL) => {
+            violations.push(`beacon:${String(url)}`);
+            return false;
+          }) as typeof navigator.sendBeacon;
+          const originalSocketSend = WebSocket.prototype.send;
+          WebSocket.prototype.send = function(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+            if (typeof data !== 'string' || data.includes(sentinel)) violations.push('websocket-document-send');
+            return originalSocketSend.call(this, data);
+          };
+          const originalIndexedDbOpen = indexedDB.open.bind(indexedDB);
+          indexedDB.open = ((...args: Parameters<IDBFactory['open']>) => {
+            violations.push('indexeddb-open');
+            return originalIndexedDbOpen(...args);
+          }) as IDBFactory['open'];
+          const originalCacheOpen = caches.open.bind(caches);
+          caches.open = (async (...args: Parameters<CacheStorage['open']>) => {
+            violations.push('cache-open');
+            return originalCacheOpen(...args);
+          }) as CacheStorage['open'];
+          addEventListener('submit', () => violations.push('form-submit'), {capture: true});
+
+          async function run() {
+            const startedAt = performance.now();
+            const sourcePdf = await PDFDocument.create();
+            const font = await sourcePdf.embedFont(StandardFonts.Helvetica);
+            const page = sourcePdf.addPage([612, 792]);
+            page.drawText(sentinel, {x: 72, y: 700, size: 12, font});
+            page.drawText('Second editable paragraph', {x: 72, y: 660, size: 12, font});
+            const pdfBytes = await sourcePdf.save();
+            const privateFile = new File([pdfBytes], `${sentinel}.pdf`, {type: 'application/pdf'});
+
+            const loadingTask = pdfjs.getDocument({data: new Uint8Array(await privateFile.arrayBuffer())});
+            let extracted: string[];
+            try {
+              const parsedPdf = await loadingTask.promise;
+              const textContent = await (await parsedPdf.getPage(1)).getTextContent();
+              extracted = textContent.items
+                .filter((item): item is Extract<(typeof textContent.items)[number], {str: string}> => 'str' in item)
+                .map((item) => item.str.trim())
+                .filter(Boolean);
+            } finally {
+              await loadingTask.destroy();
+            }
+            if (extracted[0] !== sentinel || extracted[1] !== 'Second editable paragraph') throw new Error('selectable text order changed');
+
+            const document = new Document({sections: [{children: extracted.map((text) => new Paragraph(text))}]});
+            const docxBlob = await Packer.toBlob(document);
+            const docxBytes = new Uint8Array(await docxBlob.arrayBuffer());
+            if (docxBytes.length < 100 || docxBytes[0] !== 0x50 || docxBytes[1] !== 0x4b) throw new Error('generated DOCX is not OOXML ZIP');
+
+            const afterStorage = `${JSON.stringify({...localStorage})}${JSON.stringify({...sessionStorage})}`;
+            if (afterStorage !== beforeStorage || afterStorage.includes(sentinel)) violations.push('web-storage');
+            if (violations.length) throw new Error(`privacy violations: ${violations.join(',')}`);
+            app.textContent = `FT08_BROWSER_PASS ${mode} ${pdfBytes.length}pdf ${docxBytes.length}docx ${Math.round(performance.now() - startedAt)}ms ${innerWidth}x${innerHeight}`;
+            document.documentElement.dataset.qa = 'pass';
+          }
+          run().catch((error) => {
+            app.textContent = `FT08_BROWSER_FAIL ${mode} ${error?.stack || error}`;
+            document.documentElement.dataset.qa = 'fail';
+          });
+          TS
+          cat > /tmp/ft08-cdp-runner.mjs <<'JS'
+          import { spawn, spawnSync } from 'node:child_process';
+          const [mode, width, height, portText] = process.argv.slice(2);
+          const port = Number(portText);
+          const candidates = [process.env.CHROME_BIN, 'google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean);
+          let chromeBin = '';
+          for (const candidate of candidates) {
+            const probe = spawnSync('which', [candidate], {encoding: 'utf8'});
+            if (probe.status === 0 && probe.stdout.trim()) { chromeBin = probe.stdout.trim(); break; }
+          }
+          if (!chromeBin) throw new Error(`No Chrome/Chromium executable found: ${candidates.join(', ')}`);
+          const chrome = spawn(chromeBin, [
+            '--headless=new', '--no-sandbox', '--disable-gpu',
+            `--window-size=${width},${height}`,
+            `--remote-debugging-port=${port}`,
+            `--user-data-dir=/tmp/ft08-chrome-${mode}`,
+            'about:blank',
+          ], {stdio: ['ignore', 'ignore', 'pipe']});
+          let diagnostics = '';
+          chrome.stderr.on('data', (chunk) => { diagnostics += String(chunk); });
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          async function connect() {
+            for (let attempt = 0; attempt < 60; attempt += 1) {
+              try {
+                const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) => response.json());
+                const target = targets.find((candidate) => candidate.type === 'page');
+                if (target?.webSocketDebuggerUrl) return new WebSocket(target.webSocketDebuggerUrl);
+              } catch {}
+              await sleep(250);
+            }
+            throw new Error(`Chrome DevTools did not start. ${diagnostics}`);
+          }
+          let socket;
+          try {
+            socket = await connect();
+            await new Promise((resolve, reject) => {
+              socket.addEventListener('open', resolve, {once: true});
+              socket.addEventListener('error', reject, {once: true});
+            });
+            let sequence = 0;
+            const pending = new Map();
+            socket.addEventListener('message', (event) => {
+              const message = JSON.parse(String(event.data));
+              if (!message.id || !pending.has(message.id)) return;
+              const {resolve, reject} = pending.get(message.id);
+              pending.delete(message.id);
+              if (message.error) reject(new Error(message.error.message));
+              else resolve(message.result);
+            });
+            const command = (method, params = {}) => new Promise((resolve, reject) => {
+              const id = ++sequence;
+              pending.set(id, {resolve, reject});
+              socket.send(JSON.stringify({id, method, params}));
+            });
+            await command('Page.enable');
+            await command('Runtime.enable');
+            await command('Page.navigate', {url: `http://127.0.0.1:4174/pdf-docx-qa.html?mode=${mode}`});
+            const deadline = Date.now() + 120_000;
+            let completed = false;
+            while (Date.now() < deadline) {
+              let state;
+              try {
+                state = await command('Runtime.evaluate', {expression: 'document.documentElement.dataset.qa || ""', returnByValue: true});
+              } catch {
+                await sleep(250);
+                continue;
+              }
+              const value = state?.result?.value;
+              if (value === 'pass' || value === 'fail') {
+                const body = await command('Runtime.evaluate', {expression: 'document.body.innerText', returnByValue: true});
+                console.log(body?.result?.value ?? '');
+                if (value === 'fail') throw new Error(body?.result?.value ?? 'browser gate failed');
+                completed = true;
+                break;
+              }
+              await sleep(250);
+            }
+            if (!completed) throw new Error(`Timed out waiting for FT08 ${mode}. ${diagnostics}`);
+          } finally {
+            socket?.close();
+            chrome.kill('SIGTERM');
+          }
+          JS
+          cat > ft08-vite.config.ts <<'TS'
+          import { defineConfig } from 'vite';
+          import path from 'node:path';
+          export default defineConfig({build: {outDir: '/tmp/ft08-browser-dist', rollupOptions: {input: path.resolve(process.cwd(), 'pdf-docx-qa.html')}}});
+          TS
+      - name: Start Vite harness
+        working-directory: artifacts/calcstride
+        run: |
+          pnpm exec vite --host 127.0.0.1 --port 4174 > /tmp/ft08-vite.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4174/pdf-docx-qa.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/ft08-vite.log; exit 1
+      - name: Desktop browser-local PDF to DOCX privacy chain
+        run: node /tmp/ft08-cdp-runner.mjs desktop 1440 1200 9232
+      - name: Mobile browser-local PDF to DOCX privacy chain
+        run: node /tmp/ft08-cdp-runner.mjs mobile 390 844 9233
+      - name: Record unpublished lazy-bundle evidence
+        working-directory: artifacts/calcstride
+        run: |
+          pnpm exec vite build --config ft08-vite.config.ts
+          find /tmp/ft08-browser-dist -type f -printf '%s %p\n' | sort -nr
