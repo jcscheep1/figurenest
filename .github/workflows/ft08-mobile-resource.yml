@@ -1,0 +1,205 @@
+name: FT-08 Mobile Resource Research Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/lib/ft08-**'
+      - 'artifacts/calcstride/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/ft08-mobile-resource.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-resource:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create unpublished 100-page browser benchmark
+        working-directory: artifacts/calcstride
+        run: |
+          cat > ft08-mobile-resource.html <<'HTML'
+          <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main id="app"></main><script type="module" src="/src/ft08-mobile-resource.ts"></script></body></html>
+          HTML
+
+          cat > src/ft08-mobile-resource.ts <<'TS'
+          import { Document, Packer, Paragraph } from 'docx';
+          import { PDFDocument, StandardFonts } from 'pdf-lib';
+          import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+          import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+
+          pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+          const app = document.querySelector<HTMLElement>('#app')!;
+          const PAGE_COUNT = 100;
+          const SENTINEL = 'FT08_LIMIT_ADJACENT_MOBILE_SENTINEL';
+
+          async function run() {
+            const startedAt = performance.now();
+            const source = await PDFDocument.create();
+            const font = await source.embedFont(StandardFonts.Helvetica);
+
+            for (let index = 0; index < PAGE_COUNT; index += 1) {
+              const page = source.addPage([612, 792]);
+              page.drawText(`${SENTINEL} page ${index + 1}`, { x: 72, y: 700, size: 12, font });
+            }
+
+            const pdfBytes = await source.save();
+            const loadingTask = pdfjs.getDocument({ data: new Uint8Array(pdfBytes) });
+            const extracted: string[] = [];
+
+            try {
+              const parsed = await loadingTask.promise;
+              if (parsed.numPages !== PAGE_COUNT) throw new Error(`expected ${PAGE_COUNT} pages, received ${parsed.numPages}`);
+
+              for (let pageNumber = 1; pageNumber <= parsed.numPages; pageNumber += 1) {
+                const page = await parsed.getPage(pageNumber);
+                const textContent = await page.getTextContent();
+                const line = textContent.items
+                  .filter((item): item is Extract<(typeof textContent.items)[number], { str: string }> => 'str' in item)
+                  .map((item) => item.str.trim())
+                  .filter(Boolean)
+                  .join(' ');
+                if (line !== `${SENTINEL} page ${pageNumber}`) throw new Error(`reading-order mismatch on page ${pageNumber}`);
+                extracted.push(line);
+                page.cleanup();
+              }
+            } finally {
+              await loadingTask.destroy();
+            }
+
+            const output = new Document({
+              sections: [{ children: extracted.map((text) => new Paragraph(text)) }],
+            });
+            const docxBlob = await Packer.toBlob(output);
+            const docxBytes = new Uint8Array(await docxBlob.arrayBuffer());
+            if (docxBytes[0] !== 0x50 || docxBytes[1] !== 0x4b) throw new Error('generated DOCX is not OOXML ZIP');
+
+            const elapsed = Math.round(performance.now() - startedAt);
+            app.textContent = `FT08_MOBILE_RESOURCE_PASS pages=${PAGE_COUNT} pdf=${pdfBytes.length} docx=${docxBytes.length} elapsed=${elapsed}ms viewport=${innerWidth}x${innerHeight}`;
+            document.documentElement.dataset.qa = 'pass';
+          }
+
+          run().catch((error) => {
+            app.textContent = `FT08_MOBILE_RESOURCE_FAIL ${error?.stack || error}`;
+            document.documentElement.dataset.qa = 'fail';
+          });
+          TS
+
+          cat > /tmp/ft08-mobile-resource-runner.mjs <<'JS'
+          import { spawn, spawnSync } from 'node:child_process';
+
+          const candidates = [process.env.CHROME_BIN, 'google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean);
+          let chromeBin = '';
+          for (const candidate of candidates) {
+            const probe = spawnSync('which', [candidate], { encoding: 'utf8' });
+            if (probe.status === 0 && probe.stdout.trim()) { chromeBin = probe.stdout.trim(); break; }
+          }
+          if (!chromeBin) throw new Error(`No Chrome/Chromium executable found: ${candidates.join(', ')}`);
+
+          const chrome = spawn(chromeBin, [
+            '--headless=new', '--no-sandbox', '--disable-gpu',
+            '--remote-debugging-port=9240',
+            '--user-data-dir=/tmp/ft08-mobile-resource-chrome',
+            'about:blank',
+          ], { stdio: ['ignore', 'ignore', 'pipe'] });
+          let diagnostics = '';
+          chrome.stderr.on('data', (chunk) => { diagnostics += String(chunk); });
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          async function connect() {
+            for (let attempt = 0; attempt < 80; attempt += 1) {
+              try {
+                const targets = await fetch('http://127.0.0.1:9240/json/list').then((response) => response.json());
+                const target = targets.find((candidate) => candidate.type === 'page');
+                if (target?.webSocketDebuggerUrl) return new WebSocket(target.webSocketDebuggerUrl);
+              } catch {}
+              await sleep(250);
+            }
+            throw new Error(`Chrome DevTools did not start. ${diagnostics}`);
+          }
+
+          let socket;
+          try {
+            socket = await connect();
+            await new Promise((resolve, reject) => {
+              socket.addEventListener('open', resolve, { once: true });
+              socket.addEventListener('error', reject, { once: true });
+            });
+
+            let sequence = 0;
+            const pending = new Map();
+            socket.addEventListener('message', (event) => {
+              const message = JSON.parse(String(event.data));
+              if (!message.id || !pending.has(message.id)) return;
+              const { resolve, reject } = pending.get(message.id);
+              pending.delete(message.id);
+              if (message.error) reject(new Error(message.error.message));
+              else resolve(message.result);
+            });
+            const command = (method, params = {}) => new Promise((resolve, reject) => {
+              const id = ++sequence;
+              pending.set(id, { resolve, reject });
+              socket.send(JSON.stringify({ id, method, params }));
+            });
+
+            await command('Page.enable');
+            await command('Runtime.enable');
+            await command('Emulation.setDeviceMetricsOverride', {
+              width: 390,
+              height: 844,
+              deviceScaleFactor: 1,
+              mobile: true,
+            });
+            await command('Page.navigate', { url: 'http://127.0.0.1:4175/ft08-mobile-resource.html' });
+
+            const deadline = Date.now() + 60_000;
+            let completed = false;
+            while (Date.now() < deadline) {
+              const state = await command('Runtime.evaluate', {
+                expression: 'document.documentElement.dataset.qa || ""',
+                returnByValue: true,
+              });
+              const value = state?.result?.value;
+              if (value === 'pass' || value === 'fail') {
+                const body = await command('Runtime.evaluate', { expression: 'document.body.innerText', returnByValue: true });
+                const text = body?.result?.value ?? '';
+                console.log(text);
+                if (value === 'fail') throw new Error(text || 'mobile resource gate failed');
+                if (!text.includes('pages=100') || !text.includes('viewport=390x844')) throw new Error(`invalid benchmark evidence: ${text}`);
+
+                const heap = await command('Runtime.getHeapUsage');
+                console.log(`FT08_MOBILE_HEAP used=${heap.usedSize} total=${heap.totalSize} embedded=${heap.embedderHeapUsedSize ?? 'n/a'} backing=${heap.backingStorageSize ?? 'n/a'}`);
+                completed = true;
+                break;
+              }
+              await sleep(250);
+            }
+            if (!completed) throw new Error(`100-page mobile benchmark exceeded 60 seconds. ${diagnostics}`);
+          } finally {
+            socket?.close();
+            chrome.kill('SIGTERM');
+          }
+          JS
+
+      - name: Start Vite benchmark harness
+        working-directory: artifacts/calcstride
+        run: |
+          pnpm exec vite --host 127.0.0.1 --port 4175 > /tmp/ft08-mobile-vite.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4175/ft08-mobile-resource.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/ft08-mobile-vite.log; exit 1
+
+      - name: Run 100-page mobile-viewport parse and DOCX benchmark
+        run: node /tmp/ft08-mobile-resource-runner.mjs
