@@ -81,7 +81,8 @@
 .docx-preview-heading-row h2, .docx-download-ready h2 { margin: 0 0 6px; }
 .docx-preview-heading-row p, .docx-download-ready p { margin: 0; color: var(--muted-foreground); }
 .docx-download-button, .docx-download-ready button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 11px 18px; border: 0; border-radius: 12px; background: var(--primary); color: white; font-size: 1rem; font-weight: 800; cursor: pointer; }
-.docx-download-button:disabled { opacity: .6; cursor: wait; }
+.docx-download-button:disabled { border: 1px solid var(--border); background: var(--muted); color: var(--muted-foreground); opacity: 1; cursor: not-allowed; }
+.docx-preview-placeholder { display: grid; place-items: center; gap: 10px; min-height: 180px; margin-top: 18px; border: 2px dashed var(--border); border-radius: 14px; background: color-mix(in srgb, var(--muted) 45%, var(--background)); color: var(--muted-foreground); text-align: center; }
 .docx-layout-note { margin: 18px 0 12px; padding: 10px 12px; border-left: 4px solid #f59e0b; background: color-mix(in srgb, #f59e0b 10%, var(--background)); color: var(--muted-foreground); font-size: .9rem; }
 .docx-preview-frame { max-height: 65vh; overflow: auto; padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: color-mix(in srgb, var(--muted) 75%, #d7dde6); }
 .docx-preview-frame .file-tool-preview { min-height: 420px; padding: 36px; background: white; color: #101828; box-shadow: 0 3px 18px rgb(0 0 0 / 14%); }
@@ -234,7 +235,7 @@
   .file-upload-panel section > div[aria-describedby] { min-height: 180px; padding: 22px 14px; }
   .file-upload-panel section > div[aria-describedby] button { width: 100%; min-height: 48px; font-size: 1rem; }
   .file-upload-panel section > div[aria-describedby] span { display: block; margin-top: 10px; }
-  .docx-preview-step { padding: 14px; }
+  .docx-preview-step { padding: 14px; scroll-margin-top: 14px; }
   .docx-preview-heading-row { align-items: stretch; flex-direction: column; gap: 16px; }
   .docx-download-button, .docx-download-ready button { width: 100%; min-height: 52px; }
   .docx-preview-frame { max-height: 58vh; padding: 8px; }
