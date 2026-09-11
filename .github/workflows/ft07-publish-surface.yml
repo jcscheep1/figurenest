@@ -1,3 +1,4 @@
+# retrigger: publication surface integration after verified green exact-head gates
 name: FT-07 Publish Surface Integration
 on:
   push:
