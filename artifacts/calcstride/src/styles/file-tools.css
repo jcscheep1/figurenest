@@ -128,9 +128,13 @@
 
 .signature-actions, .size-actions { display: flex; gap: 8px; margin-top: 9px; }
 .signature-actions button { flex: 1; }
-.signature-upload { display: grid; gap: 7px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
-.signature-upload input { width: 100%; padding: 6px; font-size: .8rem; }
-.signature-upload small { color: var(--muted-foreground); }
+.annotation-wide-action { width: 100%; margin-top: 8px; }
+.signature-upload, .annotation-panel-section { display: grid; gap: 7px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.signature-upload input, .annotation-panel-section input { width: 100%; padding: 6px; font-size: .8rem; }
+.signature-upload small, .annotation-panel-section small { color: var(--muted-foreground); line-height: 1.45; }
+.annotation-panel-section h2 { margin-bottom: 4px; }
+.stamp-actions { display: grid; grid-template-columns: 1fr; gap: 7px; margin-top: 9px; }
+.stamp-actions button { font-size: .74rem; letter-spacing: .04em; }
 
 .selected-edit-panel { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
 .selected-edit-panel input { width: 100%; padding: 7px 9px; }
@@ -174,6 +178,13 @@
 .pdf-edit-object svg, .pdf-edit-object img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 .pdf-edit-object polyline { fill: none; stroke: #101828; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .pdf-check-mark { font-size: 1.45rem; color: #067647; }
+.pdf-edit-highlight { border-color: #c98a00 !important; background: rgb(255 223 77 / 42%) !important; }
+.pdf-highlight-preview { width: 100%; height: 100%; display: block; background: rgb(255 223 77 / 60%); }
+.pdf-edit-freehand { background: rgb(224 239 255 / 18%) !important; }
+.pdf-edit-freehand polyline { stroke: #175cd3; stroke-width: 2.5; }
+.pdf-edit-image { background: rgb(255 255 255 / 35%) !important; }
+.pdf-edit-stamp { border: 2px solid #b42318 !important; background: rgb(255 255 255 / 72%) !important; color: #b42318 !important; font-size: .72rem; font-weight: 900; letter-spacing: .05em; }
+.pdf-edit-stamp span { padding: 0 4px; }
 
 .pdf-export-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 14px 16px; border-top: 1px solid var(--border); background: var(--background); }
 .pdf-export-bar > div { display: flex; gap: 10px; align-items: center; margin-right: auto; min-width: 0; }
