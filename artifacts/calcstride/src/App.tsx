@@ -52,6 +52,7 @@ const directoryPages = import.meta.env.SSR ? await import('@/pages/CalculatorDir
 const articlePages = import.meta.env.SSR ? await import('@/pages/ArticlePages') : null;
 const fileToolPages = import.meta.env.SSR ? await import('@/pages/PdfSignEditPage') : null;
 const pdfConversionPages = import.meta.env.SSR ? await import('@/pages/PdfConversionPages') : null;
+const imageToPdfPages = import.meta.env.SSR ? await import('@/pages/ImageToPdfPage') : null;
 const notFoundPage = import.meta.env.SSR ? await import('@/pages/not-found') : null;
 
 const HomePage = homePages?.HomePage
@@ -108,6 +109,8 @@ const PdfToImagePage = pdfConversionPages?.PdfToImagePage
   ?? lazy(() => import('@/pages/PdfConversionPages').then(({ PdfToImagePage: page }) => ({ default: page })));
 const PdfToTextPage = pdfConversionPages?.PdfToTextPage
   ?? lazy(() => import('@/pages/PdfConversionPages').then(({ PdfToTextPage: page }) => ({ default: page })));
+const ImageToPdfPage = imageToPdfPages?.ImageToPdfPage
+  ?? lazy(() => import('@/pages/ImageToPdfPage').then(({ ImageToPdfPage: page }) => ({ default: page })));
 const NotFound = notFoundPage?.default ?? lazy(() => import('@/pages/not-found'));
 const PrivateApp = lazy(() => import('./PrivateApp'));
 
@@ -116,7 +119,7 @@ const phaseFourRoutePaths: ReadonlyArray<[PhaseFourSlug, string]> = [
   ['roman-numeral', '/converters/roman-numeral'],
   ['shoe-size', '/converters/shoe-size'],
   ['social-security', '/calculators/finance/social-security'],
-  ['take-home-pay', '/calculators/salary-work/take-home-pay'],
+  ['take-home-pay', '/calculators/finance/take-home-pay'],
   ['tire-size', '/calculators/automotive/tire-size'],
   ['401k', '/calculators/finance/401k'],
   ['annuity', '/calculators/finance/annuity'],
@@ -288,6 +291,7 @@ function Router() {
         ))}
         <Route path="/file-tools/pdf-sign-edit" component={PdfSignEditPage} />
         <Route path="/file-tools/pdf-to-image" component={PdfToImagePage} />
+        <Route path="/file-tools/image-to-pdf" component={ImageToPdfPage} />
         <Route path="/file-tools/pdf-to-text" component={PdfToTextPage} />
         <Route path="/articles" component={ArticleIndexPage} />
         <Route path="/articles/:slug"><ArticlePage /></Route>
