@@ -44,6 +44,8 @@ Any spike must prove all of the following before route publication:
 6. Generated DOCX reopens successfully in an independent parser/validator in CI.
 7. Formula/action/embedded-file/annotation URLs from PDFs are not carried into DOCX as active content without an explicit safe protocol policy.
 
+The programme default PDF page ceiling is locked at **100 pages**. The research test suite contains a 101-page parseable fixture that must fail before extraction or DOCX generation; a separate byte-limit fixture proves oversized input is rejected before PDF.js sees attacker-controlled bytes.
+
 ## Fidelity fixture gate
 
 Minimum research matrix:
@@ -64,8 +66,12 @@ Acceptance requires useful editable text with deterministic reading order on fix
 
 - Plain selectable text can be extracted locally with the pinned PDF.js build, mapped into paragraphs, generated as DOCX with `docx@9.7.1`, and reopened independently with Mammoth while preserving deterministic paragraph order.
 - DOCX generation/reopenability preserves representative Unicode text independently of PDF-lib's standard-font WinAnsi limitation in the synthetic PDF fixture.
+- Recoverable heading and simple-list cues are converted into semantic DOCX structure and independently reopened as heading/list HTML.
+- Two-column reading order is reconstructed from PDF coordinates rather than raw content-stream emission order.
+- A simple table fixture deliberately emits cells out of reading order and is reconstructed deterministically by row clustering plus left-to-right cell ordering.
 - A graphics-only PDF produces no usable selectable text and is explicitly classified **OCR required** instead of being treated as a successful empty DOCX conversion.
-- The exact research head carrying the no-text fixture passed normal FigureNest validation and both authoritative Vercel previews; these are research checks only and do not authorize a public route.
+- Malformed/truncated input fails closed; byte limits are enforced before PDF.js parsing; parseable documents over the programme ceiling are rejected before extraction/generation.
+- Exact research head `13b4fdf7653e5149e8a0f51ffa09779c51b2c0f5` passed **Validate FigureNest #640** and **FT-07 Browser Publication Gate #40**. These are regression/research checks only and do not authorize a public FT-08 route.
 
 ## Stop / pivot conditions
 
@@ -81,4 +87,12 @@ If rejected, keep the evidence and consider a narrower product such as **PDF →
 
 ## Next spike decision
 
-Allowed next work: unpublished fidelity fixtures for headings/lists and two-column/table reading order, followed by browser privacy/resource interception with the exact locked dependency tree. No catalog/route/schema/sitemap/tool-count change is allowed until this research gate passes.
+The basic selectable-text, semantic heading/list, columns, simple-table, no-text/OCR classification, malformed-input and 100-page resource fixtures are now evidenced. Allowed next work is limited to the unresolved publication gates:
+
+1. encrypted/password-protected PDF classification with an explicit safe UX state;
+2. browser network + storage interception proving zero document-derived egress/persistence;
+3. mixed text + raster-image behavior, including an honest fallback if image positioning cannot be reconstructed reliably;
+4. mobile-class timing/memory/resource measurements under the locked limits;
+5. explicit dependency-risk and lazy-bundle disposition for `docx@9.7.1 → xml-js@1.6.11 → sax@1.6.1`.
+
+No catalog/route/schema/sitemap/tool-count change is allowed until those gates are resolved and the research outcome is explicitly recorded as publishable or not publishable.
