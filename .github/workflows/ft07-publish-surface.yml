@@ -1,0 +1,158 @@
+name: FT-07 Publish Surface Integration
+on:
+  push:
+    branches: [expansion/ft-07-docx-pdf-gate]
+    paths: ['.github/workflows/ft07-publish-surface.yml']
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: expansion/ft-07-docx-pdf-gate
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Wire public DOCX to PDF surface
+        shell: bash
+        run: |
+          cat > artifacts/calcstride/src/pages/DocxToPdfPage.tsx <<'TSX'
+          import { useEffect, useRef, useState } from 'react';
+          import { ArrowLeft, Download } from 'lucide-react';
+          import { Shell } from '@/components/FigureNestShell';
+          import { LocalFileDropzone } from '@/components/LocalFileDropzone';
+          import { Link } from '@/components/PublicLink';
+          import { Seo } from '@/pages/AppPages';
+          import type { FileDeviceClass, FileJobStatus } from '@/lib/file-tools-foundation';
+          import { convertDocxToSanitizedHtml, exportSanitizedPreviewToPdf } from '@/lib/docx-to-pdf-spike';
+          import { fileToolDefinitions } from '@/lib/file-tools-catalog';
+          import '@/styles/file-tools.css';
+
+          function deviceClass(): FileDeviceClass {
+            if (typeof window === 'undefined') return 'desktop';
+            return window.matchMedia('(pointer: coarse)').matches && window.innerWidth < 1024 ? 'mobile' : 'desktop';
+          }
+
+          export function DocxToPdfPage() {
+            const definition = fileToolDefinitions['docx-to-pdf'];
+            const [status, setStatus] = useState<FileJobStatus>('idle');
+            const [fileName, setFileName] = useState('');
+            const [html, setHtml] = useState('');
+            const [messages, setMessages] = useState<readonly string[]>([]);
+            const [error, setError] = useState('');
+            const [pdf, setPdf] = useState<Blob | null>(null);
+            const abortRef = useRef<AbortController | null>(null);
+            const previewRef = useRef<HTMLElement | null>(null);
+
+            const reset = () => {
+              abortRef.current?.abort();
+              abortRef.current = null;
+              setStatus('idle'); setFileName(''); setHtml(''); setMessages([]); setError(''); setPdf(null);
+            };
+            useEffect(() => () => abortRef.current?.abort(), []);
+
+            const select = async (file: File) => {
+              reset();
+              const controller = new AbortController();
+              abortRef.current = controller;
+              setFileName(file.name);
+              setStatus('processing');
+              try {
+                const result = await convertDocxToSanitizedHtml(file, deviceClass(), controller.signal);
+                if (controller.signal.aborted) return;
+                setHtml(result.html); setMessages(result.messages); setStatus('ready');
+              } catch (caught) {
+                if (controller.signal.aborted) { setStatus('cancelled'); return; }
+                setError(caught instanceof Error ? caught.message : 'The DOCX file could not be converted locally.');
+                setStatus('failed');
+              } finally {
+                if (abortRef.current === controller) abortRef.current = null;
+              }
+            };
+
+            const createPdf = async () => {
+              if (!previewRef.current) return;
+              setStatus('processing'); setError('');
+              try {
+                const blob = await exportSanitizedPreviewToPdf(previewRef.current, { filename: fileName });
+                setPdf(blob); setStatus('succeeded');
+              } catch (caught) {
+                setError(caught instanceof Error ? caught.message : 'The PDF could not be created locally.');
+                setStatus('failed');
+              }
+            };
+
+            const download = () => {
+              if (!pdf) return;
+              const url = URL.createObjectURL(pdf);
+              const a = document.createElement('a');
+              a.href = url; a.download = `${fileName.replace(/\.docx$/i, '') || 'document'}.pdf`; a.rel = 'noopener';
+              document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 0);
+            };
+
+            return <Shell>
+              <Seo title={definition.seoTitle} description={definition.seoDescription} canonicalPath={definition.href} />
+              <main className="tool-page file-tool-page">
+                <nav className="calc-breadcrumb" aria-label="Breadcrumb">
+                  <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
+                  <Link href="/category/file-tools">PDF &amp; File Tools</Link>
+                  <span aria-current="page">/ DOCX TO PDF</span>
+                </nav>
+                <header className="file-tool-hero">
+                  <p className="eyebrow">Private browser file tool</p>
+                  <h1>{definition.h1}</h1>
+                  <p>{definition.description}</p>
+                  <p><strong>Your files stay on this device.</strong> {definition.privacySummary}</p>
+                </header>
+                <LocalFileDropzone accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" status={status} fileName={fileName || undefined} error={error || undefined} onSelect={select} onCancel={() => abortRef.current?.abort()} onReset={reset} />
+                {html ? <section aria-labelledby="docx-preview-heading">
+                  <h2 id="docx-preview-heading">Preview before download</h2>
+                  <p>This is a best-effort document layout. Complex Word pagination, fonts, fields, tracked changes, headers and footers may differ from Word.</p>
+                  <article ref={previewRef} className="file-tool-preview" dangerouslySetInnerHTML={{ __html: html }} />
+                  {messages.length ? <details><summary>Conversion notes</summary><ul>{messages.map((message, index) => <li key={index}>{message}</li>)}</ul></details> : null}
+                  <button type="button" onClick={createPdf} disabled={status === 'processing'}>Create PDF locally</button>
+                </section> : null}
+                {pdf ? <section aria-live="polite"><h2>PDF ready</h2><button type="button" onClick={download}><Download size={16} aria-hidden="true" /> Download PDF</button></section> : null}
+                <section><h2>Important limitations</h2><ul>{definition.limitations.map((item) => <li key={item}>{item}</li>)}</ul></section>
+                <section><h2>Frequently asked questions</h2>{definition.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
+              </main>
+            </Shell>;
+          }
+          TSX
+          python - <<'PY'
+          from pathlib import Path
+          app=Path('artifacts/calcstride/src/App.tsx')
+          s=app.read_text()
+          s=s.replace("const imageToPdfPages = import.meta.env.SSR ? await import('@/pages/ImageToPdfPage') : null;", "const imageToPdfPages = import.meta.env.SSR ? await import('@/pages/ImageToPdfPage') : null;\nconst docxToPdfPages = import.meta.env.SSR ? await import('@/pages/DocxToPdfPage') : null;")
+          s=s.replace("const ImageToPdfPage = imageToPdfPages?.ImageToPdfPage\n  ?? lazy(() => import('@/pages/ImageToPdfPage').then(({ ImageToPdfPage: page }) => ({ default: page })));", "const ImageToPdfPage = imageToPdfPages?.ImageToPdfPage\n  ?? lazy(() => import('@/pages/ImageToPdfPage').then(({ ImageToPdfPage: page }) => ({ default: page })));\nconst DocxToPdfPage = docxToPdfPages?.DocxToPdfPage\n  ?? lazy(() => import('@/pages/DocxToPdfPage').then(({ DocxToPdfPage: page }) => ({ default: page })));" )
+          s=s.replace('<Route path="/file-tools/pdf-to-text" component={PdfToTextPage} />', '<Route path="/file-tools/pdf-to-text" component={PdfToTextPage} />\n        <Route path="/file-tools/docx-to-pdf" component={DocxToPdfPage} />')
+          app.write_text(s)
+
+          cat=Path('artifacts/calcstride/src/lib/file-tools-catalog.ts')
+          c=cat.read_text()
+          marker="  'pdf-to-text': {"
+          entry="""  'docx-to-pdf': {\n    slug: 'docx-to-pdf',\n    name: 'DOCX to PDF',\n    description: 'Convert a DOCX document to a best-effort PDF locally in your browser, with a sanitized preview before download and no document upload.',\n    category: FILE_TOOLS_CATEGORY.name,\n    categorySlug: FILE_TOOLS_CATEGORY.slug,\n    href: '/file-tools/docx-to-pdf',\n    tags: ['docx to pdf', 'word to pdf', 'document to pdf', 'private docx converter', 'browser word converter'],\n    featured: false,\n    h1: 'Convert DOCX to PDF',\n    seoTitle: 'Free DOCX to PDF Converter | Private Browser | FigureNest',\n    seoDescription: 'Convert DOCX to PDF locally in your browser. Preview the sanitized best-effort layout before download without uploading your document.',\n    privacySummary: 'The DOCX, filename, extracted document content, preview and generated PDF remain in this browser tab and are not uploaded to a FigureNest conversion server.',\n    limitations: [\n      'Conversion is best-effort rather than a pixel-perfect copy of Microsoft Word. Complex pagination, fonts, fields, tracked changes, headers and footers may differ.',\n      'Only DOCX files that pass local OOXML/ZIP safety checks are processed. Malformed, encrypted, oversized or suspicious packages are rejected locally.',\n      'Remote document resources and active content are blocked. Converted HTML is sanitized before preview and checked again before PDF export.',\n      'The PDF is created from the browser preview, so advanced Word layout features and exact print settings are not guaranteed.'\n    ],\n    faqs: [\n      { question: 'Does FigureNest upload my DOCX?', answer: 'No. Package inspection, document conversion, sanitization, preview rendering and PDF creation run locally in your browser. Normal website assets may load, but your filename, document bytes, extracted content and PDF output are not included in those requests.' },\n      { question: 'Will the PDF look exactly like Microsoft Word?', answer: 'Not always. This converter is designed for useful best-effort output for ordinary headings, lists, tables and images. Complex pagination, fonts, tracked changes, fields, headers and footers can differ.' },\n      { question: 'Can I preview the conversion first?', answer: 'Yes. FigureNest shows the sanitized browser preview before you create and download the PDF.' },\n      { question: 'Are external images or links loaded from the DOCX?', answer: 'No external document resources are fetched. The converter blocks network-capable document resources and sanitizes the generated preview before export.' }\n    ],\n    relatedRoutes: ['/file-tools/pdf-sign-edit', '/file-tools/pdf-to-text', '/file-tools/image-to-pdf'],\n  },\n"""
+          if "'docx-to-pdf': {" not in c:
+              c=c.replace(marker, entry+marker)
+          cat.write_text(c)
+          PY
+      - name: Validate publication surface
+        run: |
+          pnpm --filter @workspace/calcstride typecheck
+          pnpm --filter @workspace/calcstride test -- --runInBand || pnpm --filter @workspace/calcstride test
+          pnpm --filter @workspace/calcstride build:client
+      - name: Commit integration and remove one-time workflow
+        run: |
+          rm .github/workflows/ft07-publish-surface.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'FT-07: publish DOCX to PDF route and catalog surface'
+          git push origin HEAD:expansion/ft-07-docx-pdf-gate
