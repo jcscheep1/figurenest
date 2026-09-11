@@ -1,0 +1,57 @@
+.pdf-page-operation-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 38%, var(--background));
+}
+
+.pdf-page-operation-bar .page-operation-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pdf-page-operation-bar .page-operation-label {
+  margin-right: 2px;
+  color: var(--muted-foreground);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.pdf-page-operation-bar .danger-page-action {
+  border-color: color-mix(in srgb, #b42318 55%, var(--border));
+  color: #b42318;
+}
+
+.pdf-page-source-note {
+  color: var(--muted-foreground);
+  font-size: .72rem;
+}
+
+@media (max-width: 720px) {
+  .pdf-page-operation-bar {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .pdf-page-operation-bar .page-operation-group {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pdf-page-operation-bar .page-operation-label {
+    grid-column: 1 / -1;
+  }
+
+  .pdf-page-operation-bar button {
+    width: 100%;
+  }
+}

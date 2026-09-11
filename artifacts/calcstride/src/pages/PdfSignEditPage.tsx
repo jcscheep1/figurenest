@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+} from 'react';
 import { ArrowLeft, Check, Download, FileText, Redo2, Trash2, Undo2 } from 'lucide-react';
 import { Shell } from '@/components/FigureNestShell';
 import { LocalFileDropzone } from '@/components/LocalFileDropzone';
@@ -14,6 +22,16 @@ import {
   type FileDeviceClass,
   type FileJobStatus,
 } from '@/lib/file-tools-foundation';
+import {
+  createPdfPagePlan,
+  deletePdfPage,
+  movePdfPage,
+  normalizeQuarterTurn,
+  PdfPagePlanHistory,
+  preparePdfPageOperations,
+  rotatePdfPage,
+  type PdfPagePlanItem,
+} from '@/lib/pdf-page-operations';
 import {
   BUILT_IN_PDF_STAMPS,
   MAX_SIGNATURE_IMAGE_BYTES,
@@ -40,11 +58,11 @@ import {
 import { fileToolDefinitions } from '@/lib/file-tools-catalog';
 import { getRelatedTools } from '@/lib/related-tools';
 import '@/styles/file-tools.css';
+import '@/styles/pdf-page-operations.css';
 
 type PdfJsPage = {
-  getViewport(options: { scale: number }): { width: number; height: number; transform: number[] };
-  getWidth?: () => number;
-  getHeight?: () => number;
+  rotate: number;
+  getViewport(options: { scale: number; rotation?: number }): { width: number; height: number; transform: number[] };
   view: number[];
   render(options: { canvasContext: CanvasRenderingContext2D; viewport: unknown; transform?: number[] }): { promise: Promise<void>; cancel(): void };
   cleanup(): void;
@@ -110,12 +128,17 @@ function dateStamp(): string {
   return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 
+function sourceIndexForVisiblePage(plan: readonly PdfPagePlanItem[], visibleIndex: number): number | null {
+  return plan[visibleIndex]?.sourcePageIndex ?? null;
+}
+
 export function PdfSignEditPage() {
   const [status, setStatus] = useState<FileJobStatus>('idle');
   const [error, setError] = useState('');
   const [fileName, setFileName] = useState('');
   const [pageCount, setPageCount] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
+  const [pagePlan, setPagePlan] = useState<PdfPagePlanItem[]>([]);
   const [zoom, setZoom] = useState(1);
   const [pageView, setPageView] = useState<PageView | null>(null);
   const [objects, setObjects] = useState<PdfEditObject[]>([]);
@@ -135,14 +158,21 @@ export function PdfSignEditPage() {
   const originalBufferRef = useRef<ArrayBuffer | null>(null);
   const urlRegistryRef = useRef(new ObjectUrlRegistry());
   const historyRef = useRef(new PdfEditHistory());
+  const pageHistoryRef = useRef(new PdfPagePlanHistory());
+  const pagePlanRef = useRef<PdfPagePlanItem[]>([]);
   const objectsRef = useRef<PdfEditObject[]>([]);
   const dragRef = useRef<DragState | null>(null);
   const drawingRef = useRef(false);
   const activeStrokeRef = useRef<PdfPoint[]>([]);
   const assetsRef = useRef<UiSignatureAsset[]>([]);
   const loadAbortRef = useRef<AbortController | null>(null);
+  const currentPlanItem = pagePlan[pageIndex] ?? null;
+  const currentSourcePageIndex = currentPlanItem?.sourcePageIndex ?? 0;
   const selected = objects.find((item) => item.id === selectedId) ?? null;
-  const currentObjects = useMemo(() => objects.filter((item) => item.pageIndex === pageIndex), [objects, pageIndex]);
+  const currentObjects = useMemo(
+    () => objects.filter((item) => item.pageIndex === currentSourcePageIndex),
+    [objects, currentSourcePageIndex],
+  );
   const deviceClass = currentDeviceClass();
   const relatedTools = useMemo(() => getRelatedTools('pdf-sign-edit', 3), []);
 
@@ -155,6 +185,37 @@ export function PdfSignEditPage() {
     const committed = historyRef.current.commit(next);
     setObjectPreview(committed);
     if (message) setAnnouncement(message);
+  };
+
+  const setPagePlanPreview = (next: PdfPagePlanItem[]) => {
+    pagePlanRef.current = next;
+    setPagePlan(next);
+    setPageCount(next.length);
+  };
+
+  const commitPagePlan = (next: PdfPagePlanItem[], nextPageIndex: number, message: string) => {
+    try {
+      const committed = pageHistoryRef.current.commit(next);
+      setPagePlanPreview(committed);
+      setPageIndex(Math.min(Math.max(nextPageIndex, 0), committed.length - 1));
+      setPageView(null);
+      setSelectedId(null);
+      setError('');
+      setAnnouncement(message);
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
+  };
+
+  const applyPageHistory = (next: PdfPagePlanItem[], message: string) => {
+    const currentSource = sourceIndexForVisiblePage(pagePlanRef.current, pageIndex);
+    const preservedIndex = currentSource === null ? -1 : next.findIndex((item) => item.sourcePageIndex === currentSource);
+    setPagePlanPreview(next);
+    setPageIndex(preservedIndex >= 0 ? preservedIndex : Math.min(pageIndex, next.length - 1));
+    setPageView(null);
+    setSelectedId(null);
+    setError('');
+    setAnnouncement(message);
   };
 
   const destroyLoadingTask = async () => {
@@ -189,11 +250,11 @@ export function PdfSignEditPage() {
     setStatus('idle');
     setError('');
     setFileName('');
-    setPageCount(0);
     setPageIndex(0);
     setZoom(1);
     setPageView(null);
     setObjectPreview(historyRef.current.reset());
+    setPagePlanPreview(pageHistoryRef.current.reset());
     setSelectedId(null);
     setSignatureStrokes([]);
     setAnnouncement('Editor reset.');
@@ -213,12 +274,14 @@ export function PdfSignEditPage() {
   useEffect(() => {
     const document = pdfDocumentRef.current;
     const canvas = canvasRef.current;
-    if (!document || !canvas || pageCount === 0) return;
+    const planItem = pagePlan[pageIndex];
+    if (!document || !canvas || !planItem || pageCount === 0) return;
     let cancelled = false;
     let renderTask: ReturnType<PdfJsPage['render']> | null = null;
 
-    void withPdfPageCleanup(document.getPage(pageIndex + 1), () => cancelled, async (page) => {
-      const viewport = page.getViewport({ scale: zoom });
+    void withPdfPageCleanup(document.getPage(planItem.sourcePageIndex + 1), () => cancelled, async (page) => {
+      const previewRotation = normalizeQuarterTurn((page.rotate ?? 0) + planItem.rotation);
+      const viewport = page.getViewport({ scale: zoom, rotation: previewRotation });
       const transform = viewport.transform;
       if (transform.length !== 6) throw new FileToolError('malformed', 'Unexpected PDF viewport transform.');
       const rawWidth = Math.abs(page.view[2] - page.view[0]);
@@ -250,7 +313,7 @@ export function PdfSignEditPage() {
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [pageCount, pageIndex, zoom]);
+  }, [pageCount, pageIndex, pagePlan, zoom]);
 
   useEffect(() => {
     const canvas = signatureCanvasRef.current;
@@ -317,7 +380,8 @@ export function PdfSignEditPage() {
       }
       validatePdfPageCount(document.numPages);
       pdfDocumentRef.current = document;
-      setPageCount(document.numPages);
+      const initialPlan = createPdfPagePlan(document.numPages);
+      setPagePlanPreview(pageHistoryRef.current.reset(initialPlan));
       setPageIndex(0);
       setStatus('ready');
       setAnnouncement(`PDF ready. ${document.numPages} ${document.numPages === 1 ? 'page' : 'pages'}.`);
@@ -345,8 +409,8 @@ export function PdfSignEditPage() {
   };
 
   const addObject = (kind: PdfEditKind, options: Parameters<typeof createPdfEditObject>[4] = {}) => {
-    if (!pageView) return;
-    const item = createPdfEditObject(kind, pageIndex, pageView.pdfBounds, createId(kind), options);
+    if (!pageView || !currentPlanItem) return;
+    const item = createPdfEditObject(kind, currentPlanItem.sourcePageIndex, pageView.pdfBounds, createId(kind), options);
     const label = kind === 'check' ? 'Checkmark' : kind === 'highlight' ? 'Highlight' : kind === 'freehand' ? 'Freehand drawing' : kind === 'image' ? 'Image' : kind === 'stamp' ? 'Stamp' : 'Item';
     commitObjects([...objectsRef.current, item], `${label} added.`);
     setSelectedId(item.id);
@@ -372,7 +436,12 @@ export function PdfSignEditPage() {
 
   const nudgeSelected = (dx: number, dy: number) => {
     if (!selected || !pageView) return;
-    commitObjects(updateItem(objectsRef.current, selected.id, (item) => clampEditObjectToPage({ ...item, x: item.x + dx, y: item.y + dy }, pageView.pdfBounds)));
+    const pdfDelta = viewportDeltaToPdfDelta(pageView.transform, { x: dx * zoom, y: dy * zoom });
+    commitObjects(updateItem(objectsRef.current, selected.id, (item) => clampEditObjectToPage({
+      ...item,
+      x: item.x + pdfDelta.x,
+      y: item.y + pdfDelta.y,
+    }, pageView.pdfBounds)));
   };
 
   const resizeSelected = (factor: number) => {
@@ -401,6 +470,36 @@ export function PdfSignEditPage() {
     const next = historyRef.current.redo();
     setObjectPreview(next);
     setAnnouncement('Redid edit.');
+  };
+
+  const rotateCurrentPage = (delta: 90 | -90) => {
+    if (!currentPlanItem) return;
+    const next = rotatePdfPage(pagePlanRef.current, pageIndex, delta);
+    commitPagePlan(next, pageIndex, delta > 0 ? 'Page rotated right.' : 'Page rotated left.');
+  };
+
+  const moveCurrentPage = (direction: -1 | 1) => {
+    const targetIndex = pageIndex + direction;
+    if (targetIndex < 0 || targetIndex >= pagePlanRef.current.length) return;
+    const next = movePdfPage(pagePlanRef.current, pageIndex, targetIndex);
+    commitPagePlan(next, targetIndex, direction < 0 ? 'Page moved earlier.' : 'Page moved later.');
+  };
+
+  const deleteCurrentPage = () => {
+    try {
+      const next = deletePdfPage(pagePlanRef.current, pageIndex);
+      commitPagePlan(next, Math.min(pageIndex, next.length - 1), 'Page removed. Undo page restores it with its annotations.');
+    } catch (caught) {
+      setError(errorMessage(caught));
+    }
+  };
+
+  const undoPageOperation = () => {
+    applyPageHistory(pageHistoryRef.current.undo(), 'Undid page operation.');
+  };
+
+  const redoPageOperation = () => {
+    applyPageHistory(pageHistoryRef.current.redo(), 'Redid page operation.');
   };
 
   const pointerDownObject = (event: ReactPointerEvent<HTMLButtonElement>, item: PdfEditObject) => {
@@ -436,7 +535,7 @@ export function PdfSignEditPage() {
     setAnnouncement('Item moved.');
   };
 
-  const objectKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, item: PdfEditObject) => {
+  const objectKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, item: PdfEditObject) => {
     const amount = event.shiftKey ? 10 : 1;
     if (event.key === 'Delete' || event.key === 'Backspace') {
       event.preventDefault();
@@ -446,14 +545,15 @@ export function PdfSignEditPage() {
       return;
     }
     const directions: Record<string, [number, number]> = {
-      ArrowLeft: [-amount, 0], ArrowRight: [amount, 0], ArrowUp: [0, amount], ArrowDown: [0, -amount],
+      ArrowLeft: [-amount, 0], ArrowRight: [amount, 0], ArrowUp: [0, -amount], ArrowDown: [0, amount],
     };
     const delta = directions[event.key];
     if (!delta || !pageView) return;
     event.preventDefault();
     setSelectedId(item.id);
+    const pdfDelta = viewportDeltaToPdfDelta(pageView.transform, { x: delta[0] * zoom, y: delta[1] * zoom });
     commitObjects(updateItem(objectsRef.current, item.id, (candidate) => clampEditObjectToPage({
-      ...candidate, x: candidate.x + delta[0], y: candidate.y + delta[1],
+      ...candidate, x: candidate.x + pdfDelta.x, y: candidate.y + pdfDelta.y,
     }, pageView.pdfBounds)));
   };
 
@@ -513,7 +613,7 @@ export function PdfSignEditPage() {
   const uploadImageAsset = async (
     file: File | undefined,
     kind: 'signature-image' | 'image',
-    inputRef: React.RefObject<HTMLInputElement | null>,
+    inputRef: RefObject<HTMLInputElement | null>,
   ) => {
     if (!file || !pageView) return;
     setError('');
@@ -552,12 +652,17 @@ export function PdfSignEditPage() {
 
   const exportPdf = async () => {
     const original = originalBufferRef.current;
-    if (!original || exporting) return;
+    if (!original || exporting || pagePlanRef.current.length === 0) return;
     setExporting(true);
     setError('');
     setStatus('processing');
+    let originalCopy: ArrayBuffer | null = null;
+    let preparedBuffer: ArrayBuffer | null = null;
     try {
-      const output = await exportEditedPdf(copiedBuffer(original), objectsRef.current, assets);
+      originalCopy = copiedBuffer(original);
+      const prepared = await preparePdfPageOperations(originalCopy, objectsRef.current, pagePlanRef.current);
+      preparedBuffer = prepared.buffer;
+      const output = await exportEditedPdf(prepared.buffer, prepared.edits, assetsRef.current);
       const outputBuffer = output.slice().buffer as ArrayBuffer;
       const url = urlRegistryRef.current.create(new Blob([outputBuffer], { type: 'application/pdf' }));
       const anchor = document.createElement('a');
@@ -569,11 +674,13 @@ export function PdfSignEditPage() {
       anchor.remove();
       window.setTimeout(() => urlRegistryRef.current.release(url), 0);
       setStatus('ready');
-      setAnnouncement('Edited PDF downloaded.');
+      setAnnouncement('Edited PDF downloaded with current page order and rotation.');
     } catch (caught) {
       setStatus('failed');
       setError(errorMessage(caught));
     } finally {
+      if (originalCopy) clearArrayBuffer(originalCopy);
+      if (preparedBuffer) clearArrayBuffer(preparedBuffer);
       setExporting(false);
     }
   };
@@ -619,8 +726,8 @@ export function PdfSignEditPage() {
           <button type="button" onClick={() => addObject('date', { value: dateStamp() })}>Add date</button>
           <button type="button" onClick={() => addObject('check')}>Add check</button>
           <button type="button" onClick={() => addObject('highlight')}>Add highlight</button>
-          <button type="button" onClick={undo} disabled={!historyRef.current.canUndo}><Undo2 size={16} aria-hidden="true" /> Undo</button>
-          <button type="button" onClick={redo} disabled={!historyRef.current.canRedo}><Redo2 size={16} aria-hidden="true" /> Redo</button>
+          <button type="button" onClick={undo} disabled={!historyRef.current.canUndo}><Undo2 size={16} aria-hidden="true" /> Undo edit</button>
+          <button type="button" onClick={redo} disabled={!historyRef.current.canRedo}><Redo2 size={16} aria-hidden="true" /> Redo edit</button>
         </div>
 
         <div className="pdf-workspace-grid">
@@ -664,10 +771,10 @@ export function PdfSignEditPage() {
               <p className="mono">{selected.kind.toUpperCase()}</p>
               {['text', 'initials', 'date'].includes(selected.kind) ? <label>Text <input value={selected.value ?? ''} onChange={(event) => updateSelectedText(event.target.value)} /></label> : null}
               <div className="nudge-grid" aria-label="Move selected item">
-                <button type="button" onClick={() => nudgeSelected(0, 5)} aria-label="Move up">↑</button>
+                <button type="button" onClick={() => nudgeSelected(0, -5)} aria-label="Move up">↑</button>
                 <button type="button" onClick={() => nudgeSelected(-5, 0)} aria-label="Move left">←</button>
                 <button type="button" onClick={() => nudgeSelected(5, 0)} aria-label="Move right">→</button>
-                <button type="button" onClick={() => nudgeSelected(0, -5)} aria-label="Move down">↓</button>
+                <button type="button" onClick={() => nudgeSelected(0, 5)} aria-label="Move down">↓</button>
               </div>
               <div className="size-actions"><button type="button" onClick={() => resizeSelected(0.9)}>Smaller</button><button type="button" onClick={() => resizeSelected(1.1)}>Larger</button></div>
               <button type="button" className="danger-action" onClick={removeSelected}><Trash2 size={15} aria-hidden="true" /> Delete item</button>
@@ -680,7 +787,31 @@ export function PdfSignEditPage() {
               <span className="mono">PAGE {pageIndex + 1} / {pageCount}</span>
               <button type="button" disabled={pageIndex >= pageCount - 1} onClick={() => { setPageIndex((value) => Math.min(pageCount - 1, value + 1)); setSelectedId(null); }}>Next</button>
               <label>Zoom <select value={zoom} onChange={(event) => setZoom(Number(event.target.value))}><option value={0.75}>75%</option><option value={1}>100%</option><option value={1.25}>125%</option><option value={1.5}>150%</option><option value={2}>200%</option></select></label>
+              {currentPlanItem ? <span className="pdf-page-source-note">Source page {currentPlanItem.sourcePageIndex + 1} · rotation {currentPlanItem.rotation}°</span> : null}
             </div>
+
+            <div className="pdf-page-operation-bar" role="toolbar" aria-label="PDF page operations">
+              <div className="page-operation-group">
+                <span className="page-operation-label">Rotate</span>
+                <button type="button" onClick={() => rotateCurrentPage(-90)}>Rotate left</button>
+                <button type="button" onClick={() => rotateCurrentPage(90)}>Rotate right</button>
+              </div>
+              <div className="page-operation-group">
+                <span className="page-operation-label">Reorder</span>
+                <button type="button" disabled={pageIndex === 0} onClick={() => moveCurrentPage(-1)}>Move earlier</button>
+                <button type="button" disabled={pageIndex >= pageCount - 1} onClick={() => moveCurrentPage(1)}>Move later</button>
+              </div>
+              <div className="page-operation-group">
+                <span className="page-operation-label">History</span>
+                <button type="button" disabled={!pageHistoryRef.current.canUndo} onClick={undoPageOperation}><Undo2 size={15} aria-hidden="true" /> Undo page</button>
+                <button type="button" disabled={!pageHistoryRef.current.canRedo} onClick={redoPageOperation}><Redo2 size={15} aria-hidden="true" /> Redo page</button>
+              </div>
+              <div className="page-operation-group">
+                <span className="page-operation-label">Remove</span>
+                <button type="button" className="danger-page-action" disabled={pageCount <= 1} onClick={deleteCurrentPage}><Trash2 size={15} aria-hidden="true" /> Delete page</button>
+              </div>
+            </div>
+
             {error ? <p className="file-tool-error" role="alert">{error}</p> : null}
             <div className="pdf-stage-scroll">
               <div className="pdf-page-stage" style={pageView ? { width: pageView.viewportWidth, height: pageView.viewportHeight } : undefined}>
@@ -716,7 +847,7 @@ export function PdfSignEditPage() {
         </div>
 
         <div className="pdf-export-bar">
-          <div><FileText size={18} aria-hidden="true" /><span><strong>{fileName}</strong><small>{pageCount} pages · {objects.length} added items</small></span></div>
+          <div><FileText size={18} aria-hidden="true" /><span><strong>{fileName}</strong><small>{pageCount} retained pages · {objects.length} added items</small></span></div>
           <button type="button" className="primary-export" disabled={exporting} onClick={() => void exportPdf()}><Download size={17} aria-hidden="true" /> {exporting ? 'Preparing PDF…' : 'Download edited PDF'}</button>
           <button type="button" onClick={resetDocument}>Choose another PDF</button>
         </div>
@@ -725,9 +856,9 @@ export function PdfSignEditPage() {
       <section className="file-tool-content">
         <article className="advanced-content">
           <div className="eyebrow">HOW IT WORKS</div>
-          <h2>Fill, sign and annotate without sending the document away.</h2>
-          <p>Select a PDF, place text or signing marks, add highlights, freehand drawings, reviewed stamps or PNG/JPEG images, then export a flattened edited copy. Object positions stay in PDF page coordinates rather than screen pixels, so changing preview zoom does not change where a mark is written into the downloaded file.</p>
-          <p>FigureNest uses PDF.js only to render the local preview and pdf-lib to write the exported copy. Processing engines are bundled with the site and loaded only when this tool is opened. The editor does not use a cloud conversion API.</p>
+          <h2>Fill, sign, annotate and manage pages without sending the document away.</h2>
+          <p>Select a PDF, place text or signing marks, add highlights, freehand drawings, reviewed stamps or PNG/JPEG images, then rotate, reorder or remove pages before export. Annotations stay attached to their original source page as pages move, and undoing a page deletion restores that page with its annotations.</p>
+          <p>FigureNest uses PDF.js only to render the local preview and pdf-lib to prepare and write the exported copy. Page order, rotation and deletion are represented as an in-memory page plan; document bytes are not sent to a cloud conversion API.</p>
           <div className="eyebrow">LIMITATIONS</div>
           <h2>What this editor does not promise.</h2>
           {definition.limitations.map((item) => <p key={item}>{item}</p>)}
