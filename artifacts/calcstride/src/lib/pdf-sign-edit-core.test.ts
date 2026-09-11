@@ -28,6 +28,13 @@ async function onePagePdf(): Promise<ArrayBuffer> {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 
+function onePixelPng(): Uint8Array {
+  return Uint8Array.from(Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z2S8AAAAASUVORK5CYII=',
+    'base64',
+  ));
+}
+
 test('FT-02 PDF rule requires a real PDF signature', () => {
   assert.deepEqual(PDF_FILE_RULE.extensions, ['pdf']);
   assert.deepEqual(PDF_FILE_RULE.mimeTypes, ['application/pdf']);
@@ -182,6 +189,18 @@ test('FT-03 exports highlight, freehand and reviewed stamp annotations into a re
     { id: 'stamp', pageIndex: 0, kind: 'stamp', x: 20, y: 90, width: 128, height: 42, value: 'REVIEWED', fontSize: 13 },
   ];
   const output = await exportEditedPdf(original, edits, []);
+  const reopened = await PDFDocument.load(output);
+  assert.equal(reopened.getPageCount(), 1);
+  assert.ok(output.byteLength > original.byteLength);
+});
+
+test('FT-03 embeds an uploaded PNG media object into a reopenable PDF', async () => {
+  const original = await onePagePdf();
+  const edits: PdfEditObject[] = [
+    { id: 'media', pageIndex: 0, kind: 'image', x: 40, y: 180, width: 120, height: 80, assetId: 'media-1' },
+  ];
+  const assets = [{ id: 'media-1', mime: 'image/png' as const, bytes: onePixelPng() }];
+  const output = await exportEditedPdf(original, edits, assets);
   const reopened = await PDFDocument.load(output);
   assert.equal(reopened.getPageCount(), 1);
   assert.ok(output.byteLength > original.byteLength);
