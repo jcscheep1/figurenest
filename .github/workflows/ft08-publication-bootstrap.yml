@@ -1,0 +1,49 @@
+name: FT-08 Publication Bootstrap
+
+on:
+  push:
+    branches: [expansion/ft-08-pdf-text-docx]
+    paths:
+      - 'docs/FT08_PDF_TEXT_TO_DOCX_PUBLICATION.md'
+      - '.github/workflows/ft08-publication-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pin-docx:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: expansion/ft-08-pdf-text-docx
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Pin exact DOCX generator and update lockfile
+        run: pnpm --filter @workspace/calcstride add docx@9.7.1 --save-exact
+      - name: Verify exact resolved path
+        run: |
+          grep -F '"docx": "9.7.1"' artifacts/calcstride/package.json
+          grep -F 'version: 9.7.1' pnpm-lock.yaml
+          grep -F 'xml-js@1.6.11:' pnpm-lock.yaml
+          grep -F 'sax@1.6.1:' pnpm-lock.yaml
+      - name: Commit exact dependency changes
+        run: |
+          if git diff --quiet -- artifacts/calcstride/package.json pnpm-lock.yaml; then
+            echo 'Exact dependency already present; nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add artifacts/calcstride/package.json pnpm-lock.yaml
+          git commit -m 'build(ft-08): pin DOCX publication dependency'
+          git push origin HEAD:expansion/ft-08-pdf-text-docx

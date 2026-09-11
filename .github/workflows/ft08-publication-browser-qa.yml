@@ -1,0 +1,251 @@
+name: FT-08 Publication Browser QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/lib/pdf-to-docx.ts'
+      - 'artifacts/calcstride/src/lib/pdf-to-docx.test.ts'
+      - 'artifacts/calcstride/src/pages/PdfToDocxPage.tsx'
+      - 'artifacts/calcstride/src/lib/file-tools-foundation.ts'
+      - 'artifacts/calcstride/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/ft08-publication-browser-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publication-browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create exact production-core browser harness
+        working-directory: artifacts/calcstride
+        run: |
+          cat > ft08-publication-qa.html <<'HTML'
+          <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main id="app">FT08 starting</main><script type="module" src="/src/ft08-publication-qa.ts"></script></body></html>
+          HTML
+          cat > src/ft08-publication-qa.ts <<'TS'
+          import { PDFDocument, StandardFonts } from 'pdf-lib';
+          import { convertPdfTextToDocx } from '@/lib/pdf-to-docx';
+
+          const app = document.querySelector<HTMLElement>('#app')!;
+          const mode = new URLSearchParams(location.search).get('mode') === 'mobile' ? 'mobile' : 'desktop';
+          const sentinel = 'FT08_PUBLICATION_PRIVATE_SENTINEL_9371';
+          const violations: string[] = [];
+          const beforeStorage = `${JSON.stringify({...localStorage})}${JSON.stringify({...sessionStorage})}`;
+
+          const containsSentinel = async (value: unknown): Promise<boolean> => {
+            if (value == null) return false;
+            if (typeof value === 'string') return value.includes(sentinel);
+            if (value instanceof URLSearchParams) return value.toString().includes(sentinel);
+            if (value instanceof FormData) {
+              for (const [, item] of value.entries()) {
+                if (typeof item === 'string' && item.includes(sentinel)) return true;
+                if (item instanceof File && item.name.includes(sentinel)) return true;
+              }
+              return false;
+            }
+            if (value instanceof Blob) return (await value.text()).includes(sentinel);
+            if (value instanceof ArrayBuffer) return new TextDecoder().decode(value).includes(sentinel);
+            if (ArrayBuffer.isView(value)) return new TextDecoder().decode(value as ArrayBufferView<ArrayBuffer>).includes(sentinel);
+            return false;
+          };
+
+          const originalFetch = window.fetch.bind(window);
+          window.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+            const request = input instanceof Request ? input : null;
+            const url = request?.url ?? String(input);
+            if (url.includes(sentinel) || await containsSentinel(init?.body)) violations.push(`fetch-document-egress:${url}`);
+            return originalFetch(input, init);
+          }) as typeof fetch;
+
+          const OriginalXHR = window.XMLHttpRequest;
+          class GuardedXHR extends OriginalXHR {
+            override send(body?: Document | XMLHttpRequestBodyInit | null): void {
+              void containsSentinel(body).then((found) => { if (found) violations.push('xhr-document-egress'); });
+              super.send(body);
+            }
+          }
+          window.XMLHttpRequest = GuardedXHR as typeof XMLHttpRequest;
+
+          if (navigator.sendBeacon) {
+            const originalBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = ((url: string | URL, data?: BodyInit | null) => {
+              void containsSentinel(data).then((found) => { if (String(url).includes(sentinel) || found) violations.push('beacon-document-egress'); });
+              return originalBeacon(url, data);
+            }) as typeof navigator.sendBeacon;
+          }
+
+          const originalSocketSend = WebSocket.prototype.send;
+          WebSocket.prototype.send = function(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+            void containsSentinel(data).then((found) => { if (found) violations.push('websocket-document-egress'); });
+            return originalSocketSend.call(this, data);
+          };
+
+          const originalIndexedDbOpen = indexedDB.open.bind(indexedDB);
+          indexedDB.open = ((...args: Parameters<IDBFactory['open']>) => {
+            violations.push('indexeddb-open-during-conversion');
+            return originalIndexedDbOpen(...args);
+          }) as IDBFactory['open'];
+          const originalCacheOpen = caches.open.bind(caches);
+          caches.open = (async (...args: Parameters<CacheStorage['open']>) => {
+            violations.push('cache-open-during-conversion');
+            return originalCacheOpen(...args);
+          }) as CacheStorage['open'];
+
+          async function makePdf(pageCount: number, text: string): Promise<Uint8Array> {
+            const pdf = await PDFDocument.create();
+            const font = await pdf.embedFont(StandardFonts.Helvetica);
+            for (let index = 0; index < pageCount; index += 1) {
+              const page = pdf.addPage([612, 792]);
+              page.drawText(index === 0 ? text : `Page ${index + 1}`, { x: 72, y: 700, size: 12, font });
+            }
+            return pdf.save();
+          }
+
+          async function run() {
+            const started = performance.now();
+            const validBytes = await makePdf(2, sentinel);
+            const privateFile = new File([validBytes], `${sentinel}.pdf`, { type: 'application/pdf' });
+            const result = await convertPdfTextToDocx(privateFile, mode);
+            const outputBytes = new Uint8Array(await result.blob.arrayBuffer());
+            if (result.pageCount !== 2 || result.paragraphCount < 2) throw new Error('production conversion returned unexpected page/paragraph counts');
+            if (outputBytes.length < 100 || outputBytes[0] !== 0x50 || outputBytes[1] !== 0x4b) throw new Error('generated DOCX is not an OOXML ZIP');
+
+            const oversizedPages = await makePdf(101, 'resource ceiling fixture');
+            let rejected = false;
+            try {
+              await convertPdfTextToDocx(new File([oversizedPages], '101-pages.pdf', { type: 'application/pdf' }), mode);
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
+              if (/up to 100 pages/i.test(message)) rejected = true;
+              else throw error;
+            }
+            if (!rejected) throw new Error('101-page PDF was not rejected by the production resource ceiling');
+
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            const afterStorage = `${JSON.stringify({...localStorage})}${JSON.stringify({...sessionStorage})}`;
+            if (afterStorage !== beforeStorage || afterStorage.includes(sentinel)) violations.push('web-storage-document-persistence');
+            if (violations.length) throw new Error(`privacy violations: ${violations.join(',')}`);
+
+            app.textContent = `FT08_PUBLICATION_BROWSER_PASS ${mode} ${result.pageCount}pages ${result.paragraphCount}paragraphs ${outputBytes.length}docx ${Math.round(performance.now() - started)}ms ${innerWidth}x${innerHeight}`;
+            document.documentElement.dataset.qa = 'pass';
+          }
+
+          run().catch((error) => {
+            app.textContent = `FT08_PUBLICATION_BROWSER_FAIL ${mode} ${error?.stack || error}`;
+            document.documentElement.dataset.qa = 'fail';
+          });
+          TS
+
+          cat > /tmp/ft08-publication-cdp.mjs <<'JS'
+          import { spawn, spawnSync } from 'node:child_process';
+          const [mode, width, height, portText] = process.argv.slice(2);
+          const port = Number(portText);
+          const candidates = [process.env.CHROME_BIN, 'google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean);
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          async function main() {
+            let chromeBin = '';
+            for (const candidate of candidates) {
+              const probe = spawnSync('which', [candidate], { encoding: 'utf8' });
+              if (probe.status === 0 && probe.stdout.trim()) { chromeBin = probe.stdout.trim(); break; }
+            }
+            if (!chromeBin) throw new Error('No Chrome/Chromium executable found');
+            const chrome = spawn(chromeBin, ['--headless=new', '--no-sandbox', '--disable-gpu', `--window-size=${width},${height}`, `--remote-debugging-port=${port}`, `--user-data-dir=/tmp/ft08-publication-${mode}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+            let diagnostics = '';
+            chrome.stderr.on('data', (chunk) => { diagnostics += String(chunk); });
+
+            async function targetSocket() {
+              for (let attempt = 0; attempt < 80; attempt += 1) {
+                try {
+                  const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) => response.json());
+                  const target = targets.find((item) => item.type === 'page');
+                  if (target?.webSocketDebuggerUrl) return new WebSocket(target.webSocketDebuggerUrl);
+                } catch {}
+                await sleep(250);
+              }
+              throw new Error(`Chrome DevTools did not start. ${diagnostics}`);
+            }
+
+            let socket;
+            try {
+              socket = await targetSocket();
+              await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', reject, { once: true }); });
+              let id = 0;
+              const pending = new Map();
+              socket.addEventListener('message', (event) => {
+                const message = JSON.parse(String(event.data));
+                if (!message.id || !pending.has(message.id)) return;
+                const handlers = pending.get(message.id); pending.delete(message.id);
+                if (message.error) handlers.reject(new Error(message.error.message)); else handlers.resolve(message.result);
+              });
+              const command = (method, params = {}) => new Promise((resolve, reject) => { const requestId = ++id; pending.set(requestId, { resolve, reject }); socket.send(JSON.stringify({ id: requestId, method, params })); });
+              await command('Page.enable');
+              await command('Runtime.enable');
+              await command('Emulation.setDeviceMetricsOverride', { width: Number(width), height: Number(height), deviceScaleFactor: 1, mobile: mode === 'mobile' });
+              await command('Page.navigate', { url: `http://127.0.0.1:4175/ft08-publication-qa.html?mode=${mode}` });
+              const deadline = Date.now() + 180_000;
+              while (Date.now() < deadline) {
+                try {
+                  const state = await command('Runtime.evaluate', { expression: 'document.documentElement.dataset.qa || ""', returnByValue: true });
+                  const value = state?.result?.value;
+                  if (value === 'pass' || value === 'fail') {
+                    const body = await command('Runtime.evaluate', { expression: 'document.body.innerText', returnByValue: true });
+                    console.log(body?.result?.value ?? '');
+                    if (value === 'fail') throw new Error(body?.result?.value ?? 'FT-08 browser gate failed');
+                    return;
+                  }
+                } catch (error) {
+                  if (String(error).includes('FT08_PUBLICATION_BROWSER_FAIL')) throw error;
+                }
+                await sleep(250);
+              }
+              throw new Error(`Timed out waiting for FT-08 ${mode}. ${diagnostics}`);
+            } finally {
+              socket?.close();
+              chrome.kill('SIGTERM');
+            }
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          JS
+
+      - name: Start Vite harness
+        working-directory: artifacts/calcstride
+        run: |
+          pnpm exec vite --host 127.0.0.1 --port 4175 > /tmp/ft08-publication-vite.log 2>&1 &
+          for i in {1..40}; do curl -fsS http://127.0.0.1:4175/ft08-publication-qa.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/ft08-publication-vite.log; exit 1
+
+      - name: Desktop production-core privacy and 100-page gate
+        run: node /tmp/ft08-publication-cdp.mjs desktop 1440 1200 9242
+
+      - name: Mobile production-core privacy and 100-page gate
+        run: node /tmp/ft08-publication-cdp.mjs mobile 390 844 9243
+
+      - name: Verify real published route is wired and route-lazy
+        working-directory: artifacts/calcstride
+        run: |
+          grep -F 'path="/file-tools/pdf-to-docx"' src/App.tsx
+          grep -F "lazy(() => import('@/pages/PdfToDocxPage')" src/App.tsx
+          grep -F "import('pdfjs-dist')" src/lib/pdf-to-docx.ts
+          grep -F "import('docx')" src/lib/pdf-to-docx.ts
+          pnpm run build
+          find dist -type f -printf '%s %p\n' | sort -nr | head -30
