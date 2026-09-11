@@ -110,6 +110,33 @@ export const fileToolDefinitions = {
     ],
     relatedRoutes: ['/file-tools/pdf-to-image', '/file-tools/pdf-sign-edit', '/privacy'],
   },
+  'docx-to-pdf': {
+    slug: 'docx-to-pdf',
+    name: 'DOCX to PDF',
+    description: 'Convert a DOCX document to a best-effort PDF locally in your browser, with a sanitized preview before download and no document upload.',
+    category: FILE_TOOLS_CATEGORY.name,
+    categorySlug: FILE_TOOLS_CATEGORY.slug,
+    href: '/file-tools/docx-to-pdf',
+    tags: ['docx to pdf', 'word to pdf', 'document to pdf', 'private docx converter', 'browser word converter'],
+    featured: false,
+    h1: 'Convert DOCX to PDF',
+    seoTitle: 'Free DOCX to PDF Converter | Private Browser | FigureNest',
+    seoDescription: 'Convert DOCX to PDF locally in your browser. Preview the sanitized best-effort layout before download without uploading your document.',
+    privacySummary: 'The DOCX, filename, extracted document content, preview and generated PDF remain in this browser tab and are not uploaded to a FigureNest conversion server.',
+    limitations: [
+      'Conversion is best-effort rather than a pixel-perfect copy of Microsoft Word. Complex pagination, fonts, fields, tracked changes, headers and footers may differ.',
+      'Only DOCX files that pass local OOXML/ZIP safety checks are processed. Malformed, encrypted, oversized or suspicious packages are rejected locally.',
+      'Remote document resources and active content are blocked. Converted HTML is sanitized before preview and checked again before PDF export.',
+      'The PDF is created from the browser preview, so advanced Word layout features and exact print settings are not guaranteed.'
+    ],
+    faqs: [
+      { question: 'Does FigureNest upload my DOCX?', answer: 'No. Package inspection, document conversion, sanitization, preview rendering and PDF creation run locally in your browser. Normal website assets may load, but your filename, document bytes, extracted content and PDF output are not included in those requests.' },
+      { question: 'Will the PDF look exactly like Microsoft Word?', answer: 'Not always. This converter is designed for useful best-effort output for ordinary headings, lists, tables and images. Complex pagination, fonts, tracked changes, fields, headers and footers can differ.' },
+      { question: 'Can I preview the conversion first?', answer: 'Yes. FigureNest shows the sanitized browser preview before you create and download the PDF.' },
+      { question: 'Are external images or links loaded from the DOCX?', answer: 'No external document resources are fetched. The converter blocks network-capable document resources and sanitizes the generated preview before export.' }
+    ],
+    relatedRoutes: ['/file-tools/pdf-sign-edit', '/file-tools/pdf-to-text', '/file-tools/image-to-pdf'],
+  },
   'pdf-to-text': {
     slug: 'pdf-to-text',
     name: 'PDF to Text',
