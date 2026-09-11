@@ -21,7 +21,10 @@ workerScope.onmessage = async (event) => {
   try {
     const result = await mammoth.convertToHtml(
       { arrayBuffer },
-      { externalFileAccess: false },
+      {
+        externalFileAccess: false,
+        styleMap: ['u => u'],
+      },
     );
     const response: ConvertResponse = {
       id,
