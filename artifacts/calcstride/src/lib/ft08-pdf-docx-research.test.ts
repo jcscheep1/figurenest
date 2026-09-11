@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx';
 import mammoth from 'mammoth';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
@@ -86,6 +86,46 @@ test('FT-08 text-first spike carries selectable PDF text into a reopenable edita
       .filter(Boolean);
 
     assert.deepEqual(normalized, PDF_LINES, 'reopened DOCX must preserve the extracted paragraph order');
+  } finally {
+    await loadingTask.destroy();
+  }
+});
+
+test('FT-08 recovers defensible heading and simple-list semantics from selectable PDF cues', async () => {
+  const pdf = await PDFDocument.create();
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const page = pdf.addPage([612, 792]);
+
+  page.drawText('Fixture heading', { x: 72, y: 710, size: 20, font });
+  page.drawText('Body paragraph', { x: 72, y: 670, size: 12, font });
+  page.drawText('- First item', { x: 84, y: 635, size: 12, font });
+  page.drawText('- Second item', { x: 84, y: 610, size: 12, font });
+
+  const pdfBytes = await pdf.save();
+  const loadingTask = getDocument({ data: pdfBytes });
+  const parsedPdf = await loadingTask.promise;
+
+  try {
+    const parsedPage = await parsedPdf.getPage(1);
+    const textContent = await parsedPage.getTextContent();
+    const items = textContent.items.filter(
+      (item): item is Extract<(typeof textContent.items)[number], { str: string }> => 'str' in item && item.str.trim().length > 0,
+    );
+
+    const children = items.map((item) => {
+      const text = item.str.trim();
+      if (item.height >= 18) return new Paragraph({ text, heading: HeadingLevel.HEADING_1 });
+      if (text.startsWith('- ')) return new Paragraph({ text: text.slice(2), bullet: { level: 0 } });
+      return new Paragraph(text);
+    });
+
+    const document = new Document({ sections: [{ children }] });
+    const docxBuffer = await Packer.toBuffer(document);
+    const reopenedHtml = await mammoth.convertToHtml({ buffer: docxBuffer });
+
+    assert.match(reopenedHtml.value, /<h1>Fixture heading<\/h1>/);
+    assert.match(reopenedHtml.value, /<p>Body paragraph<\/p>/);
+    assert.match(reopenedHtml.value, /<ul>[\s\S]*<li>First item<\/li>[\s\S]*<li>Second item<\/li>[\s\S]*<\/ul>/);
   } finally {
     await loadingTask.destroy();
   }
