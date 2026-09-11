@@ -1,10 +1,13 @@
 import { FILE_INPUT_LIMITS, FileToolError, type FileDeviceClass } from './file-tools-foundation';
 
+const ZIP_LOCAL_SIGNATURE = 0x04034b50;
 const ZIP_EOCD_SIGNATURE = 0x06054b50;
 const ZIP_CENTRAL_SIGNATURE = 0x02014b50;
 const ZIP64_U16 = 0xffff;
 const ZIP64_U32 = 0xffffffff;
 const MAX_ZIP_COMMENT_BYTES = 0xffff;
+const MAX_INSPECT_XML_BYTES = 2 * 1024 * 1024;
+const MAX_INSPECT_XML_TOTAL_BYTES = 8 * 1024 * 1024;
 
 export const DOCX_PACKAGE_LIMITS = {
   maxEntries: 2_000,
@@ -20,12 +23,18 @@ export type DocxPackageEntry = {
   compressedBytes: number;
   uncompressedBytes: number;
   compressionMethod: 0 | 8;
+  localHeaderOffset: number;
 };
 
 export type DocxPackagePreflight = {
   entries: readonly DocxPackageEntry[];
   totalCompressedBytes: number;
   totalUncompressedBytes: number;
+};
+
+export type DocxPackageInspection = DocxPackagePreflight & {
+  externalHyperlinks: number;
+  inspectedRelationshipFiles: number;
 };
 
 const utf8 = new TextDecoder('utf-8', { fatal: false });
@@ -47,7 +56,9 @@ function findEndOfCentralDirectory(bytes: Uint8Array): number {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const start = Math.max(0, bytes.byteLength - (22 + MAX_ZIP_COMMENT_BYTES));
   for (let offset = bytes.byteLength - 22; offset >= start; offset -= 1) {
-    if (view.getUint32(offset, true) === ZIP_EOCD_SIGNATURE) return offset;
+    if (view.getUint32(offset, true) !== ZIP_EOCD_SIGNATURE) continue;
+    const commentLength = view.getUint16(offset + 20, true);
+    if (offset + 22 + commentLength === bytes.byteLength) return offset;
   }
   malformed('The DOCX package does not contain a valid ZIP end record.');
 }
@@ -81,6 +92,60 @@ function deviceEntryLimit(deviceClass: FileDeviceClass): number {
     : DOCX_PACKAGE_LIMITS.desktopEntryBytes;
 }
 
+function copiedArrayBuffer(bytes: Uint8Array, start: number, end: number): ArrayBuffer {
+  const absoluteStart = bytes.byteOffset + start;
+  const absoluteEnd = bytes.byteOffset + end;
+  return bytes.buffer.slice(absoluteStart, absoluteEnd) as ArrayBuffer;
+}
+
+async function readZipEntry(bytes: Uint8Array, entry: DocxPackageEntry): Promise<Uint8Array> {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const offset = entry.localHeaderOffset;
+  if (offset + 30 > bytes.byteLength || view.getUint32(offset, true) !== ZIP_LOCAL_SIGNATURE) {
+    malformed('A DOCX ZIP local-file header is malformed.');
+  }
+  const flags = view.getUint16(offset + 6, true);
+  const method = view.getUint16(offset + 8, true);
+  const nameLength = view.getUint16(offset + 26, true);
+  const extraLength = view.getUint16(offset + 28, true);
+  const nameStart = offset + 30;
+  const dataStart = nameStart + nameLength + extraLength;
+  const dataEnd = dataStart + entry.compressedBytes;
+  if (dataEnd > bytes.byteLength) malformed('A DOCX ZIP entry payload exceeds the file boundary.');
+  if ((flags & 0x0001) !== 0) unsupported('Encrypted DOCX ZIP entries are not supported.');
+  if (method !== entry.compressionMethod) malformed('A DOCX ZIP entry has mismatched compression metadata.');
+  const localName = normalizedEntryName(utf8.decode(bytes.subarray(nameStart, nameStart + nameLength)));
+  if (localName.toLowerCase() !== entry.name.toLowerCase()) malformed('A DOCX ZIP local header does not match its central-directory entry.');
+
+  const compressed = copiedArrayBuffer(bytes, dataStart, dataEnd);
+  let output: Uint8Array;
+  if (entry.compressionMethod === 0) {
+    output = new Uint8Array(compressed);
+  } else {
+    try {
+      const decompressor = new DecompressionStream('deflate-raw');
+      const stream = new Blob([compressed]).stream().pipeThrough(decompressor);
+      output = new Uint8Array(await new Response(stream).arrayBuffer());
+    } catch {
+      malformed('A compressed DOCX ZIP entry could not be decompressed locally.');
+    }
+  }
+  if (output.byteLength !== entry.uncompressedBytes) malformed('A DOCX ZIP entry decompressed to an unexpected size.');
+  return output;
+}
+
+function relationshipAttributes(tag: string): Record<string, string> {
+  const attributes: Record<string, string> = {};
+  const pattern = /([A-Za-z_:][A-Za-z0-9_.:-]*)\s*=\s*(["'])(.*?)\2/g;
+  for (const match of tag.matchAll(pattern)) attributes[match[1].toLowerCase()] = match[3];
+  return attributes;
+}
+
+function isAllowedExternalHyperlink(target: string): boolean {
+  const value = target.trim();
+  return /^(https?:|mailto:|tel:)/i.test(value);
+}
+
 export function preflightDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceClass): DocxPackagePreflight {
   if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) {
     throw new FileToolError('empty-file', 'The selected DOCX file is empty.');
@@ -99,7 +164,7 @@ export function preflightDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceC
   const centralOffset = view.getUint32(eocdOffset + 16, true);
   const commentLength = view.getUint16(eocdOffset + 20, true);
 
-  if (eocdOffset + 22 + commentLength > bytes.byteLength) malformed('The DOCX ZIP comment exceeds the file boundary.');
+  if (eocdOffset + 22 + commentLength !== bytes.byteLength) malformed('The DOCX ZIP end record is malformed.');
   if (diskNumber !== 0 || centralDisk !== 0 || entriesOnDisk !== totalEntries) unsupported('Multi-disk DOCX ZIP packages are not supported.');
   if (totalEntries === ZIP64_U16 || centralSize === ZIP64_U32 || centralOffset === ZIP64_U32) unsupported('ZIP64 DOCX packages are not supported by this browser tool.');
   if (totalEntries < 1) malformed('The DOCX package contains no files.');
@@ -151,7 +216,7 @@ export function preflightDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceC
       totalCompressedBytes += compressedBytes;
       totalUncompressedBytes += uncompressedBytes;
       if (totalUncompressedBytes > maxUncompressed) resourceLimit('The DOCX package exceeds the safe total uncompressed-size limit for this device.');
-      entries.push({ name, compressedBytes, uncompressedBytes, compressionMethod: method as 0 | 8 });
+      entries.push({ name, compressedBytes, uncompressedBytes, compressionMethod: method as 0 | 8, localHeaderOffset: localOffset });
     }
 
     cursor = entryEnd;
@@ -163,4 +228,46 @@ export function preflightDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceC
   }
 
   return { entries, totalCompressedBytes, totalUncompressedBytes };
+}
+
+export async function inspectDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceClass): Promise<DocxPackageInspection> {
+  const preflight = preflightDocxPackage(bytes, deviceClass);
+  const inspectEntries = preflight.entries.filter((entry) => {
+    const lower = entry.name.toLowerCase();
+    return lower === '[content_types].xml' || lower.endsWith('.rels');
+  });
+  let inspectedBytes = 0;
+  let externalHyperlinks = 0;
+  let inspectedRelationshipFiles = 0;
+
+  for (const entry of inspectEntries) {
+    if (entry.uncompressedBytes > MAX_INSPECT_XML_BYTES) resourceLimit('A DOCX metadata XML part exceeds the safe inspection limit.');
+    inspectedBytes += entry.uncompressedBytes;
+    if (inspectedBytes > MAX_INSPECT_XML_TOTAL_BYTES) resourceLimit('DOCX metadata XML exceeds the safe total inspection limit.');
+    const xmlBytes = await readZipEntry(bytes, entry);
+    const xml = utf8.decode(xmlBytes);
+    xmlBytes.fill(0);
+
+    if (entry.name.toLowerCase() === '[content_types].xml') {
+      if (/(macroenabled|vbaproject|activex)/i.test(xml)) {
+        unsupported('Macro-enabled or active-content DOCX packages are not supported.');
+      }
+      continue;
+    }
+
+    inspectedRelationshipFiles += 1;
+    for (const tag of xml.match(/<Relationship\b[^>]*>/gi) ?? []) {
+      const attributes = relationshipAttributes(tag);
+      if (attributes.targetmode?.toLowerCase() !== 'external') continue;
+      const relationshipType = (attributes.type ?? '').toLowerCase();
+      const target = attributes.target ?? '';
+      if (relationshipType.endsWith('/hyperlink') && isAllowedExternalHyperlink(target)) {
+        externalHyperlinks += 1;
+        continue;
+      }
+      unsupported('The DOCX package contains an unsupported external relationship or resource.');
+    }
+  }
+
+  return { ...preflight, externalHyperlinks, inspectedRelationshipFiles };
 }
