@@ -5,6 +5,7 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 type PdfPreflightResult =
   | { status: 'accepted'; pages: number }
+  | { status: 'password-protected' }
   | { status: 'malformed-or-unsupported' }
   | { status: 'resource-limit'; reason: 'bytes' | 'pages' };
 
@@ -12,6 +13,22 @@ const DEFAULT_LIMITS = {
   maxBytes: 20 * 1024 * 1024,
   maxPages: 100,
 };
+
+function classifyPdfLoadFailure(error: unknown): PdfPreflightResult {
+  // PDF.js reports password-gated documents with a PasswordException. Keep
+  // that case distinct so the future UI can honestly explain that FigureNest
+  // does not bypass PDF passwords instead of mislabelling the file malformed.
+  if (
+    typeof error === 'object'
+    && error !== null
+    && 'name' in error
+    && error.name === 'PasswordException'
+  ) {
+    return { status: 'password-protected' };
+  }
+
+  return { status: 'malformed-or-unsupported' };
+}
 
 async function preflightPdfLocally(
   pdfBytes: Uint8Array,
@@ -32,10 +49,11 @@ async function preflightPdfLocally(
     }
 
     return { status: 'accepted', pages: parsedPdf.numPages };
-  } catch {
+  } catch (error) {
     // Do not expose parser internals or turn malformed/encrypted input into a
-    // partially generated DOCX. Password-specific UX remains a later fixture.
-    return { status: 'malformed-or-unsupported' };
+    // partially generated DOCX. Password-gated input receives a distinct,
+    // honest classification; all other parser failures still fail closed.
+    return classifyPdfLoadFailure(error);
   } finally {
     await loadingTask.destroy();
   }
@@ -48,6 +66,23 @@ test('FT-08 rejects oversized PDF bytes before invoking PDF.js', async () => {
     await preflightPdfLocally(oversized, { maxBytes: 32, maxPages: 10 }),
     { status: 'resource-limit', reason: 'bytes' },
   );
+});
+
+test('FT-08 classifies PDF.js password failures without exposing parser internals', () => {
+  const passwordFailure = Object.assign(new Error('Password required'), {
+    name: 'PasswordException',
+    code: 1,
+  });
+
+  assert.deepEqual(classifyPdfLoadFailure(passwordFailure), {
+    status: 'password-protected',
+  });
+});
+
+test('FT-08 does not misclassify ordinary parser failures as password-protected', () => {
+  assert.deepEqual(classifyPdfLoadFailure(new Error('Invalid PDF structure')), {
+    status: 'malformed-or-unsupported',
+  });
 });
 
 test('FT-08 fails closed for malformed/truncated PDF input', async () => {
