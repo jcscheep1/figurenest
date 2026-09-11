@@ -109,8 +109,8 @@ jobs:
             }
             if (extracted[0] !== sentinel || extracted[1] !== 'Second editable paragraph') throw new Error('selectable text order changed');
 
-            const document = new Document({sections: [{children: extracted.map((text) => new Paragraph(text))}]});
-            const docxBlob = await Packer.toBlob(document);
+            const docxDocument = new Document({sections: [{children: extracted.map((text) => new Paragraph(text))}]});
+            const docxBlob = await Packer.toBlob(docxDocument);
             const docxBytes = new Uint8Array(await docxBlob.arrayBuffer());
             if (docxBytes.length < 100 || docxBytes[0] !== 0x50 || docxBytes[1] !== 0x4b) throw new Error('generated DOCX is not OOXML ZIP');
 
