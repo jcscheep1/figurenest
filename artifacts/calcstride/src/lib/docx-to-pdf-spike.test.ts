@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as mammoth from 'mammoth';
-import { calculatePdfPageSlices, isAllowedDocxPreviewResourceUrl } from './docx-to-pdf-spike';
+import {
+  calculatePdfPageSlices,
+  isAllowedDocxPreviewLinkUrl,
+  isAllowedDocxPreviewResourceUrl,
+} from './docx-to-pdf-spike';
 import { DOCX_PUBLICATION_FIXTURES } from './docx-publication-fixtures';
 import { inspectDocxPackage } from './docx-package-preflight';
 
@@ -15,6 +19,19 @@ test('allows only embedded raster image data URLs for generated DOCX preview res
   assert.equal(isAllowedDocxPreviewResourceUrl('data:text/html;base64,AAAA'), false);
   assert.equal(isAllowedDocxPreviewResourceUrl('javascript:alert(1)'), false);
   assert.equal(isAllowedDocxPreviewResourceUrl(''), false);
+});
+
+test('allows only explicitly approved preview hyperlink protocols', () => {
+  assert.equal(isAllowedDocxPreviewLinkUrl('https://example.com'), true);
+  assert.equal(isAllowedDocxPreviewLinkUrl('http://example.com'), true);
+  assert.equal(isAllowedDocxPreviewLinkUrl('mailto:test@example.com'), true);
+  assert.equal(isAllowedDocxPreviewLinkUrl('tel:+352123456'), true);
+  assert.equal(isAllowedDocxPreviewLinkUrl('#section-1'), true);
+  assert.equal(isAllowedDocxPreviewLinkUrl(' javascript:alert(1)'), false);
+  assert.equal(isAllowedDocxPreviewLinkUrl('//example.com'), false);
+  assert.equal(isAllowedDocxPreviewLinkUrl('data:text/html;base64,AAAA'), false);
+  assert.equal(isAllowedDocxPreviewLinkUrl('blob:https://example.com/id'), false);
+  assert.equal(isAllowedDocxPreviewLinkUrl(''), false);
 });
 
 test('calculates stable PDF page offsets without dropping a trailing partial page', () => {
