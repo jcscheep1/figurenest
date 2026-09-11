@@ -11,12 +11,29 @@ export type DocxPdfExportOptions = {
   pageFormat?: 'a4' | 'letter';
 };
 
+export type PdfPageSlice = {
+  pageIndex: number;
+  offsetY: number;
+};
+
 let requestSequence = 0;
 
 export function isAllowedDocxPreviewResourceUrl(value: string): boolean {
   const trimmed = value.trim();
   if (!trimmed) return false;
   return /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(trimmed);
+}
+
+export function calculatePdfPageSlices(imageHeight: number, pageHeight: number): PdfPageSlice[] {
+  if (!Number.isFinite(imageHeight) || !Number.isFinite(pageHeight) || imageHeight <= 0 || pageHeight <= 0) {
+    throw new Error('DOCX PDF pagination requires positive finite dimensions.');
+  }
+
+  const pageCount = Math.max(1, Math.ceil(imageHeight / pageHeight));
+  return Array.from({ length: pageCount }, (_, pageIndex) => ({
+    pageIndex,
+    offsetY: pageIndex * pageHeight,
+  }));
 }
 
 function scrubPreviewResources(container: HTMLElement): void {
@@ -124,21 +141,22 @@ export async function exportSanitizedPreviewToPdf(
     scale: Math.min(Math.max(window.devicePixelRatio || 1, 1), 2),
   });
 
+  if (canvas.width <= 0 || canvas.height <= 0) {
+    throw new Error('DOCX preview rendered an empty canvas and cannot be exported.');
+  }
+
   const pdf = new jsPDF({ unit: 'pt', format: options.pageFormat ?? 'a4', orientation: 'portrait', compress: true });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imageWidth = pageWidth;
   const imageHeight = canvas.height * (imageWidth / canvas.width);
   const imageData = canvas.toDataURL('image/jpeg', 0.92);
+  const slices = calculatePdfPageSlices(imageHeight, pageHeight);
 
-  let offsetY = 0;
-  let remaining = imageHeight;
-  do {
-    if (offsetY > 0) pdf.addPage(options.pageFormat ?? 'a4', 'portrait');
-    pdf.addImage(imageData, 'JPEG', 0, -offsetY, imageWidth, imageHeight, undefined, 'FAST');
-    offsetY += pageHeight;
-    remaining -= pageHeight;
-  } while (remaining > 0);
+  for (const slice of slices) {
+    if (slice.pageIndex > 0) pdf.addPage(options.pageFormat ?? 'a4', 'portrait');
+    pdf.addImage(imageData, 'JPEG', 0, -slice.offsetY, imageWidth, imageHeight, undefined, 'FAST');
+  }
 
   return pdf.output('blob');
 }
