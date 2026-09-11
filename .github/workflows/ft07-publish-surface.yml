@@ -1,4 +1,4 @@
-# retrigger: publication surface integration after verified green exact-head gates
+# retrigger: publication surface integration after green browser/security gate; split QA stages for durable diagnostics
 name: FT-07 Publish Surface Integration
 on:
   push:
@@ -144,12 +144,14 @@ jobs:
               c=c.replace(marker, entry+marker)
           cat.write_text(c)
           PY
-      - name: Validate publication surface
-        run: |
-          pnpm exec tsc -b lib/api-client-react
-          pnpm --filter @workspace/calcstride typecheck
-          pnpm --filter @workspace/calcstride test
-          pnpm --filter @workspace/calcstride build:client
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+      - name: Typecheck publication surface
+        run: pnpm --filter @workspace/calcstride typecheck
+      - name: Test publication surface
+        run: pnpm --filter @workspace/calcstride test
+      - name: Build publication client
+        run: pnpm --filter @workspace/calcstride build:client
       - name: Commit integration and remove one-time workflow
         run: |
           rm .github/workflows/ft07-publish-surface.yml
