@@ -1,4 +1,9 @@
-import { FILE_INPUT_LIMITS, FileToolError, type FileDeviceClass } from './file-tools-foundation';
+import {
+  FILE_INPUT_LIMITS,
+  FileToolError,
+  type FileDeviceClass,
+  type FileTypeRule,
+} from './file-tools-foundation';
 
 const ZIP_LOCAL_SIGNATURE = 0x04034b50;
 const ZIP_EOCD_SIGNATURE = 0x06054b50;
@@ -8,6 +13,17 @@ const ZIP64_U32 = 0xffffffff;
 const MAX_ZIP_COMMENT_BYTES = 0xffff;
 const MAX_INSPECT_XML_BYTES = 2 * 1024 * 1024;
 const MAX_INSPECT_XML_TOTAL_BYTES = 8 * 1024 * 1024;
+
+export const DOCX_FILE_RULES: readonly FileTypeRule[] = [{
+  id: 'docx',
+  extensions: ['docx'],
+  mimeTypes: [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/zip',
+    'application/x-zip-compressed',
+  ],
+  magicBytes: [{ offset: 0, bytes: [0x50, 0x4b, 0x03, 0x04] }],
+}];
 
 export const DOCX_PACKAGE_LIMITS = {
   maxEntries: 2_000,
@@ -38,6 +54,7 @@ export type DocxPackageInspection = DocxPackagePreflight & {
 };
 
 const utf8 = new TextDecoder('utf-8', { fatal: false });
+const strictUtf8 = new TextDecoder('utf-8', { fatal: true });
 
 function malformed(message: string): never {
   throw new FileToolError('malformed', message);
@@ -96,6 +113,19 @@ function copiedArrayBuffer(bytes: Uint8Array, start: number, end: number): Array
   const absoluteStart = bytes.byteOffset + start;
   const absoluteEnd = bytes.byteOffset + end;
   return bytes.buffer.slice(absoluteStart, absoluteEnd) as ArrayBuffer;
+}
+
+function decodeXmlPart(bytes: Uint8Array): string {
+  if (bytes.byteLength >= 2 && ((bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff))) {
+    unsupported('UTF-16 DOCX metadata XML is not supported by this browser tool.');
+  }
+  const probe = bytes.subarray(0, Math.min(bytes.byteLength, 256));
+  if (probe.includes(0)) unsupported('DOCX metadata XML uses an unsupported text encoding.');
+  try {
+    return strictUtf8.decode(bytes);
+  } catch {
+    malformed('DOCX metadata XML is not valid UTF-8.');
+  }
 }
 
 async function readZipEntry(bytes: Uint8Array, entry: DocxPackageEntry): Promise<Uint8Array> {
@@ -245,7 +275,7 @@ export async function inspectDocxPackage(bytes: Uint8Array, deviceClass: FileDev
     inspectedBytes += entry.uncompressedBytes;
     if (inspectedBytes > MAX_INSPECT_XML_TOTAL_BYTES) resourceLimit('DOCX metadata XML exceeds the safe total inspection limit.');
     const xmlBytes = await readZipEntry(bytes, entry);
-    const xml = utf8.decode(xmlBytes);
+    const xml = decodeXmlPart(xmlBytes);
     xmlBytes.fill(0);
 
     if (entry.name.toLowerCase() === '[content_types].xml') {
@@ -256,7 +286,7 @@ export async function inspectDocxPackage(bytes: Uint8Array, deviceClass: FileDev
     }
 
     inspectedRelationshipFiles += 1;
-    for (const tag of xml.match(/<Relationship\b[^>]*>/gi) ?? []) {
+    for (const tag of xml.match(/<(?:[A-Za-z_][A-Za-z0-9_.-]*:)?Relationship\b[^>]*>/gi) ?? []) {
       const attributes = relationshipAttributes(tag);
       if (attributes.targetmode?.toLowerCase() !== 'external') continue;
       const relationshipType = (attributes.type ?? '').toLowerCase();
