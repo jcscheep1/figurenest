@@ -158,6 +158,8 @@ Exact-head QA then found a separate filename-interpretation ambiguity: JSZip hon
 
 After QA accepts that exact hostile-input guard, the next Build step is not public-route integration. It is the exact-pinned Mammoth + DOMPurify + jsPDF/html2canvas spike with fixture evidence and lockfile-safe installation. Do not add the public route until the publication threshold passes.
 
+The unpublished renderer spike now has an executable, repository-committed fixture matrix for mandatory rows 1–6 and 8. Fixtures are deterministic minimal OOXML packages rather than third-party documents: plain Unicode paragraphs, heading hierarchy, ordered/unordered lists, nested lists, bold/italic/underlined emphasis, a simple table and an embedded PNG. The Mammoth fixture test always sets `externalFileAccess: false`, requires the expected semantic HTML structures, and uses the same explicit `u => u` style map as the worker so underlining is not silently discarded. This is conversion-stage evidence only; browser sanitization, rendered layout, PDF reopening, privacy interception and desktop/mobile measurements remain release blockers.
+
 ## Stop condition
 
 If the accepted fixture subset cannot produce a safe, readable, reopenable local PDF within the privacy, security, bundle and mobile limits, FT-07 is recorded as **not publishable in the current browser-only architecture**. Do not create a placeholder route or weaken the product promise to force release.
