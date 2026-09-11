@@ -138,7 +138,6 @@ export async function convertPdfTextToDocx(
       useWorkerFetch: false,
       disableAutoFetch: true,
       disableStream: true,
-      isEvalSupported: false,
     }) as unknown as PdfJsLoadingTask;
     parsed = await task.promise;
     task = null;
