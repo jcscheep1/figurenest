@@ -178,7 +178,7 @@ jobs:
           unit_marker="  'pdf-sign-edit': unitless(), 'pdf-to-image': unitless(), 'image-to-pdf': unitless(), 'pdf-to-text': unitless(),"
           if "'docx-to-pdf': unitless()" not in u:
               assert unit_marker in u, 'File Tools applicability marker missing'
-              u=u.replace(unit_marker, unit_marker[:-1] + " 'docx-to-pdf': unitless(),", 1)
+              u=u.replace(unit_marker, unit_marker + " 'docx-to-pdf': unitless(),", 1)
               units.write_text(u)
           PY
       - name: Build workspace type dependency
