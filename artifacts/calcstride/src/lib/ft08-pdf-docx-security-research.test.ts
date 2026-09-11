@@ -10,7 +10,7 @@ type PdfPreflightResult =
 
 const DEFAULT_LIMITS = {
   maxBytes: 20 * 1024 * 1024,
-  maxPages: 200,
+  maxPages: 100,
 };
 
 async function preflightPdfLocally(
@@ -66,6 +66,16 @@ test('FT-08 rejects a parseable PDF above the page ceiling before extraction or 
     await preflightPdfLocally(await pdf.save(), { maxBytes: 1024 * 1024, maxPages: 5 }),
     { status: 'resource-limit', reason: 'pages' },
   );
+});
+
+test('FT-08 locks the programme default PDF page ceiling at 100 pages', async () => {
+  const pdf = await PDFDocument.create();
+  for (let page = 0; page < 101; page += 1) pdf.addPage([612, 792]);
+
+  assert.deepEqual(await preflightPdfLocally(await pdf.save()), {
+    status: 'resource-limit',
+    reason: 'pages',
+  });
 });
 
 test('FT-08 accepts an ordinary in-limit PDF and records its page count', async () => {
