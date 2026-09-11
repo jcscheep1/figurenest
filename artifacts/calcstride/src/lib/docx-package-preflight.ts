@@ -10,6 +10,7 @@ const ZIP_EOCD_SIGNATURE = 0x06054b50;
 const ZIP_CENTRAL_SIGNATURE = 0x02014b50;
 const ZIP64_U16 = 0xffff;
 const ZIP64_U32 = 0xffffffff;
+const ZIP_UNICODE_PATH_EXTRA_FIELD = 0x7075;
 const MAX_ZIP_COMMENT_BYTES = 0xffff;
 const MAX_INSPECT_XML_BYTES = 2 * 1024 * 1024;
 const MAX_INSPECT_XML_TOTAL_BYTES = 8 * 1024 * 1024;
@@ -89,6 +90,24 @@ function normalizedEntryName(raw: string): string {
   return name;
 }
 
+function rejectAmbiguousPathExtraFields(bytes: Uint8Array, start: number, length: number): void {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const end = start + length;
+  if (start < 0 || end > bytes.byteLength) malformed('A DOCX ZIP extra-field area exceeds the file boundary.');
+  let cursor = start;
+  while (cursor < end) {
+    if (cursor + 4 > end) malformed('A DOCX ZIP extra field is truncated.');
+    const id = view.getUint16(cursor, true);
+    const fieldLength = view.getUint16(cursor + 2, true);
+    cursor += 4;
+    if (cursor + fieldLength > end) malformed('A DOCX ZIP extra field exceeds its declared boundary.');
+    if (id === ZIP_UNICODE_PATH_EXTRA_FIELD) {
+      unsupported('DOCX ZIP Unicode-path aliases are not supported by this browser tool.');
+    }
+    cursor += fieldLength;
+  }
+}
+
 function isBlockedOfficePayload(lowerName: string): boolean {
   return lowerName === 'word/vbaproject.bin'
     || lowerName === 'word/vbadata.xml'
@@ -155,6 +174,7 @@ function localEntryDataEnd(bytes: Uint8Array, entry: DocxPackageEntry): number {
   if (localCompressedBytes !== entry.compressedBytes || localUncompressedBytes !== entry.uncompressedBytes) {
     malformed('A DOCX ZIP local header does not match its central-directory sizes.');
   }
+  rejectAmbiguousPathExtraFields(bytes, nameStart + nameLength, extraLength);
   const localName = normalizedEntryName(utf8.decode(bytes.subarray(nameStart, nameStart + nameLength)));
   if (localName.toLowerCase() !== entry.name.toLowerCase()) malformed('A DOCX ZIP local header does not match its central-directory entry.');
 
@@ -186,6 +206,7 @@ function validateLocalEntryLayout(bytes: Uint8Array, entries: readonly DocxPacka
     if (dataEnd > centralOffset) malformed('A DOCX ZIP local entry exceeds the local-file area.');
     if ((flags & 0x0001) !== 0) unsupported('Encrypted DOCX ZIP entries are not supported.');
     if ((flags & 0x0008) !== 0) unsupported('DOCX ZIP data-descriptor entries are not supported by this browser tool.');
+    rejectAmbiguousPathExtraFields(bytes, nameStart + nameLength, extraLength);
     const name = normalizedEntryName(utf8.decode(bytes.subarray(nameStart, nameStart + nameLength)));
     const expected = expectedFiles.get(name.toLowerCase());
 
@@ -358,6 +379,7 @@ export function preflightDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceC
     if (localOffset >= centralOffset) malformed('A DOCX ZIP entry points outside the local-file area.');
 
     const rawName = utf8.decode(bytes.subarray(cursor + 46, cursor + 46 + nameLength));
+    rejectAmbiguousPathExtraFields(bytes, cursor + 46 + nameLength, extraLength);
     const name = normalizedEntryName(rawName);
     const lowerName = name.toLowerCase();
     if (seen.has(lowerName)) malformed('The DOCX ZIP package contains duplicate entry names.');
