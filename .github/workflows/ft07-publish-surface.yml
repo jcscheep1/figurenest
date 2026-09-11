@@ -1,4 +1,4 @@
-# retrigger: green exact-head browser + Validate/Vercel gates; publish real DOCX route surface
+# retrigger: include DOCX applicability classification before full publication suite
 name: FT-07 Publish Surface Integration
 on:
   push:
@@ -172,6 +172,14 @@ jobs:
                   "The current PDF Sign & Edit, PDF to JPG/PNG, JPG/PNG to PDF, PDF to Text, and DOCX to PDF tools are designed to process selected files in your browser rather than upload them to a FigureNest conversion server."
               )
           guide.write_text(g)
+
+          units=Path('artifacts/calcstride/src/lib/units-preferences.ts')
+          u=units.read_text()
+          unit_marker="  'pdf-sign-edit': unitless(), 'pdf-to-image': unitless(), 'image-to-pdf': unitless(), 'pdf-to-text': unitless(),"
+          if "'docx-to-pdf': unitless()" not in u:
+              assert unit_marker in u, 'File Tools applicability marker missing'
+              u=u.replace(unit_marker, unit_marker[:-1] + " 'docx-to-pdf': unitless(),", 1)
+              units.write_text(u)
           PY
       - name: Build workspace type dependency
         run: pnpm exec tsc -b lib/api-client-react
