@@ -40,7 +40,6 @@ type PdfJsPage = {
 type PdfJsDocument = {
   numPages: number;
   getPage(pageNumber: number): Promise<PdfJsPage>;
-  destroy(): Promise<void>;
 };
 type PdfJsLoadingTask = { promise: Promise<PdfJsDocument>; destroy(): Promise<void> };
 
@@ -140,7 +139,6 @@ export async function convertPdfTextToDocx(
       disableStream: true,
     }) as unknown as PdfJsLoadingTask;
     parsed = await task.promise;
-    task = null;
     throwIfAborted(signal);
 
     if (!Number.isInteger(parsed.numPages) || parsed.numPages < 1) {
@@ -195,7 +193,6 @@ export async function convertPdfTextToDocx(
     throw mapPdfError(error);
   } finally {
     if (task) await task.destroy().catch(() => undefined);
-    if (parsed) await parsed.destroy().catch(() => undefined);
     if (inputBuffer) clearArrayBuffer(inputBuffer);
   }
 }
