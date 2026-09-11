@@ -436,7 +436,12 @@ export function PdfSignEditPage() {
 
   const nudgeSelected = (dx: number, dy: number) => {
     if (!selected || !pageView) return;
-    commitObjects(updateItem(objectsRef.current, selected.id, (item) => clampEditObjectToPage({ ...item, x: item.x + dx, y: item.y + dy }, pageView.pdfBounds)));
+    const pdfDelta = viewportDeltaToPdfDelta(pageView.transform, { x: dx * zoom, y: dy * zoom });
+    commitObjects(updateItem(objectsRef.current, selected.id, (item) => clampEditObjectToPage({
+      ...item,
+      x: item.x + pdfDelta.x,
+      y: item.y + pdfDelta.y,
+    }, pageView.pdfBounds)));
   };
 
   const resizeSelected = (factor: number) => {
@@ -540,14 +545,15 @@ export function PdfSignEditPage() {
       return;
     }
     const directions: Record<string, [number, number]> = {
-      ArrowLeft: [-amount, 0], ArrowRight: [amount, 0], ArrowUp: [0, amount], ArrowDown: [0, -amount],
+      ArrowLeft: [-amount, 0], ArrowRight: [amount, 0], ArrowUp: [0, -amount], ArrowDown: [0, amount],
     };
     const delta = directions[event.key];
     if (!delta || !pageView) return;
     event.preventDefault();
     setSelectedId(item.id);
+    const pdfDelta = viewportDeltaToPdfDelta(pageView.transform, { x: delta[0] * zoom, y: delta[1] * zoom });
     commitObjects(updateItem(objectsRef.current, item.id, (candidate) => clampEditObjectToPage({
-      ...candidate, x: candidate.x + delta[0], y: candidate.y + delta[1],
+      ...candidate, x: candidate.x + pdfDelta.x, y: candidate.y + pdfDelta.y,
     }, pageView.pdfBounds)));
   };
 
@@ -765,10 +771,10 @@ export function PdfSignEditPage() {
               <p className="mono">{selected.kind.toUpperCase()}</p>
               {['text', 'initials', 'date'].includes(selected.kind) ? <label>Text <input value={selected.value ?? ''} onChange={(event) => updateSelectedText(event.target.value)} /></label> : null}
               <div className="nudge-grid" aria-label="Move selected item">
-                <button type="button" onClick={() => nudgeSelected(0, 5)} aria-label="Move up">↑</button>
+                <button type="button" onClick={() => nudgeSelected(0, -5)} aria-label="Move up">↑</button>
                 <button type="button" onClick={() => nudgeSelected(-5, 0)} aria-label="Move left">←</button>
                 <button type="button" onClick={() => nudgeSelected(5, 0)} aria-label="Move right">→</button>
-                <button type="button" onClick={() => nudgeSelected(0, -5)} aria-label="Move down">↓</button>
+                <button type="button" onClick={() => nudgeSelected(0, 5)} aria-label="Move down">↓</button>
               </div>
               <div className="size-actions"><button type="button" onClick={() => resizeSelected(0.9)}>Smaller</button><button type="button" onClick={() => resizeSelected(1.1)}>Larger</button></div>
               <button type="button" className="danger-action" onClick={removeSelected}><Trash2 size={15} aria-hidden="true" /> Delete item</button>
