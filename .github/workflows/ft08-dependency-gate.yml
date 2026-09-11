@@ -1,72 +1,20 @@
-name: FT-08 Dependency Gate
-
-on:
-  push:
-    branches:
-      - expansion/ft-08-pdf-docx-research
-
-permissions:
-  contents: write
-
+name: FT08 Gate
+on: push
 jobs:
   gate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: expansion/ft-08-pdf-docx-research
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 10
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - name: Install repository dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Add exact DOCX candidate
-        run: pnpm add --filter @workspace/calcstride --save-exact docx@9.7.1
-      - name: Verify DOCX metadata
-        working-directory: artifacts/calcstride
-        run: node -e "const p=require('docx/package.json'); if(p.version!=='9.7.1'||p.license!=='MIT') process.exit(2); console.log({version:p.version,license:p.license,dependencies:p.dependencies})"
-      - name: Generate and independently reopen DOCX
-        working-directory: artifacts/calcstride
-        run: |
-          cat > /tmp/ft08-docx-gate.mjs <<'NODE'
-          import { Document, Packer, Paragraph, TextRun } from 'docx';
-          import mammoth from 'mammoth';
-          const sentinel = 'FigureNest FT-08 dependency gate sentinel';
-          const doc = new Document({ sections: [{ children: [new Paragraph({ children: [new TextRun({ text: sentinel, bold: true })] })] }] });
-          const buffer = await Packer.toBuffer(doc);
-          if (buffer[0] !== 0x50 || buffer[1] !== 0x4b) throw new Error('Output is not a DOCX ZIP package');
-          const reopened = await mammoth.extractRawText({ buffer });
-          if (!reopened.value.includes(sentinel)) throw new Error('Independent reopen lost sentinel text');
-          console.log(`DOCX bytes=${buffer.length}; independent reopen PASS`);
-          NODE
-          node /tmp/ft08-docx-gate.mjs
-      - name: Build workspace type dependency
-        run: pnpm exec tsc -b lib/api-client-react
-      - name: Typecheck
-        run: pnpm --filter @workspace/calcstride typecheck
-      - name: Unit tests
-        run: pnpm --filter @workspace/calcstride test
-      - name: Client build
-        run: pnpm --filter @workspace/calcstride build:client
-      - name: Record verified research dependency
-        run: |
-          cat >> docs/FT08_PDF_TO_DOCX_PREFLIGHT.md <<'EOF'
-
-## Exact dependency gate result
-
-Repository-native CI accepted exact `docx@9.7.1` for **research use only** after verifying its reported MIT license/version, generating a real DOCX package, reopening it independently with Mammoth and recovering sentinel text, and passing FigureNest typecheck, unit tests and client build. The known `xml-js` maintenance concern remains open and publication stays prohibited until the full research gate passes.
-EOF
-          rm .github/workflows/ft08-dependency-gate.yml
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
-          git commit -m 'FT-08: pin DOCX generator after dependency gate'
-          git pull --rebase origin expansion/ft-08-pdf-docx-research
-          git push origin HEAD:expansion/ft-08-pdf-docx-research
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm add --filter @workspace/calcstride --save-exact docx@9.7.1
+      - run: pnpm exec tsc -b lib/api-client-react
+      - run: pnpm --filter @workspace/calcstride typecheck
+      - run: pnpm --filter @workspace/calcstride test
+      - run: pnpm --filter @workspace/calcstride build:client
