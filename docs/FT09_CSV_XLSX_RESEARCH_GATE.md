@@ -96,3 +96,23 @@ The next commit in this lane should be an unpublished dependency/fixture spike o
 6. demonstrates at least one bounded hostile ZIP/resource rejection mechanism or, if the candidate cannot support a defensible bound, records that as a publication blocker and evaluates an alternative.
 
 Until those criteria are satisfied, FT-09 is **NOT PUBLISHABLE**.
+
+## Preflight decision — 2026-09-12
+
+**Decision: ALLOW the unpublished dependency/fixture spike with exact SheetJS CE `0.20.3`; publication remains closed.**
+
+Fresh authoritative SheetJS documentation still identifies `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz` as the bundler package and explicitly says the public npm registry is stale at `0.18.5`. The bundler guidance also recommends a narrow wrapper module for dynamic imports so bundlers can tree-shake the route-lazy surface instead of importing the whole library blindly.
+
+The first comparison candidate is ExcelJS `4.4.0`, but it is **not approved as the primary FT-09 engine** at this stage. A documented browser-side corruption report exists for generated XLSX files, and there is an unresolved dependency-licensing concern in the project issue tracker. Those signals do not prove ExcelJS unusable, but they are enough that the spike should prefer the narrower SheetJS candidate while keeping ExcelJS only as comparison evidence.
+
+The spike is permitted only under these additional constraints:
+
+- install SheetJS from the exact authoritative tarball URL, never `xlsx@latest` from npm;
+- place all SheetJS imports behind an FT-09-only wrapper/dynamic import and measure both initial-site delta and lazy chunk gzip size;
+- do not add legacy codepage support unless a fixture proves it is required for the v1 CSV/XLSX scope;
+- before passing arbitrary XLSX bytes to the workbook parser, add or prove a bounded OOXML ZIP preflight capable of enforcing compressed input size, entry count and declared uncompressed-size/ratio ceilings; if the chosen browser stack cannot enforce those bounds before expensive inflation, that is a publication blocker rather than permission to raise limits;
+- formulas must remain inert data; no calculation engine or macro path may be introduced;
+- CSV export safety must distinguish text beginning with `=`, `+`, `-`, `@` (including leading whitespace) from genuine numeric negative values, with fixtures locking the policy;
+- the spike may add dependencies, fixtures, tests and research evidence only. It must not add `/file-tools/csv-to-xlsx`, `/file-tools/xlsx-to-csv`, catalog records, sitemap URLs, schema promises or tool-count changes.
+
+Resume condition for implementation approval: exact-head tests must demonstrate deterministic CSV→XLSX→reopen and XLSX→CSV value preservation, hostile ZIP/resource rejection before uncontrolled expansion, formula non-execution, injection-safe CSV output, and acceptable route-lazy bundle measurements. Until then FT-09 remains **RESEARCH / NOT PUBLISHABLE**.
