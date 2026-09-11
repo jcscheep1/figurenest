@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { deflateRawSync } from 'node:zlib';
 import test from 'node:test';
 import { FileToolError } from './file-tools-foundation';
-import { DOCX_PACKAGE_LIMITS, inspectDocxPackage, preflightDocxPackage } from './docx-package-preflight';
+import { DOCX_FILE_RULES, DOCX_PACKAGE_LIMITS, inspectDocxPackage, preflightDocxPackage } from './docx-package-preflight';
 
 type SyntheticEntry = {
   name: string;
@@ -81,6 +81,13 @@ function baseEntries(extra: readonly SyntheticEntry[] = []): SyntheticEntry[] {
 function hasCode(code: string) {
   return (error: unknown) => error instanceof FileToolError && error.code === code;
 }
+
+test('FT-07 DOCX picker rule requires .docx plus ZIP signature', () => {
+  assert.deepEqual(DOCX_FILE_RULES.map((rule) => rule.id), ['docx']);
+  assert.deepEqual(DOCX_FILE_RULES[0].extensions, ['docx']);
+  assert.deepEqual(DOCX_FILE_RULES[0].magicBytes?.[0].bytes, [0x50, 0x4b, 0x03, 0x04]);
+  assert.ok(DOCX_FILE_RULES[0].mimeTypes.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
+});
 
 test('FT-07 accepts a bounded ordinary DOCX ZIP package', () => {
   const result = preflightDocxPackage(syntheticZip(baseEntries([
@@ -186,6 +193,19 @@ test('FT-07 rejects javascript external hyperlinks before any HTML renderer sees
       { name: '_rels/.rels', data: ROOT_RELS },
       { name: 'word/document.xml', data: EMPTY_DOCUMENT },
       { name: 'word/_rels/document.xml.rels', data: unsafeHyperlink },
+    ]), 'desktop'),
+    hasCode('unsupported-type'),
+  );
+});
+
+test('FT-07 rejects ambiguous UTF-16 metadata XML before conversion', async () => {
+  const utf16Like = new Uint8Array([0xff, 0xfe, 0x3c, 0x00, 0x54, 0x00, 0x79, 0x00, 0x70, 0x00, 0x65, 0x00, 0x73, 0x00, 0x2f, 0x00, 0x3e, 0x00]);
+  await assert.rejects(
+    inspectDocxPackage(syntheticZip([
+      { name: '[Content_Types].xml', data: utf16Like },
+      { name: '_rels/.rels', data: ROOT_RELS },
+      { name: 'word/document.xml', data: EMPTY_DOCUMENT },
+      { name: 'word/_rels/document.xml.rels', data: EMPTY_RELS },
     ]), 'desktop'),
     hasCode('unsupported-type'),
   );
