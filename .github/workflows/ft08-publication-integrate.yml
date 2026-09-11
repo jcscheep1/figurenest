@@ -1,3 +1,4 @@
+# Retrigger guarded publication integration after exact-head catalog/route ordering failure.
 name: FT-08 Publication Integration
 
 on:
