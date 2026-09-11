@@ -1,4 +1,4 @@
-# retrigger: package-scoped site audit after proving the root command lacked tsx
+# retrigger: green exact-head browser + Validate/Vercel gates; publish real DOCX route surface
 name: FT-07 Publish Surface Integration
 on:
   push:
