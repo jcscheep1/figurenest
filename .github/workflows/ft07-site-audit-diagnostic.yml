@@ -6,59 +6,38 @@ on:
 permissions:
   contents: write
 jobs:
-  capture:
+  repair:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           ref: expansion/ft-07-docx-pdf-gate
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Apply publication candidate exactly
+      - name: Repair applicability registry and retrigger publication
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          text=Path('.github/workflows/ft07-publish-surface.yml').read_text()
-          marker='      - name: Wire public DOCX to PDF surface\n'
-          start=text.index(marker)+len(marker)
-          end=text.index('      - name: Build workspace type dependency\n', start)
-          section=text[start:end]
-          run_marker='        run: |\n'
-          assert section.startswith('        shell: bash\n'+run_marker)
-          body=section[len('        shell: bash\n'+run_marker):]
-          lines=[]
-          for line in body.splitlines():
-              assert not line or line.startswith('          '), repr(line)
-              lines.append(line[10:] if line else '')
-          Path('/tmp/apply-ft07.sh').write_text('\n'.join(lines)+'\n')
+          units=Path('artifacts/calcstride/src/lib/units-preferences.ts')
+          s=units.read_text()
+          old="  'pdf-sign-edit': unitless(), 'pdf-to-image': unitless(), 'image-to-pdf': unitless(), 'pdf-to-text': unitless(),"
+          new="  'pdf-sign-edit': unitless(), 'pdf-to-image': unitless(), 'image-to-pdf': unitless(), 'pdf-to-text': unitless(), 'docx-to-pdf': unitless(),"
+          assert old in s, 'expected File Tools applicability marker missing'
+          units.write_text(s.replace(old,new,1))
+
+          publish=Path('.github/workflows/ft07-publish-surface.yml')
+          p=publish.read_text()
+          first=p.splitlines()[0]
+          p=p.replace(first, '# retrigger: DOCX applicability registry repaired; rerun complete publication gate', 1)
+          publish.write_text(p)
           PY
-          bash /tmp/apply-ft07.sh
-      - run: pnpm exec tsc -b lib/api-client-react
-      - run: pnpm --filter @workspace/calcstride typecheck
-      - run: pnpm --filter @workspace/calcstride generate:seo
-      - name: Capture full Calcstride test output
-        shell: bash
-        run: |
-          set +e
-          pnpm --filter @workspace/calcstride test > /tmp/full-test.log 2>&1
-          code=$?
-          set -e
-          {
-            printf '# FT-07 full-suite diagnostic\n\nExit code: %s\n\n```text\n' "$code"
-            cat /tmp/full-test.log
-            printf '\n```\n'
-          } > FT07_FULL_TEST_DIAGNOSTIC.md
-      - name: Commit diagnostic evidence
+          rm -f FT07_SITE_AUDIT_DIAGNOSTIC.md FT07_FULL_TEST_DIAGNOSTIC.md
+          rm -f .github/workflows/ft07-full-test-diagnostic.yml .github/workflows/ft07-fix-publish-command.yml
+          rm -f .github/workflows/ft07-site-audit-diagnostic.yml
+      - name: Commit repair
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add FT07_FULL_TEST_DIAGNOSTIC.md
-          git commit -m 'FT-07: record exact full-suite diagnostic'
+          git add -A
+          git commit -m 'FT-07: classify DOCX to PDF and clean diagnostics'
+          git pull --rebase origin expansion/ft-07-docx-pdf-gate
           git push origin HEAD:expansion/ft-07-docx-pdf-gate
