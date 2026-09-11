@@ -15,6 +15,7 @@ import {
   type FileJobStatus,
 } from '@/lib/file-tools-foundation';
 import {
+  BUILT_IN_PDF_STAMPS,
   MAX_SIGNATURE_IMAGE_BYTES,
   PDF_FILE_RULE,
   SIGNATURE_IMAGE_RULES,
@@ -128,6 +129,7 @@ export function PdfSignEditPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
   const pdfDocumentRef = useRef<PdfJsDocument | null>(null);
   const pdfLoadingTaskRef = useRef<PdfJsLoadingTask | null>(null);
   const originalBufferRef = useRef<ArrayBuffer | null>(null);
@@ -345,7 +347,8 @@ export function PdfSignEditPage() {
   const addObject = (kind: PdfEditKind, options: Parameters<typeof createPdfEditObject>[4] = {}) => {
     if (!pageView) return;
     const item = createPdfEditObject(kind, pageIndex, pageView.pdfBounds, createId(kind), options);
-    commitObjects([...objectsRef.current, item], `${kind === 'check' ? 'Checkmark' : 'Item'} added.`);
+    const label = kind === 'check' ? 'Checkmark' : kind === 'highlight' ? 'Highlight' : kind === 'freehand' ? 'Freehand drawing' : kind === 'image' ? 'Image' : kind === 'stamp' ? 'Stamp' : 'Item';
+    commitObjects([...objectsRef.current, item], `${label} added.`);
     setSelectedId(item.id);
   };
 
@@ -493,19 +496,31 @@ export function PdfSignEditPage() {
     activeStrokeRef.current = [];
   };
 
+  const drawableStrokes = () => signatureStrokes.filter((stroke) => stroke.length >= 2);
+
   const addDrawnSignature = () => {
-    const strokes = signatureStrokes.filter((stroke) => stroke.length >= 2);
+    const strokes = drawableStrokes();
     if (!strokes.length) return;
     addObject('signature-draw', { strokes });
   };
 
-  const uploadSignature = async (file: File | undefined) => {
+  const addFreehandAnnotation = () => {
+    const strokes = drawableStrokes();
+    if (!strokes.length) return;
+    addObject('freehand', { strokes, width: 190, height: 110 });
+  };
+
+  const uploadImageAsset = async (
+    file: File | undefined,
+    kind: 'signature-image' | 'image',
+    inputRef: React.RefObject<HTMLInputElement | null>,
+  ) => {
     if (!file || !pageView) return;
     setError('');
     let previewUrl: string | null = null;
     let bytes: Uint8Array | null = null;
     try {
-      if (file.size > MAX_SIGNATURE_IMAGE_BYTES) throw new FileToolError('oversized', 'Signature images are limited to 10 MB.');
+      if (file.size > MAX_SIGNATURE_IMAGE_BYTES) throw new FileToolError('oversized', 'PNG/JPEG images are limited to 10 MB.');
       const validation = await validateLocalFile(file, SIGNATURE_IMAGE_RULES, deviceClass);
       const buffer = await readBlobArrayBuffer(file);
       bytes = new Uint8Array(buffer);
@@ -513,21 +528,24 @@ export function PdfSignEditPage() {
       const dimensions = await imageDimensions(previewUrl);
       validateSignatureImageDimensions(dimensions.width, dimensions.height);
       const asset: UiSignatureAsset = {
-        id: createId('signature-asset'),
+        id: createId(kind === 'image' ? 'media-asset' : 'signature-asset'),
         mime: validation.ruleId === 'png' ? 'image/png' : 'image/jpeg',
         bytes,
         previewUrl,
       };
       assetsRef.current = [...assetsRef.current, asset];
       setAssets(assetsRef.current);
-      addObject('signature-image', { assetId: asset.id });
+      const aspect = dimensions.width / dimensions.height;
+      const width = kind === 'image' ? Math.min(220, Math.max(90, 160 * Math.sqrt(aspect))) : 180;
+      const height = kind === 'image' ? Math.min(180, Math.max(60, width / aspect)) : 70;
+      addObject(kind, { assetId: asset.id, width, height });
       previewUrl = null;
       bytes = null;
-      if (signatureInputRef.current) signatureInputRef.current.value = '';
+      if (inputRef.current) inputRef.current.value = '';
     } catch (caught) {
       if (previewUrl) urlRegistryRef.current.release(previewUrl);
       bytes?.fill(0);
-      if (signatureInputRef.current) signatureInputRef.current.value = '';
+      if (inputRef.current) inputRef.current.value = '';
       setError(errorMessage(caught));
     }
   };
@@ -600,18 +618,19 @@ export function PdfSignEditPage() {
           <button type="button" onClick={addInitials} disabled={!initialsDraft.trim()}>Add initials</button>
           <button type="button" onClick={() => addObject('date', { value: dateStamp() })}>Add date</button>
           <button type="button" onClick={() => addObject('check')}>Add check</button>
+          <button type="button" onClick={() => addObject('highlight')}>Add highlight</button>
           <button type="button" onClick={undo} disabled={!historyRef.current.canUndo}><Undo2 size={16} aria-hidden="true" /> Undo</button>
           <button type="button" onClick={redo} disabled={!historyRef.current.canRedo}><Redo2 size={16} aria-hidden="true" /> Redo</button>
         </div>
 
         <div className="pdf-workspace-grid">
-          <aside className="pdf-signature-panel" aria-label="Signature tools">
-            <h2>Signature</h2>
-            <p>Draw with a mouse, pen or touch.</p>
+          <aside className="pdf-signature-panel" aria-label="Signature, annotation and media tools">
+            <h2>Draw</h2>
+            <p>Draw once with a mouse, pen or touch, then add the strokes as a signature or a blue freehand annotation.</p>
             <canvas
               ref={signatureCanvasRef}
               className="signature-pad"
-              aria-label="Draw signature"
+              aria-label="Draw signature or freehand annotation"
               role="img"
               onPointerDown={beginSignature}
               onPointerMove={continueSignature}
@@ -620,12 +639,24 @@ export function PdfSignEditPage() {
             />
             <div className="signature-actions">
               <button type="button" onClick={() => setSignatureStrokes([])}>Clear</button>
-              <button type="button" onClick={addDrawnSignature} disabled={!signatureStrokes.some((stroke) => stroke.length >= 2)}>Add drawn signature</button>
+              <button type="button" onClick={addDrawnSignature} disabled={!signatureStrokes.some((stroke) => stroke.length >= 2)}>Add signature</button>
             </div>
+            <button type="button" className="annotation-wide-action" onClick={addFreehandAnnotation} disabled={!signatureStrokes.some((stroke) => stroke.length >= 2)}>Add as freehand drawing</button>
+
             <div className="signature-upload">
-              <label htmlFor="signature-image">Or upload PNG/JPEG</label>
-              <input ref={signatureInputRef} id="signature-image" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" onChange={(event) => void uploadSignature(event.target.files?.item(0) ?? undefined)} />
-              <small>Up to 10 MB and 40 megapixels.</small>
+              <label htmlFor="signature-image">Signature image</label>
+              <input ref={signatureInputRef} id="signature-image" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" onChange={(event) => void uploadImageAsset(event.target.files?.item(0) ?? undefined, 'signature-image', signatureInputRef)} />
+              <small>PNG/JPEG only · 10 MB · 40 megapixels max.</small>
+            </div>
+
+            <div className="annotation-panel-section">
+              <h2>Image &amp; stamps</h2>
+              <label htmlFor="annotation-image">Add PNG/JPEG image</label>
+              <input ref={mediaInputRef} id="annotation-image" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" onChange={(event) => void uploadImageAsset(event.target.files?.item(0) ?? undefined, 'image', mediaInputRef)} />
+              <small>Decoded dimensions are checked before the image can be placed.</small>
+              <div className="stamp-actions" aria-label="Built-in stamps">
+                {BUILT_IN_PDF_STAMPS.map((stamp) => <button key={stamp} type="button" onClick={() => addObject('stamp', { value: stamp })}>{stamp}</button>)}
+              </div>
             </div>
 
             {selected ? <section className="selected-edit-panel" aria-label="Selected item controls">
@@ -661,7 +692,7 @@ export function PdfSignEditPage() {
                     return <button
                       key={item.id}
                       type="button"
-                      className={`pdf-edit-object ${selectedId === item.id ? 'is-selected' : ''}`}
+                      className={`pdf-edit-object pdf-edit-${item.kind} ${selectedId === item.id ? 'is-selected' : ''}`}
                       style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
                       data-object-id={item.id}
                       aria-label={`${item.kind.replace('-', ' ')}. Drag to move. Use arrow keys to move, Shift plus arrow for larger steps, Delete to remove.`}
@@ -672,8 +703,9 @@ export function PdfSignEditPage() {
                       onKeyDown={(event) => objectKeyDown(event, item)}
                     >
                       {item.kind === 'check' ? <span className="pdf-check-mark">✓</span>
-                        : item.kind === 'signature-draw' ? <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{item.strokes?.map((stroke, index) => <polyline key={index} points={stroke.map((point) => `${point.x * 100},${point.y * 100}`).join(' ')} />)}</svg>
-                        : item.kind === 'signature-image' && asset ? <img src={asset.previewUrl} alt="" />
+                        : item.kind === 'highlight' ? <span className="pdf-highlight-preview" aria-hidden="true" />
+                        : (item.kind === 'signature-draw' || item.kind === 'freehand') ? <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{item.strokes?.map((stroke, index) => <polyline key={index} points={stroke.map((point) => `${point.x * 100},${point.y * 100}`).join(' ')} />)}</svg>
+                        : (item.kind === 'signature-image' || item.kind === 'image') && asset ? <img src={asset.previewUrl} alt="" />
                         : <span>{item.value}</span>}
                     </button>;
                   })}
@@ -693,11 +725,11 @@ export function PdfSignEditPage() {
       <section className="file-tool-content">
         <article className="advanced-content">
           <div className="eyebrow">HOW IT WORKS</div>
-          <h2>Fill and sign without sending the document away.</h2>
-          <p>Select a PDF, place the fill-and-sign items you need, then export a flattened edited copy. Object positions are stored in PDF page coordinates rather than screen pixels, so changing preview zoom does not change where a mark is written into the downloaded file.</p>
+          <h2>Fill, sign and annotate without sending the document away.</h2>
+          <p>Select a PDF, place text or signing marks, add highlights, freehand drawings, reviewed stamps or PNG/JPEG images, then export a flattened edited copy. Object positions stay in PDF page coordinates rather than screen pixels, so changing preview zoom does not change where a mark is written into the downloaded file.</p>
           <p>FigureNest uses PDF.js only to render the local preview and pdf-lib to write the exported copy. Processing engines are bundled with the site and loaded only when this tool is opened. The editor does not use a cloud conversion API.</p>
           <div className="eyebrow">LIMITATIONS</div>
-          <h2>What this first release does not promise.</h2>
+          <h2>What this editor does not promise.</h2>
           {definition.limitations.map((item) => <p key={item}>{item}</p>)}
         </article>
         <aside className="advanced-faq">
@@ -708,7 +740,7 @@ export function PdfSignEditPage() {
       </section>
 
       <section className="section-block" aria-labelledby="pdf-related-tools">
-        <div className="section-heading"><div><div className="eyebrow">RELATED TOOLS</div><h2 id="pdf-related-tools">Useful image and sizing tools.</h2></div></div>
+        <div className="section-heading"><div><div className="eyebrow">RELATED TOOLS</div><h2 id="pdf-related-tools">More private PDF tools.</h2></div></div>
         <div className="tool-list-grid">{relatedTools.map((tool) => <Link key={tool.slug} href={tool.href} className="home-article-card"><span className="mono">{tool.category}</span><h3>{tool.name}</h3><p>Open this related FigureNest tool.</p></Link>)}</div>
       </section>
     </div>

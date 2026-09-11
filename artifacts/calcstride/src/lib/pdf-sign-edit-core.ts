@@ -28,11 +28,23 @@ export const SIGNATURE_IMAGE_RULES: readonly FileTypeRule[] = [
 ];
 
 export const MAX_SIGNATURE_IMAGE_BYTES = 10 * 1024 * 1024;
+export const BUILT_IN_PDF_STAMPS = ['APPROVED', 'REVIEWED', 'CONFIDENTIAL'] as const;
+export type PdfBuiltInStamp = typeof BUILT_IN_PDF_STAMPS[number];
 
 export type PdfPoint = { x: number; y: number };
 export type PdfViewportTransform = readonly [number, number, number, number, number, number];
 export type PdfPageBounds = { width: number; height: number };
-export type PdfEditKind = 'text' | 'initials' | 'date' | 'check' | 'signature-draw' | 'signature-image';
+export type PdfEditKind =
+  | 'text'
+  | 'initials'
+  | 'date'
+  | 'check'
+  | 'signature-draw'
+  | 'signature-image'
+  | 'highlight'
+  | 'freehand'
+  | 'image'
+  | 'stamp';
 
 export type PdfEditObject = {
   id: string;
@@ -198,8 +210,8 @@ export function pdfRectToViewportBox(transform: PdfViewportTransform, item: Pick
 }
 
 export function clampEditObjectToPage(item: PdfEditObject, bounds: PdfPageBounds): PdfEditObject {
-  const minWidth = item.kind === 'check' ? 18 : 32;
-  const minHeight = item.kind === 'check' ? 18 : 20;
+  const minWidth = item.kind === 'check' ? 18 : item.kind === 'highlight' ? 24 : item.kind === 'stamp' ? 50 : 32;
+  const minHeight = item.kind === 'check' ? 18 : item.kind === 'highlight' ? 10 : item.kind === 'stamp' ? 24 : 20;
   const width = Math.min(Math.max(item.width, minWidth), bounds.width);
   const height = Math.min(Math.max(item.height, minHeight), bounds.height);
   return {
@@ -225,6 +237,10 @@ export function createPdfEditObject(
     check: { width: 26, height: 26 },
     'signature-draw': { width: 180, height: 70 },
     'signature-image': { width: 180, height: 70 },
+    highlight: { width: 180, height: 28 },
+    freehand: { width: 180, height: 100 },
+    image: { width: 180, height: 120 },
+    stamp: { width: 128, height: 42, fontSize: 13 },
   };
   const shape = defaults[kind];
   const width = options.width ?? shape.width;
@@ -246,7 +262,7 @@ export function createPdfEditObject(
 
 export function validateSignatureImageDimensions(width: number, height: number): void {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) {
-    throw new FileToolError('malformed', 'The signature image dimensions are invalid.');
+    throw new FileToolError('malformed', 'The image dimensions are invalid.');
   }
   assertFileResourceLimit('imagePixels', width * height);
 }
@@ -255,17 +271,21 @@ export function validatePdfPageCount(pageCount: number): void {
   assertFileResourceLimit('pdfPages', pageCount);
 }
 
-function assertNormalizedStrokes(strokes: readonly PdfPoint[][] | undefined): PdfPoint[][] {
-  if (!strokes?.length) throw new FileToolError('malformed', 'The drawn signature contains no strokes.');
+function assertNormalizedStrokes(strokes: readonly PdfPoint[][] | undefined, label = 'drawing'): PdfPoint[][] {
+  if (!strokes?.length) throw new FileToolError('malformed', `The ${label} contains no strokes.`);
   return strokes.map((stroke) => {
-    if (stroke.length < 2) throw new FileToolError('malformed', 'A drawn signature stroke is incomplete.');
+    if (stroke.length < 2) throw new FileToolError('malformed', `A ${label} stroke is incomplete.`);
     return stroke.map((point) => {
       if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) {
-        throw new FileToolError('malformed', 'The drawn signature coordinates are invalid.');
+        throw new FileToolError('malformed', `The ${label} coordinates are invalid.`);
       }
       return clonePoint(point);
     });
   });
+}
+
+function isBuiltInStamp(value: string | undefined): value is PdfBuiltInStamp {
+  return typeof value === 'string' && (BUILT_IN_PDF_STAMPS as readonly string[]).includes(value);
 }
 
 function validateExportObject(item: PdfEditObject, pageCount: number): void {
@@ -279,8 +299,14 @@ function validateExportObject(item: PdfEditObject, pageCount: number): void {
   if ((item.kind === 'text' || item.kind === 'initials' || item.kind === 'date') && !item.value?.trim()) {
     throw new FileToolError('malformed', 'A text edit cannot be empty.');
   }
-  if (item.kind === 'signature-draw') assertNormalizedStrokes(item.strokes);
-  if (item.kind === 'signature-image' && !item.assetId) throw new FileToolError('malformed', 'The signature image is missing.');
+  if (item.kind === 'stamp' && !isBuiltInStamp(item.value)) {
+    throw new FileToolError('malformed', 'The selected stamp is not part of the reviewed built-in set.');
+  }
+  if (item.kind === 'signature-draw') assertNormalizedStrokes(item.strokes, 'drawn signature');
+  if (item.kind === 'freehand') assertNormalizedStrokes(item.strokes, 'freehand annotation');
+  if ((item.kind === 'signature-image' || item.kind === 'image') && !item.assetId) {
+    throw new FileToolError('malformed', 'The image data is missing.');
+  }
 }
 
 export async function exportEditedPdf(
@@ -304,8 +330,6 @@ export async function exportEditedPdf(
   validatePdfPageCount(pages.length);
   for (const item of edits) validateExportObject(item, pages.length);
 
-  // Active document-open and additional-action hooks are not needed by the editor.
-  // Removing them prevents the exported copy from launching catalog/page scripts.
   document.catalog.delete(PDFName.of('OpenAction'));
   document.catalog.delete(PDFName.of('AA'));
   for (const page of pages) page.node.delete(PDFName.of('AA'));
@@ -350,8 +374,43 @@ export async function exportEditedPdf(
       continue;
     }
 
-    if (safe.kind === 'signature-draw') {
-      const strokes = assertNormalizedStrokes(safe.strokes);
+    if (safe.kind === 'highlight') {
+      page.drawRectangle({
+        x: safe.x,
+        y: safe.y,
+        width: safe.width,
+        height: safe.height,
+        color: rgb(1, 0.88, 0.18),
+        opacity: 0.38,
+      });
+      continue;
+    }
+
+    if (safe.kind === 'stamp') {
+      const confidential = safe.value === 'CONFIDENTIAL';
+      const stampColor = confidential ? rgb(0.72, 0.12, 0.12) : rgb(0.04, 0.38, 0.24);
+      const fontSize = Math.min(18, Math.max(9, safe.fontSize ?? 13));
+      page.drawRectangle({
+        x: safe.x,
+        y: safe.y,
+        width: safe.width,
+        height: safe.height,
+        borderColor: stampColor,
+        borderWidth: 1.8,
+      });
+      page.drawText(safe.value!, {
+        x: safe.x + 7,
+        y: safe.y + Math.max(4, (safe.height - fontSize) / 2),
+        size: fontSize,
+        font,
+        color: stampColor,
+        maxWidth: Math.max(1, safe.width - 14),
+      });
+      continue;
+    }
+
+    if (safe.kind === 'signature-draw' || safe.kind === 'freehand') {
+      const strokes = assertNormalizedStrokes(safe.strokes, safe.kind === 'signature-draw' ? 'drawn signature' : 'freehand annotation');
       for (const stroke of strokes) {
         for (let index = 1; index < stroke.length; index += 1) {
           const previous = stroke[index - 1];
@@ -359,8 +418,8 @@ export async function exportEditedPdf(
           page.drawLine({
             start: { x: safe.x + previous.x * safe.width, y: safe.y + (1 - previous.y) * safe.height },
             end: { x: safe.x + current.x * safe.width, y: safe.y + (1 - current.y) * safe.height },
-            thickness: 1.8,
-            color: rgb(0.05, 0.08, 0.15),
+            thickness: safe.kind === 'freehand' ? 2.4 : 1.8,
+            color: safe.kind === 'freehand' ? rgb(0.08, 0.29, 0.63) : rgb(0.05, 0.08, 0.15),
           });
         }
       }
@@ -368,7 +427,7 @@ export async function exportEditedPdf(
     }
 
     const asset = assetById.get(safe.assetId!);
-    if (!asset) throw new FileToolError('malformed', 'The signature image data is unavailable.');
+    if (!asset) throw new FileToolError('malformed', 'The image data is unavailable.');
     let embedded = embeddedAssets.get(asset.id);
     if (!embedded) {
       try {
@@ -376,7 +435,7 @@ export async function exportEditedPdf(
           ? await document.embedPng(asset.bytes)
           : await document.embedJpg(asset.bytes);
       } catch {
-        throw new FileToolError('malformed', 'The signature image could not be embedded in the PDF.');
+        throw new FileToolError('malformed', 'The image could not be embedded in the PDF.');
       }
       embeddedAssets.set(asset.id, embedded);
     }

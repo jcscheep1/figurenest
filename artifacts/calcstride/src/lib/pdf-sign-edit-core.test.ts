@@ -4,6 +4,7 @@ import test from 'node:test';
 import { PDFDocument } from 'pdf-lib';
 import { FileToolError } from './file-tools-foundation';
 import {
+  BUILT_IN_PDF_STAMPS,
   PDF_FILE_RULE,
   PdfEditHistory,
   applyViewportTransform,
@@ -25,6 +26,13 @@ async function onePagePdf(): Promise<ArrayBuffer> {
   doc.addPage([300, 400]);
   const bytes = await doc.save();
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
+function onePixelPng(): Uint8Array {
+  return Uint8Array.from(Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z2S8AAAAASUVORK5CYII=',
+    'base64',
+  ));
 }
 
 test('FT-02 PDF rule requires a real PDF signature', () => {
@@ -73,10 +81,7 @@ test('FT-02 releases every acquired PDF.js page after success, cancellation and 
   });
   await Promise.resolve();
   rejectRender?.(new Error('RenderingCancelledException'));
-  await assert.rejects(
-    cancelledRender,
-    /RenderingCancelledException/,
-  );
+  await assert.rejects(cancelledRender, /RenderingCancelledException/);
   assert.deepEqual(events, ['render', 'cleanup']);
 
   events.length = 0;
@@ -104,7 +109,21 @@ test('FT-02 edit objects clamp to page bounds and use useful defaults', () => {
   assert.equal(escaped.width, 300);
 });
 
-test('FT-02 history supports immutable commit, undo, redo and redo invalidation', () => {
+test('FT-03 annotation objects use bounded defaults and reviewed stamp values', () => {
+  const bounds = { width: 300, height: 400 };
+  const highlight = createPdfEditObject('highlight', 0, bounds, 'highlight-1');
+  assert.equal(highlight.width, 180);
+  assert.equal(highlight.height, 28);
+  const freehand = createPdfEditObject('freehand', 0, bounds, 'freehand-1', {
+    strokes: [[{ x: 0, y: 0 }, { x: 1, y: 1 }]],
+  });
+  assert.equal(freehand.height, 100);
+  const stamp = createPdfEditObject('stamp', 0, bounds, 'stamp-1', { value: BUILT_IN_PDF_STAMPS[0] });
+  assert.equal(stamp.value, 'APPROVED');
+  assert.equal(stamp.width, 128);
+});
+
+test('FT-02 history supports immutable commit, undo, redo and redo invalidation for every object kind', () => {
   const history = new PdfEditHistory();
   const first: PdfEditObject = {
     id: 'a', pageIndex: 0, kind: 'check', x: 1, y: 2, width: 20, height: 20,
@@ -115,16 +134,19 @@ test('FT-02 history supports immutable commit, undo, redo and redo invalidation'
   exposed[0].x = 999;
   assert.equal(history.value[0].x, 1);
 
-  assert.deepEqual(history.undo(), []);
-  assert.equal(history.canRedo, true);
-  assert.equal(history.redo()[0].id, 'a');
+  const annotation: PdfEditObject = {
+    id: 'h', pageIndex: 0, kind: 'highlight', x: 10, y: 10, width: 80, height: 20,
+  };
+  history.commit([first, annotation]);
+  assert.equal(history.undo().some((item) => item.id === 'h'), false);
+  assert.equal(history.redo().some((item) => item.id === 'h'), true);
   history.undo();
   history.commit([{ ...first, id: 'b' }]);
   assert.equal(history.canRedo, false);
   assert.equal(history.value[0].id, 'b');
 });
 
-test('FT-02 resource guards enforce PDF page and signature image limits', () => {
+test('FT-02 resource guards enforce PDF page and uploaded image limits', () => {
   assert.doesNotThrow(() => validatePdfPageCount(100));
   assert.throws(
     () => validatePdfPageCount(101),
@@ -156,6 +178,34 @@ test('FT-02 exports typed text, date, check and drawn signature into a reopenabl
   assert.equal(reopened.getPage(0).getHeight(), 400);
 });
 
+test('FT-03 exports highlight, freehand and reviewed stamp annotations into a reopenable PDF', async () => {
+  const original = await onePagePdf();
+  const edits: PdfEditObject[] = [
+    { id: 'highlight', pageIndex: 0, kind: 'highlight', x: 20, y: 320, width: 180, height: 28 },
+    {
+      id: 'freehand', pageIndex: 0, kind: 'freehand', x: 20, y: 180, width: 160, height: 90,
+      strokes: [[{ x: 0.05, y: 0.75 }, { x: 0.35, y: 0.15 }, { x: 0.7, y: 0.55 }, { x: 0.95, y: 0.2 }]],
+    },
+    { id: 'stamp', pageIndex: 0, kind: 'stamp', x: 20, y: 90, width: 128, height: 42, value: 'REVIEWED', fontSize: 13 },
+  ];
+  const output = await exportEditedPdf(original, edits, []);
+  const reopened = await PDFDocument.load(output);
+  assert.equal(reopened.getPageCount(), 1);
+  assert.ok(output.byteLength > original.byteLength);
+});
+
+test('FT-03 embeds an uploaded PNG media object into a reopenable PDF', async () => {
+  const original = await onePagePdf();
+  const edits: PdfEditObject[] = [
+    { id: 'media', pageIndex: 0, kind: 'image', x: 40, y: 180, width: 120, height: 80, assetId: 'media-1' },
+  ];
+  const assets = [{ id: 'media-1', mime: 'image/png' as const, bytes: onePixelPng() }];
+  const output = await exportEditedPdf(original, edits, assets);
+  const reopened = await PDFDocument.load(output);
+  assert.equal(reopened.getPageCount(), 1);
+  assert.ok(output.byteLength > original.byteLength);
+});
+
 test('FT-02 rejects malformed edits instead of exporting ambiguous output', async () => {
   const original = await onePagePdf();
   await assert.rejects(
@@ -170,6 +220,10 @@ test('FT-02 rejects malformed edits instead of exporting ambiguous output', asyn
     exportEditedPdf(original, [{ id: 'stroke', pageIndex: 0, kind: 'signature-draw', x: 0, y: 0, width: 40, height: 20, strokes: [[{ x: 2, y: 0 }, { x: 0, y: 0 }]] }], []),
     (error: unknown) => error instanceof FileToolError && error.code === 'malformed',
   );
+  await assert.rejects(
+    exportEditedPdf(original, [{ id: 'stamp', pageIndex: 0, kind: 'stamp', x: 0, y: 0, width: 100, height: 30, value: 'EXECUTED' }], []),
+    (error: unknown) => error instanceof FileToolError && error.code === 'malformed',
+  );
 });
 
 test('FT-02 core contains no upload, persistence, analytics or runtime CDN calls', () => {
@@ -182,7 +236,6 @@ test('FT-02 core contains no upload, persistence, analytics or runtime CDN calls
   }
   assert.match(source, /await import\('pdf-lib'\)/);
 });
-
 
 test('FT-02 cancellation destroys the active PDF.js task and releases retained bytes', () => {
   const source = readFileSync(new URL('../pages/PdfSignEditPage.tsx', import.meta.url), 'utf8');
