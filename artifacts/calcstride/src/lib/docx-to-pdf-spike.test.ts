@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import * as mammoth from 'mammoth';
 import {
   calculatePdfPageSlices,
@@ -8,6 +9,13 @@ import {
 } from './docx-to-pdf-spike';
 import { DOCX_PUBLICATION_FIXTURES } from './docx-publication-fixtures';
 import { inspectDocxPackage } from './docx-package-preflight';
+
+test('DOCX converter renders its picker inside the responsive upload panel', () => {
+  const source = readFileSync(new URL('../pages/DocxToPdfPage.tsx', import.meta.url), 'utf8');
+  assert.match(source, /className="file-upload-panel"/);
+  assert.match(source, /aria-label="DOCX file selection"/);
+  assert.match(source, /<LocalFileDropzone/);
+});
 
 test('allows only embedded raster image data URLs for generated DOCX preview resources', () => {
   assert.equal(isAllowedDocxPreviewResourceUrl('data:image/png;base64,AAAA'), true);
