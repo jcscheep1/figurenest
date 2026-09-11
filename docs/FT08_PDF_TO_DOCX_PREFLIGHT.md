@@ -23,15 +23,29 @@ Expected safe v1 semantics:
 Source: https://www.npmjs.com/package/pdfjs-dist
 
 ### Candidate DOCX generator
-`docx@9.7.1` is the leading spike candidate. npm reports MIT licensing, browser support, ~3M+ weekly downloads, and first-party browser/React examples.
+`docx@9.7.1` is the leading spike candidate. npm reports MIT licensing, browser support, and first-party browser/React examples.
 
 Source: https://www.npmjs.com/package/docx
 
-**Exact lock evidence (2026-09-11):** the FigureNest pnpm lock resolves `docx` exactly to `9.7.1` and resolves its `xml-js` range to `xml-js@1.6.11`, whose only locked dependency is `sax@1.6.1`. This is materially better evidence than treating the declared `^1.6.8` range as the installed version. The package remains MIT and browser-capable, but this does **not** clear the maintenance gate by itself.
+**Exact lock evidence (2026-09-11):** the FigureNest pnpm lock resolves `docx` exactly to `9.7.1` and resolves its `xml-js` range to `xml-js@1.6.11`, whose only locked dependency is `sax@1.6.1`. This is materially better evidence than treating the declared `^1.6.8` range as the installed version.
 
-**Maintenance caution remains:** upstream docx issue #3471 (opened 2026-06-18) calls out `xml-js` as effectively unmaintained. The research lane may continue with the exact locked tree for bounded CI/browser experiments because generated DOCX output is produced from FigureNest-controlled structures rather than parsing untrusted XML through `xml-js`, but publication still requires an explicit dependency-risk disposition. Do not substitute an unofficial fork merely to hide this concern. If the dependency remains in the shipped browser bundle, record bundle reachability and decide accept/replace/reject before publication.
+**Maintenance caution remains:** upstream docx issue #3471 (opened 2026-06-18 and still open when rechecked on 2026-09-11) calls out `xml-js` as effectively unmaintained. Do not substitute an unofficial fork merely to hide this concern.
 
 Source: https://github.com/dolanmiu/docx/issues/3471
+
+### Explicit dependency and bundle disposition
+
+**Decision for the bounded FT-08 spike: CONDITIONAL ACCEPT, not a publication blocker by itself.**
+
+Rationale:
+- the exact dependency tree is pinned and license-compatible (`docx` MIT; no AGPL/proprietary/cloud converter introduced);
+- FT-08 uses `docx` to serialize FigureNest-controlled document structures. Untrusted PDF XML is not handed to `xml-js`; hostile input is parsed by PDF.js first and converted into a narrow internal representation before DOCX generation;
+- the browser privacy run proved the selected dependency chain works locally with a same-origin PDF.js worker and no document-derived egress or persistence;
+- the measured research harness is heavy — 1,271,992-byte JS / 428.96 kB gzip plus a 1,317,034-byte PDF worker — therefore this dependency set is acceptable only behind route-level lazy loading. It must not increase FigureNest's initial-site JS budget materially;
+- the PDF worker is an existing FigureNest file-tool dependency and must remain same-origin/version-matched. A publication PR must report initial chunk delta separately from route-only lazy assets rather than presenting the whole harness as initial cost;
+- the open `xml-js` maintenance issue is an ongoing supply-chain risk. Publication must keep exact pins and CI lockfile enforcement, and the lane must be reconsidered if a concrete advisory appears, upstream removes/changes the dependency, or a maintained drop-in alternative can materially reduce risk without increasing attack surface.
+
+This disposition does **not** authorize publication. It closes the dependency-selection question for the current bounded research path while leaving fidelity and limit-adjacent mobile/resource evidence as product gates.
 
 ## Security / privacy gate
 
@@ -71,7 +85,10 @@ Acceptance requires useful editable text with deterministic reading order on fix
 - A simple table fixture deliberately emits cells out of reading order and is reconstructed deterministically by row clustering plus left-to-right cell ordering.
 - A graphics-only PDF produces no usable selectable text and is explicitly classified **OCR required** instead of being treated as a successful empty DOCX conversion.
 - Malformed/truncated input fails closed; byte limits are enforced before PDF.js parsing; parseable documents over the programme ceiling are rejected before extraction/generation.
-- Exact research head `13b4fdf7653e5149e8a0f51ffa09779c51b2c0f5` passed **Validate FigureNest #640** and **FT-07 Browser Publication Gate #40**. These are regression/research checks only and do not authorize a public FT-08 route.
+- Password-protected PDFs are classified separately from generic malformed/unsupported parser failures.
+- Exact research head `d059579b0ba6334e1bb8ee6df22384a9077d9857` passed **Validate FigureNest #649**, **FT-07 Browser Publication Gate #46**, the dedicated **FT-08 Browser Privacy Research Gate #4**, and both authoritative Vercel previews.
+- The dedicated privacy gate exercised a browser-local PDF → DOCX chain at 1440×1200 desktop and a CDP-enforced **390×844** mobile viewport, with no cross-origin/document-bearing network activity and no local/session/IndexedDB/Cache Storage persistence. It measured approximately 946-byte PDF → 8.54 KB DOCX in 941 ms desktop and 521 ms mobile.
+- A mixed text + raster-image fixture has now been added. Its required behavior is intentionally conservative: preserve usable selectable text as editable DOCX content, detect that raster imagery is present, and emit/require an **image-placement warning** rather than silently claiming faithful image reconstruction. This fixture must pass exact-head CI before being counted as closed evidence.
 
 ## Stop / pivot conditions
 
@@ -87,12 +104,11 @@ If rejected, keep the evidence and consider a narrower product such as **PDF →
 
 ## Next spike decision
 
-The basic selectable-text, semantic heading/list, columns, simple-table, no-text/OCR classification, malformed-input and 100-page resource fixtures are now evidenced. Allowed next work is limited to the unresolved publication gates:
+The dependency-selection question is now conditionally dispositioned and the browser privacy gate is green. Publication remains closed while the following bounded gates remain:
 
-1. encrypted/password-protected PDF classification with an explicit safe UX state;
-2. browser network + storage interception proving zero document-derived egress/persistence;
-3. mixed text + raster-image behavior, including an honest fallback if image positioning cannot be reconstructed reliably;
-4. mobile-class timing/memory/resource measurements under the locked limits;
-5. explicit dependency-risk and lazy-bundle disposition for `docx@9.7.1 → xml-js@1.6.11 → sax@1.6.1`.
+1. exact-head validation of the new mixed text + raster-image warning fixture;
+2. limit-adjacent mobile timing/resource evidence under the locked input/page ceilings, including a clear timeout/cancel or rejection policy if sustained work is too expensive;
+3. final product naming/copy decision. If images/layout are not reconstructed reliably, ship only under wording equivalent to **PDF text to editable DOCX** / **best-effort editable reconstruction**, never as faithful PDF-to-Word conversion;
+4. if all gates pass, implement the real route/catalog/schema/sitemap integration on a new exact head and rerun privacy, normal validation, bundle, Vercel and production smoke gates before merge.
 
 No catalog/route/schema/sitemap/tool-count change is allowed until those gates are resolved and the research outcome is explicitly recorded as publishable or not publishable.
