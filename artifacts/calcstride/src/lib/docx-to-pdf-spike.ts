@@ -24,6 +24,12 @@ export function isAllowedDocxPreviewResourceUrl(value: string): boolean {
   return /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(trimmed);
 }
 
+export function isAllowedDocxPreviewLinkUrl(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return /^(?:https?:|mailto:|tel:|#)/i.test(trimmed);
+}
+
 export function calculatePdfPageSlices(imageHeight: number, pageHeight: number): PdfPageSlice[] {
   if (!Number.isFinite(imageHeight) || !Number.isFinite(pageHeight) || imageHeight <= 0 || pageHeight <= 0) {
     throw new Error('DOCX PDF pagination requires positive finite dimensions.');
@@ -51,7 +57,7 @@ function scrubPreviewResources(container: HTMLElement): void {
 
   for (const anchor of container.querySelectorAll('a')) {
     const href = anchor.getAttribute('href') ?? '';
-    if (!/^(?:https?:|mailto:|#)/i.test(href)) anchor.removeAttribute('href');
+    if (!isAllowedDocxPreviewLinkUrl(href)) anchor.removeAttribute('href');
     anchor.setAttribute('rel', 'noopener noreferrer');
   }
 }
