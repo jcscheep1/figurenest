@@ -7,7 +7,7 @@ type SyntheticEntry = {
   name: string;
   compressedBytes?: number;
   uncompressedBytes?: number;
-  method?: 0 | 8;
+  method?: number;
   flags?: number;
 };
 
@@ -97,12 +97,8 @@ test('FT-07 rejects path traversal, encryption and unsupported compression', () 
     hasCode('unsupported-type'),
   );
   assert.throws(
-    () => preflightDocxPackage(syntheticZip(baseEntries([{ name: 'word/odd.bin', method: 8 as 0 | 8 }])).map((value, index, all) => {
-      // Replace the first optional payload central-directory method with unsupported method 99.
-      if (index > all.length - 22 - 46 && index < all.length - 22) return value;
-      return value;
-    }), 'desktop'),
-    () => false,
+    () => preflightDocxPackage(syntheticZip(baseEntries([{ name: 'word/odd.bin', method: 99 }])), 'desktop'),
+    hasCode('unsupported-type'),
   );
 });
 
