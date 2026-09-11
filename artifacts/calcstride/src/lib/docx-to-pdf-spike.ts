@@ -44,16 +44,14 @@ export async function sanitizeDocxHtml(html: string): Promise<string> {
     throw new Error('DOCX preview sanitization is only available in the browser.');
   }
   const { default: DOMPurify } = await import('dompurify');
-  const sanitized = DOMPurify.sanitize(html, {
+  const sanitized = String(DOMPurify.sanitize(html, {
     FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'option', 'link', 'meta'],
     FORBID_ATTR: ['style', 'srcset', 'formaction', 'onerror', 'onload'],
-  });
-  const template = document.createElement('template');
-  template.innerHTML = sanitized;
-  scrubPreviewResources(template.content.firstElementChild instanceof HTMLElement
-    ? template.content.firstElementChild
-    : template.content.appendChild(document.createElement('div')));
-  return template.innerHTML;
+  }));
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = sanitized;
+  scrubPreviewResources(wrapper);
+  return wrapper.innerHTML;
 }
 
 function createConversionWorker(): Worker {
