@@ -1,0 +1,117 @@
+name: FT-07 Browser Publication Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/lib/docx-**'
+      - 'artifacts/calcstride/src/workers/docx-**'
+      - 'artifacts/calcstride/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/ft07-browser-publication.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create branch-only browser harness
+        working-directory: artifacts/calcstride
+        run: |
+          cat > docx-qa.html <<'HTML'
+          <!doctype html><html><body><main id="app"></main><script type="module" src="/src/docx-qa.ts"></script></body></html>
+          HTML
+          cat > src/docx-qa.ts <<'TS'
+          import { DOCX_PUBLICATION_FIXTURES } from './lib/docx-publication-fixtures';
+          import { convertDocxToSanitizedHtml, exportSanitizedPreviewToPdf } from './lib/docx-to-pdf-spike';
+          import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+          const app = document.querySelector<HTMLElement>('#app')!;
+          const mode = new URLSearchParams(location.search).get('mode') === 'mobile' ? 'mobile' : 'desktop';
+          const sentinel = 'FT07_SENTINEL_FILE_NAME_AND_CONTENT_7391';
+          const violations: string[] = [];
+          const originalFetch = window.fetch.bind(window);
+          window.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+            const text = `${String(input)} ${JSON.stringify(init ?? {})}`;
+            if (text.includes(sentinel)) violations.push('fetch');
+            return originalFetch(input, init);
+          }) as typeof fetch;
+          const OriginalXHR = window.XMLHttpRequest;
+          class GuardedXHR extends OriginalXHR {
+            override send(body?: Document | XMLHttpRequestBodyInit | null): void {
+              if (String(body ?? '').includes(sentinel)) violations.push('xhr');
+              super.send(body);
+            }
+          }
+          window.XMLHttpRequest = GuardedXHR as typeof XMLHttpRequest;
+          const originalBeacon = navigator.sendBeacon?.bind(navigator);
+          if (originalBeacon) navigator.sendBeacon = ((url: string | URL, data?: BodyInit | null) => {
+            if (`${String(url)} ${String(data ?? '')}`.includes(sentinel)) violations.push('beacon');
+            return originalBeacon(url, data);
+          }) as typeof navigator.sendBeacon;
+          const storageSnapshot = () => `${JSON.stringify({...localStorage})}${JSON.stringify({...sessionStorage})}`;
+
+          async function run() {
+            const beforeStorage = storageSnapshot();
+            const results: string[] = [];
+            for (const fixture of DOCX_PUBLICATION_FIXTURES) {
+              const bytes = fixture.id === '1'
+                ? new Uint8Array([...fixture.bytes, ...new TextEncoder().encode(sentinel)].slice(0, fixture.bytes.length))
+                : fixture.bytes;
+              const file = new File([bytes], `${sentinel}-${fixture.id}.docx`, {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+              const converted = await convertDocxToSanitizedHtml(file, mode);
+              const preview = document.createElement('article');
+              preview.style.width = mode === 'mobile' ? '360px' : '760px';
+              preview.innerHTML = converted.html;
+              document.body.append(preview);
+              for (const expected of fixture.expectedText) if (!preview.textContent?.includes(expected)) throw new Error(`${fixture.id} missing ${expected}`);
+              const pdfBlob = await exportSanitizedPreviewToPdf(preview);
+              const pdfBytes = new Uint8Array(await pdfBlob.arrayBuffer());
+              if (pdfBytes.length < 100 || String.fromCharCode(...pdfBytes.slice(0,5)) !== '%PDF-') throw new Error(`${fixture.id} invalid PDF`);
+              const opened = await pdfjs.getDocument({data: pdfBytes, disableWorker: true}).promise;
+              if (opened.numPages < 1) throw new Error(`${fixture.id} reopen failed`);
+              results.push(`${fixture.id}:${opened.numPages}p:${pdfBytes.length}b`);
+              preview.remove();
+            }
+            const afterStorage = storageSnapshot();
+            if (beforeStorage !== afterStorage || afterStorage.includes(sentinel)) violations.push('storage');
+            if (violations.length) throw new Error(`privacy violations: ${violations.join(',')}`);
+            app.textContent = `FT07_BROWSER_PASS ${mode} ${results.join(' ')}`;
+            document.documentElement.dataset.qa = 'pass';
+          }
+          run().catch((error) => { app.textContent = `FT07_BROWSER_FAIL ${mode} ${error?.stack || error}`; document.documentElement.dataset.qa = 'fail'; });
+          TS
+      - name: Start Vite harness
+        working-directory: artifacts/calcstride
+        run: |
+          pnpm exec vite --host 127.0.0.1 --port 4173 > /tmp/ft07-vite.log 2>&1 &
+          echo $! > /tmp/ft07-vite.pid
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/docx-qa.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/ft07-vite.log; exit 1
+      - name: Desktop fixtures → sanitized preview → PDF → reopen + privacy
+        run: |
+          google-chrome --headless=new --no-sandbox --disable-gpu --window-size=1440,1200 --virtual-time-budget=45000 --dump-dom 'http://127.0.0.1:4173/docx-qa.html?mode=desktop' > /tmp/desktop.html
+          grep 'FT07_BROWSER_PASS desktop' /tmp/desktop.html || (cat /tmp/desktop.html; exit 1)
+      - name: Mobile fixtures → sanitized preview → PDF → reopen + privacy
+        run: |
+          google-chrome --headless=new --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=45000 --dump-dom 'http://127.0.0.1:4173/docx-qa.html?mode=mobile' > /tmp/mobile.html
+          grep 'FT07_BROWSER_PASS mobile' /tmp/mobile.html || (cat /tmp/mobile.html; exit 1)
+      - name: Record bundle evidence
+        working-directory: artifacts/calcstride
+        run: |
+          pnpm run build:client
+          echo 'Largest DOCX-related chunks:'
+          find dist -type f -name '*.js' -printf '%s %p\n' | sort -nr | head -20
