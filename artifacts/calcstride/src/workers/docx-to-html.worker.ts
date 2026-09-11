@@ -9,9 +9,14 @@ type ConvertResponse =
   | { id: number; ok: true; html: string; messages: string[] }
   | { id: number; ok: false; error: string };
 
-const workerScope = self as DedicatedWorkerGlobalScope;
+type DocxWorkerScope = {
+  onmessage: ((event: MessageEvent<ConvertRequest>) => void | Promise<void>) | null;
+  postMessage: (message: ConvertResponse) => void;
+};
 
-workerScope.onmessage = async (event: MessageEvent<ConvertRequest>) => {
+const workerScope = self as unknown as DocxWorkerScope;
+
+workerScope.onmessage = async (event) => {
   const { id, arrayBuffer } = event.data;
   try {
     const result = await mammoth.convertToHtml(
