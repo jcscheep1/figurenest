@@ -48,6 +48,8 @@ Concrete current package limits are: maximum 2,000 ZIP entries; maximum 100:1 pe
 
 The preflight itself remains dependency-free. It parses the ZIP central directory before conversion, rejects ZIP64/multi-disk/encrypted/unsupported compression, path traversal, duplicate case-insensitive names, `vbaProject`, ActiveX, embedded OLE/package objects and custom UI. Small `[Content_Types].xml` and `.rels` parts are then read locally with STORE or the browser-native `DecompressionStream('deflate-raw')` path. Macro-enabled content types, unsafe external resources and unsafe external hyperlink schemes are rejected before Mammoth sees the file. Ordinary `http:`, `https:`, `mailto:` and `tel:` hyperlinks may remain as links but are never fetched automatically.
 
+The picker contract is centralized as `.docx` plus approved DOCX/ZIP MIME types plus the ZIP local-header signature. Metadata XML inspection uses strict UTF-8 and deliberately rejects ambiguous UTF-16/NUL-encoded metadata for the first release rather than accepting an encoding path that could bypass security checks.
+
 Mammoth `externalFileAccess` must remain false (its default). Do not enable it for this product.
 
 ## Sanitization gate
@@ -148,7 +150,7 @@ The same PR must update all relevant sources of truth together:
 
 ## Current implementation checkpoint
 
-PR #130 now contains a dependency-free package guard in `artifacts/calcstride/src/lib/docx-package-preflight.ts` plus hostile-input regression tests. The initial central-directory guard passed FigureNest typecheck, unit tests and production build on head `c2b87fbe3011d6732f1c49a7fb02f9306ef75e9a`. The next head extends that guard to inspect content types and relationships locally before renderer dependencies are introduced.
+PR #130 now contains a dependency-free package guard in `artifacts/calcstride/src/lib/docx-package-preflight.ts` plus hostile-input regression tests. The first security implementation passed FigureNest typecheck, unit tests and production build on `c2b87fbe3011d6732f1c49a7fb02f9306ef75e9a`; later heads added local metadata decompression/inspection, the explicit `.docx` file rule, strict XML encoding guards and prefixed relationship handling. Current security-preflight head before this documentation-only commit is `ba952fc250dd34e258d947e87ee5ae6a9abbcf0f`.
 
 The next Build step is not public-route integration. It is the exact-pinned Mammoth + DOMPurify + jsPDF/html2canvas spike with fixture evidence and lockfile-safe installation. Do not add the public route until the publication threshold passes.
 
