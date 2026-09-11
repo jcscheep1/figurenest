@@ -126,3 +126,15 @@ The dependency-independent ZIP preflight head `c8d6827e6ae6434995cf863d73dcc5270
 Production `main` has since advanced independently to `b2b0b10c7fb33d8e54d66dbb5a1c4032c3c97e87` with a File Tools mobile-contrast/calculator-export repair. FT-09 is four commits ahead of the common FT-08 merge base and one commit behind current `main`; its three changed paths remain isolated to the FT-09 ZIP preflight and this research record. The branch must reconcile that newer main before any publication or merge decision, and no older QA verdict can be treated as release approval after such reconciliation.
 
 Resume condition for implementation approval: exact-head tests must demonstrate deterministic CSV→XLSX→reopen and XLSX→CSV value preservation, hostile ZIP/resource rejection before uncontrolled expansion, formula non-execution, injection-safe CSV output, and acceptable route-lazy bundle measurements. Until then FT-09 remains **RESEARCH / NOT PUBLISHABLE**.
+
+## Executable SheetJS CE 0.20.3 fixture spike
+- authoritative source: `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`
+- observed tarball SHA-256: `8dc73fc3b00203e72d176e85b50938627c7b086e607c682e8d3c22c02bb99fe8`
+- deterministic CSV → XLSX → reopen: PASS
+- Unicode, quoted comma/newline and leading-zero text preservation: PASS
+- formula-looking inputs remain string cells; no generated formula field: PASS
+- safe CSV neutralization preserves genuine negative numbers: PASS
+- generated OOXML passes the dependency-independent ZIP preflight before reopen: PASS
+- repository typecheck, full unit suite and production build: PASS
+
+Research only: runtime CDN loading remains forbidden. Publication still requires browser privacy/storage, mobile/resource and lazy-bundle evidence plus immutable dependency disposition.
