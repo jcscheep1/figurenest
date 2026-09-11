@@ -1,0 +1,115 @@
+name: FT-08 Publication Integration
+
+on:
+  push:
+    branches: [expansion/ft-08-pdf-text-docx]
+    paths:
+      - '.github/workflows/ft08-publication-integrate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: expansion/ft-08-pdf-text-docx
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Add truthful catalog record and route wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          catalog_path = Path('artifacts/calcstride/src/lib/file-tools-catalog.ts')
+          catalog = catalog_path.read_text()
+          if "'pdf-to-docx': {" not in catalog:
+              marker = "  'pdf-to-text': {"
+              if marker not in catalog:
+                  raise SystemExit('pdf-to-text catalog insertion marker missing')
+              definition = """  'pdf-to-docx': {
+            slug: 'pdf-to-docx',
+            name: 'PDF Text to Editable DOCX',
+            description: 'Turn selectable PDF text into an editable DOCX locally in your browser, with clear warnings for scans, images and complex layout.',
+            category: FILE_TOOLS_CATEGORY.name,
+            categorySlug: FILE_TOOLS_CATEGORY.slug,
+            href: '/file-tools/pdf-to-docx',
+            tags: ['pdf to docx', 'pdf to word', 'pdf text to word', 'editable pdf text', 'private pdf converter', 'browser pdf converter'],
+            featured: false,
+            h1: 'Convert PDF Text to Editable DOCX',
+            seoTitle: 'Free PDF Text to Editable DOCX | Private Browser | FigureNest',
+            seoDescription: 'Convert selectable PDF text to an editable DOCX locally in your browser. No upload or OCR, with clear best-effort layout limits.',
+            privacySummary: 'The PDF, filename, extracted text and generated DOCX stay in this browser tab. FigureNest does not upload the document or conversion output.',
+            limitations: [
+              'This tool converts selectable text into an editable DOCX on a best-effort basis. It is not a pixel-perfect PDF-to-Word recreation, so columns, tables, fonts, spacing and pagination may differ.',
+              'Scanned or image-only PDFs need OCR, which this version does not perform. Those files are rejected rather than returning an empty DOCX or sending the document to a server.',
+              'Raster images are detected, but their placement is not preserved in this version. Selectable text can still be converted and the tool shows an image-placement warning.',
+              'Password-protected, malformed, oversized and over-100-page PDFs are rejected locally. PDF scripts, launch actions, embedded executables and other active content are not carried into the DOCX.',
+            ],
+            faqs: [
+              { question: 'Does FigureNest upload my PDF to convert it?', answer: 'No. PDF parsing, selectable-text extraction and DOCX generation run in your browser. The PDF bytes, filename, extracted text and generated DOCX are not sent to a FigureNest conversion server.' },
+              { question: 'Will the DOCX look exactly like the PDF?', answer: 'No. PDFs store positioned drawing instructions rather than Word document structure. FigureNest creates useful editable text with best-effort reading order, but complex columns, tables, fonts and pagination can differ.' },
+              { question: 'Can this convert scanned PDFs?', answer: 'Not in this version. If the PDF has no usable selectable text, FigureNest reports that OCR is required instead of pretending the conversion succeeded.' },
+              { question: 'What happens to images in the PDF?', answer: 'The converter detects raster imagery and warns that image placement is not preserved. Selectable text remains the intended editable output for this release.' },
+              { question: 'How large can the PDF be?', answer: 'The shared local-file limits currently allow up to 25 MB on mobile-class devices or 75 MB on desktop-class devices, with a maximum of 100 PDF pages.' },
+            ],
+            relatedRoutes: ['/file-tools/pdf-to-text', '/file-tools/docx-to-pdf', '/file-tools/pdf-sign-edit'],
+          },
+          """
+              catalog = catalog.replace(marker, definition + marker, 1)
+              catalog_path.write_text(catalog)
+
+          app_path = Path('artifacts/calcstride/src/App.tsx')
+          app = app_path.read_text()
+          if 'const pdfToDocxPages =' not in app:
+              marker = "const docxToPdfPages = import.meta.env.SSR ? await import('@/pages/DocxToPdfPage') : null;"
+              if marker not in app:
+                  raise SystemExit('App SSR insertion marker missing')
+              app = app.replace(marker, marker + "\nconst pdfToDocxPages = import.meta.env.SSR ? await import('@/pages/PdfToDocxPage') : null;", 1)
+
+          if 'const PdfToDocxPage =' not in app:
+              marker = "const DocxToPdfPage = docxToPdfPages?.DocxToPdfPage\n  ?? lazy(() => import('@/pages/DocxToPdfPage').then(({ DocxToPdfPage: page }) => ({ default: page })));"
+              if marker not in app:
+                  raise SystemExit('App lazy component insertion marker missing')
+              addition = marker + "\nconst PdfToDocxPage = pdfToDocxPages?.PdfToDocxPage\n  ?? lazy(() => import('@/pages/PdfToDocxPage').then(({ PdfToDocxPage: page }) => ({ default: page })));"
+              app = app.replace(marker, addition, 1)
+
+          route = '<Route path="/file-tools/pdf-to-docx" component={PdfToDocxPage} />'
+          if route not in app:
+              marker = '<Route path="/file-tools/docx-to-pdf" component={DocxToPdfPage} />'
+              if marker not in app:
+                  raise SystemExit('App route insertion marker missing')
+              app = app.replace(marker, marker + '\n        ' + route, 1)
+          app_path.write_text(app)
+          PY
+
+      - name: Validate publication integration before committing
+        run: |
+          pnpm exec tsc -b lib/api-client-react
+          pnpm --filter @workspace/calcstride typecheck
+          pnpm --filter @workspace/calcstride test
+          pnpm --filter @workspace/calcstride generate:seo
+          grep -F '/file-tools/pdf-to-docx' artifacts/calcstride/public/sitemap.xml
+          pnpm --filter @workspace/calcstride build
+
+      - name: Commit validated publication surface
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add artifacts/calcstride/src/App.tsx artifacts/calcstride/src/lib/file-tools-catalog.ts artifacts/calcstride/public/robots.txt artifacts/calcstride/public/sitemap.xml
+          git rm .github/workflows/ft08-publication-integrate.yml
+          git commit -m 'feat(ft-08): publish PDF text to DOCX surface'
+          git push origin HEAD:expansion/ft-08-pdf-text-docx
