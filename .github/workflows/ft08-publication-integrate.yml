@@ -30,7 +30,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: Add truthful catalog record and route wiring
+      - name: Add truthful catalog record, route and publication metadata
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -95,14 +95,46 @@ jobs:
                   raise SystemExit('App route insertion marker missing')
               app = app.replace(marker, marker + '\n        ' + route, 1)
           app_path.write_text(app)
+
+          applicability_path = Path('artifacts/calcstride/src/lib/units-preferences.ts')
+          applicability = applicability_path.read_text()
+          if "'pdf-to-docx': unitless()" not in applicability:
+              marker = "  'pdf-sign-edit': unitless(), 'pdf-to-image': unitless(), 'image-to-pdf': unitless(), 'pdf-to-text': unitless(), 'docx-to-pdf': unitless(),"
+              if marker not in applicability:
+                  raise SystemExit('file-tool applicability insertion marker missing')
+              replacement = "  'pdf-sign-edit': unitless(), 'pdf-to-image': unitless(), 'image-to-pdf': unitless(), 'pdf-to-text': unitless(), 'docx-to-pdf': unitless(), 'pdf-to-docx': unitless(),"
+              applicability = applicability.replace(marker, replacement, 1)
+              applicability_path.write_text(applicability)
+
+          guide_path = Path('artifacts/calcstride/src/lib/file-tools-category-content.ts')
+          guide = guide_path.read_text()
+          if "{ slug: 'pdf-to-docx'," not in guide:
+              marker = "    { slug: 'docx-to-pdf', description: 'Convert a DOCX file locally to a sanitized best-effort browser preview, then create and download a PDF without uploading document bytes, names, or extracted content.' },"
+              if marker not in guide:
+                  raise SystemExit('file-tools category description insertion marker missing')
+              addition = marker + "\n    { slug: 'pdf-to-docx', description: 'Convert selectable PDF text into an editable DOCX locally, with explicit OCR-required, password-protected, image-placement and complex-layout limitations instead of claiming pixel-perfect PDF-to-Word fidelity.' },"
+              guide = guide.replace(marker, addition, 1)
+
+              old_intro = "The current file tools cover fill-and-sign editing with annotations and page operations, PDF pages to JPG/PNG, ordered JPG/PNG images to PDF, text-layer extraction to TXT, and best-effort DOCX to PDF conversion with a sanitized preview."
+              new_intro = "The current file tools cover fill-and-sign editing with annotations and page operations, PDF pages to JPG/PNG, ordered JPG/PNG images to PDF, text-layer extraction to TXT, best-effort DOCX to PDF conversion with a sanitized preview, and selectable PDF text to editable DOCX reconstruction."
+              if old_intro not in guide:
+                  raise SystemExit('file-tools category introduction marker missing')
+              guide = guide.replace(old_intro, new_intro, 1)
+
+              marker = "    'Use DOCX to PDF for ordinary Word documents when a private best-effort PDF is sufficient. Review the sanitized preview before export because complex pagination, fonts, fields, tracked changes, headers and footers may differ from Microsoft Word.',"
+              if marker not in guide:
+                  raise SystemExit('file-tools choosing-tools insertion marker missing')
+              addition = marker + "\n    'Use PDF Text to Editable DOCX when the PDF already has selectable text and editability matters more than exact visual reconstruction. Scans need OCR, raster-image placement is not preserved, and complex columns, tables, fonts and pagination can differ.',"
+              guide = guide.replace(marker, addition, 1)
+              guide_path.write_text(guide)
           PY
 
       - name: Validate publication integration before committing
         run: |
           pnpm exec tsc -b lib/api-client-react
           pnpm --filter @workspace/calcstride typecheck
-          pnpm --filter @workspace/calcstride test
           pnpm --filter @workspace/calcstride generate:seo
+          pnpm --filter @workspace/calcstride test
           grep -F '/file-tools/pdf-to-docx' artifacts/calcstride/public/sitemap.xml
           pnpm --filter @workspace/calcstride build
 
@@ -110,7 +142,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add artifacts/calcstride/src/App.tsx artifacts/calcstride/src/lib/file-tools-catalog.ts artifacts/calcstride/public/robots.txt artifacts/calcstride/public/sitemap.xml
+          git add artifacts/calcstride/src/App.tsx artifacts/calcstride/src/lib/file-tools-catalog.ts artifacts/calcstride/src/lib/units-preferences.ts artifacts/calcstride/src/lib/file-tools-category-content.ts artifacts/calcstride/public/robots.txt artifacts/calcstride/public/sitemap.xml
           git rm .github/workflows/ft08-publication-integrate.yml
           git commit -m 'feat(ft-08): publish PDF text to DOCX surface'
           git push origin HEAD:expansion/ft-08-pdf-text-docx
