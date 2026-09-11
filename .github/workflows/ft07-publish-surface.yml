@@ -1,4 +1,4 @@
-# retrigger: publication surface integration after green browser/security gate; split QA stages for durable diagnostics
+# retrigger: add DOCX category-content parity and regenerate SEO before publication tests
 name: FT-07 Publish Surface Integration
 on:
   push:
@@ -143,11 +143,44 @@ jobs:
           if "'docx-to-pdf': {" not in c:
               c=c.replace(marker, entry+marker)
           cat.write_text(c)
+
+          guide=Path('artifacts/calcstride/src/lib/file-tools-category-content.ts')
+          g=guide.read_text()
+          if "slug: 'docx-to-pdf'" not in g:
+              g=g.replace(
+                  "    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },",
+                  "    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },\n    { slug: 'docx-to-pdf', description: 'Convert a DOCX file locally to a sanitized best-effort browser preview, then create and download a PDF without uploading document bytes, names, or extracted content.' },"
+              )
+              g=g.replace(
+                  "    'Can I extract the existing text layer from a PDF without sending the document to an OCR service?',",
+                  "    'Can I extract the existing text layer from a PDF without sending the document to an OCR service?',\n    'Can I convert a DOCX file to a best-effort PDF locally without uploading the document?',"
+              )
+              g=g.replace(
+                  "    'Use PDF to Text when the PDF already contains selectable text and you need a plain-text copy. It does not perform OCR. Scanned or image-only documents need a separate OCR workflow because FigureNest does not silently upload those pages to a recognition service.',",
+                  "    'Use PDF to Text when the PDF already contains selectable text and you need a plain-text copy. It does not perform OCR. Scanned or image-only documents need a separate OCR workflow because FigureNest does not silently upload those pages to a recognition service.',\n    'Use DOCX to PDF for ordinary Word documents when a private best-effort PDF is sufficient. Review the sanitized preview before export because complex pagination, fonts, fields, tracked changes, headers and footers may differ from Microsoft Word.',"
+              )
+              g=g.replace(
+                  "The current PDF tools cover fill-and-sign editing with annotations and page operations, PDF pages to JPG/PNG, ordered JPG/PNG images to PDF, and text-layer extraction to TXT.",
+                  "The current file tools cover fill-and-sign editing with annotations and page operations, PDF pages to JPG/PNG, ordered JPG/PNG images to PDF, text-layer extraction to TXT, and best-effort DOCX to PDF conversion with a sanitized preview."
+              )
+              g=g.replace(
+                  "The current PDF and image tools process selected bytes in the browser tab and do not send file names, images, annotations, page-operation plans, extracted text or generated output to FigureNest for conversion.",
+                  "The current PDF, image, and DOCX tools process selected bytes in the browser tab and do not send file names, images, annotations, page-operation plans, extracted text, document content, or generated output to FigureNest for conversion."
+              )
+              g=g.replace(
+                  "The current PDF Sign & Edit, PDF to JPG/PNG, JPG/PNG to PDF, and PDF to Text tools are designed to process selected files in your browser rather than upload them to a FigureNest conversion server.",
+                  "The current PDF Sign & Edit, PDF to JPG/PNG, JPG/PNG to PDF, PDF to Text, and DOCX to PDF tools are designed to process selected files in your browser rather than upload them to a FigureNest conversion server."
+              )
+          guide.write_text(g)
           PY
       - name: Build workspace type dependency
         run: pnpm exec tsc -b lib/api-client-react
       - name: Typecheck publication surface
         run: pnpm --filter @workspace/calcstride typecheck
+      - name: Generate publication SEO and sitemap
+        run: pnpm --filter @workspace/calcstride generate:seo
+      - name: Test site-audit publication parity
+        run: pnpm exec tsx --test artifacts/calcstride/src/lib/site-audit.test.ts
       - name: Test publication surface
         run: pnpm --filter @workspace/calcstride test
       - name: Build publication client
