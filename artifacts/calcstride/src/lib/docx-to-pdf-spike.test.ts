@@ -12,9 +12,12 @@ import { inspectDocxPackage } from './docx-package-preflight';
 
 test('DOCX converter renders its picker inside the responsive upload panel', () => {
   const source = readFileSync(new URL('../pages/DocxToPdfPage.tsx', import.meta.url), 'utf8');
-  assert.match(source, /className="file-upload-panel"/);
-  assert.match(source, /aria-label="DOCX file selection"/);
+  assert.match(source, /className="file-upload-panel docx-workflow-step"/);
+  assert.match(source, /aria-label="Step 1: Choose DOCX file"/);
   assert.match(source, /<LocalFileDropzone/);
+  assert.match(source, /Convert and download PDF/);
+  assert.match(source, /Download PDF again/);
+  assert.match(source, /className="docx-information-sections"/);
 });
 
 test('allows only embedded raster image data URLs for generated DOCX preview resources', () => {
