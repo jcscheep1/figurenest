@@ -1,4 +1,4 @@
-# Retrigger guarded publication integration after exact-head catalog/route ordering failure.
+# Exact-head green gate passed; trigger guarded FT-08 publication integration.
 name: FT-08 Publication Integration
 
 on:
