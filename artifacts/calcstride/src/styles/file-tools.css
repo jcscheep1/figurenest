@@ -212,7 +212,10 @@
 
 @media (max-width: 560px) {
   .file-tool-hero { padding-top: 28px; }
-  .file-upload-panel { padding: 12px; }
+  .file-upload-panel { width: 100%; padding: 12px; }
+  .file-upload-panel section > div[aria-describedby] { min-height: 180px; padding: 22px 14px; }
+  .file-upload-panel section > div[aria-describedby] button { width: 100%; min-height: 48px; font-size: 1rem; }
+  .file-upload-panel section > div[aria-describedby] span { display: block; margin-top: 10px; }
   .pdf-editor-toolbar { align-items: stretch; }
   .pdf-editor-toolbar label, .pdf-editor-toolbar input, .pdf-editor-toolbar button { width: 100%; }
   .pdf-page-controls button { flex: 1; }
