@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download } from 'lucide-react';
 import { Shell } from '@/components/FigureNestShell';
 import { LocalFileDropzone } from '@/components/LocalFileDropzone';
 import { Link } from '@/components/PublicLink';
@@ -51,12 +51,19 @@ export function DocxToPdfPage() {
     }
   };
 
-  const createPdf = async () => {
+  const downloadBlob = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${fileName.replace(/\.docx$/i, '') || 'document'}.pdf`; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
+  const createAndDownloadPdf = async () => {
     if (!previewRef.current) return;
     setStatus('processing'); setError('');
     try {
       const blob = await exportSanitizedPreviewToPdf(previewRef.current, { filename: fileName });
-      setPdf(blob); setStatus('succeeded');
+      setPdf(blob); setStatus('succeeded'); downloadBlob(blob);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'The PDF could not be created locally.');
       setStatus('failed');
@@ -65,10 +72,7 @@ export function DocxToPdfPage() {
 
   const download = () => {
     if (!pdf) return;
-    const url = URL.createObjectURL(pdf);
-    const a = document.createElement('a');
-    a.href = url; a.download = `${fileName.replace(/\.docx$/i, '') || 'document'}.pdf`; a.rel = 'noopener';
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 0);
+    downloadBlob(pdf);
   };
 
   return <Shell>
@@ -85,19 +89,25 @@ export function DocxToPdfPage() {
         <p>{definition.description}</p>
         <p><strong>Your files stay on this device.</strong> {definition.privacySummary}</p>
       </header>
-      <section className="file-upload-panel" aria-label="DOCX file selection">
+      <section className="file-upload-panel docx-workflow-step" aria-label="Step 1: Choose DOCX file">
+        <p className="docx-step-label"><span>1</span> Upload your Word document</p>
         <LocalFileDropzone accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" status={status} fileName={fileName || undefined} error={error || undefined} onSelect={select} onCancel={() => abortRef.current?.abort()} onReset={reset} />
       </section>
-      {html ? <section aria-labelledby="docx-preview-heading">
-        <h2 id="docx-preview-heading">Preview before download</h2>
-        <p>This is a best-effort document layout. Complex Word pagination, fonts, fields, tracked changes, headers and footers may differ from Word.</p>
-        <article ref={previewRef} className="file-tool-preview" dangerouslySetInnerHTML={{ __html: html }} />
-        {messages.length ? <details><summary>Conversion notes</summary><ul>{messages.map((message, index) => <li key={index}>{message}</li>)}</ul></details> : null}
-        <button type="button" onClick={createPdf} disabled={status === 'processing'}>Create PDF locally</button>
+      {html ? <section className="docx-preview-step docx-workflow-step" aria-labelledby="docx-preview-heading">
+        <p className="docx-step-label"><span>2</span> Review and download</p>
+        <div className="docx-preview-heading-row">
+          <div><h2 id="docx-preview-heading">Document preview</h2><p>Check the document below, then use the blue button to download your PDF.</p></div>
+          <button className="docx-download-button" type="button" onClick={createAndDownloadPdf} disabled={status === 'processing'}><Download size={19} aria-hidden="true" /> {status === 'processing' ? 'Creating PDF…' : 'Convert and download PDF'}</button>
+        </div>
+        <p className="docx-layout-note">Complex Word pagination, fonts, fields, tracked changes, headers and footers may differ from Word.</p>
+        <div className="docx-preview-frame"><article ref={previewRef} className="file-tool-preview" dangerouslySetInnerHTML={{ __html: html }} /></div>
+        {messages.length ? <details className="docx-conversion-notes"><summary>Conversion notes</summary><ul>{messages.map((message, index) => <li key={index}>{message}</li>)}</ul></details> : null}
       </section> : null}
-      {pdf ? <section aria-live="polite"><h2>PDF ready</h2><button type="button" onClick={download}><Download size={16} aria-hidden="true" /> Download PDF</button></section> : null}
-      <section><h2>Important limitations</h2><ul>{definition.limitations.map((item) => <li key={item}>{item}</li>)}</ul></section>
-      <section><h2>Frequently asked questions</h2>{definition.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
+      {pdf ? <section className="docx-download-ready" aria-live="polite"><CheckCircle2 size={25} aria-hidden="true" /><div><h2>Your PDF has downloaded</h2><p>If the download did not open, tap the button again.</p></div><button type="button" onClick={download}><Download size={18} aria-hidden="true" /> Download PDF again</button></section> : null}
+      <div className="docx-information-sections">
+        <section><h2>Important limitations</h2><ul>{definition.limitations.map((item) => <li key={item}>{item}</li>)}</ul></section>
+        <section><h2>Frequently asked questions</h2>{definition.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
+      </div>
     </main>
   </Shell>;
 }
