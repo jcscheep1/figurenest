@@ -1,0 +1,61 @@
+name: FT-07 Full Test Diagnostic
+on:
+  push:
+    branches: [expansion/ft-07-docx-pdf-gate]
+    paths: ['.github/workflows/ft07-full-test-diagnostic.yml']
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: expansion/ft-07-docx-pdf-gate
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply publication candidate exactly
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          wf=Path('.github/workflows/ft07-publish-surface.yml').read_text()
+          start=wf.index('          cat > artifacts/calcstride/src/pages/DocxToPdfPage.tsx')
+          end=wf.index('      - name: Build workspace type dependency')
+          block=wf[start:end]
+          # Reuse the publication workflow body verbatim by extracting its shell block,
+          # de-indenting the workflow indentation, and executing it in a temp script.
+          lines=[]
+          for line in block.splitlines():
+              lines.append(line[10:] if line.startswith('          ') else line)
+          Path('/tmp/apply-ft07.sh').write_text('\n'.join(lines)+'\n')
+          PY
+          bash /tmp/apply-ft07.sh
+      - run: pnpm exec tsc -b lib/api-client-react
+      - run: pnpm --filter @workspace/calcstride typecheck
+      - run: pnpm --filter @workspace/calcstride generate:seo
+      - name: Capture full Calcstride test output
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter @workspace/calcstride test > /tmp/full-test.log 2>&1
+          code=$?
+          set -e
+          {
+            printf '# FT-07 full-test diagnostic\n\nExit code: %s\n\n```text\n' "$code"
+            cat /tmp/full-test.log
+            printf '\n```\n'
+          } > FT07_FULL_TEST_DIAGNOSTIC.md
+      - name: Commit diagnostic evidence
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add FT07_FULL_TEST_DIAGNOSTIC.md
+          git commit -m 'FT-07: record exact full-test diagnostic'
+          git push origin HEAD:expansion/ft-07-docx-pdf-gate
