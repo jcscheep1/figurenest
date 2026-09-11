@@ -1,5 +1,7 @@
 name: FT08 Gate
 on: push
+permissions:
+  contents: write
 jobs:
   gate:
     runs-on: ubuntu-24.04
@@ -18,3 +20,12 @@ jobs:
       - run: pnpm --filter @workspace/calcstride typecheck
       - run: pnpm --filter @workspace/calcstride test
       - run: pnpm --filter @workspace/calcstride build:client
+      - name: Persist verified research dependency
+        run: |
+          rm .github/workflows/ft08-dependency-gate.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add artifacts/calcstride/package.json pnpm-lock.yaml .github/workflows/ft08-dependency-gate.yml
+          git commit -m 'FT-08: pin DOCX generator for research spike'
+          git pull --rebase origin expansion/ft-08-pdf-docx-research
+          git push origin HEAD:expansion/ft-08-pdf-docx-research
