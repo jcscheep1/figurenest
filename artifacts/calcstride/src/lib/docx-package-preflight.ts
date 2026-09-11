@@ -128,7 +128,12 @@ function decodeXmlPart(bytes: Uint8Array): string {
   }
 }
 
-async function readZipEntry(bytes: Uint8Array, entry: DocxPackageEntry): Promise<Uint8Array> {
+type ZipEntryReadResult = {
+  bytes: Uint8Array | null;
+  actualBytes: number;
+};
+
+function localEntryDataEnd(bytes: Uint8Array, entry: DocxPackageEntry): number {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const offset = entry.localHeaderOffset;
   if (offset + 30 > bytes.byteLength || view.getUint32(offset, true) !== ZIP_LOCAL_SIGNATURE) {
@@ -136,6 +141,8 @@ async function readZipEntry(bytes: Uint8Array, entry: DocxPackageEntry): Promise
   }
   const flags = view.getUint16(offset + 6, true);
   const method = view.getUint16(offset + 8, true);
+  const localCompressedBytes = view.getUint32(offset + 18, true);
+  const localUncompressedBytes = view.getUint32(offset + 22, true);
   const nameLength = view.getUint16(offset + 26, true);
   const extraLength = view.getUint16(offset + 28, true);
   const nameStart = offset + 30;
@@ -143,25 +150,142 @@ async function readZipEntry(bytes: Uint8Array, entry: DocxPackageEntry): Promise
   const dataEnd = dataStart + entry.compressedBytes;
   if (dataEnd > bytes.byteLength) malformed('A DOCX ZIP entry payload exceeds the file boundary.');
   if ((flags & 0x0001) !== 0) unsupported('Encrypted DOCX ZIP entries are not supported.');
+  if ((flags & 0x0008) !== 0) unsupported('DOCX ZIP data-descriptor entries are not supported by this browser tool.');
   if (method !== entry.compressionMethod) malformed('A DOCX ZIP entry has mismatched compression metadata.');
+  if (localCompressedBytes !== entry.compressedBytes || localUncompressedBytes !== entry.uncompressedBytes) {
+    malformed('A DOCX ZIP local header does not match its central-directory sizes.');
+  }
   const localName = normalizedEntryName(utf8.decode(bytes.subarray(nameStart, nameStart + nameLength)));
   if (localName.toLowerCase() !== entry.name.toLowerCase()) malformed('A DOCX ZIP local header does not match its central-directory entry.');
 
-  const compressed = copiedArrayBuffer(bytes, dataStart, dataEnd);
-  let output: Uint8Array;
+  return dataEnd;
+}
+
+function validateLocalEntryLayout(bytes: Uint8Array, entries: readonly DocxPackageEntry[]): void {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const eocdOffset = findEndOfCentralDirectory(bytes);
+  const centralOffset = view.getUint32(eocdOffset + 16, true);
+  const totalEntries = view.getUint16(eocdOffset + 10, true);
+  const expectedFiles = new Map(entries.map((entry) => [entry.name.toLowerCase(), entry]));
+  let cursor = 0;
+  let localEntries = 0;
+
+  while (cursor < centralOffset) {
+    if (cursor + 30 > centralOffset || view.getUint32(cursor, true) !== ZIP_LOCAL_SIGNATURE) {
+      malformed('The DOCX ZIP local-file area contains hidden, overlapping, or unaccounted bytes.');
+    }
+    const flags = view.getUint16(cursor + 6, true);
+    const method = view.getUint16(cursor + 8, true);
+    const compressedBytes = view.getUint32(cursor + 18, true);
+    const uncompressedBytes = view.getUint32(cursor + 22, true);
+    const nameLength = view.getUint16(cursor + 26, true);
+    const extraLength = view.getUint16(cursor + 28, true);
+    const nameStart = cursor + 30;
+    const dataStart = nameStart + nameLength + extraLength;
+    const dataEnd = dataStart + compressedBytes;
+    if (dataEnd > centralOffset) malformed('A DOCX ZIP local entry exceeds the local-file area.');
+    if ((flags & 0x0001) !== 0) unsupported('Encrypted DOCX ZIP entries are not supported.');
+    if ((flags & 0x0008) !== 0) unsupported('DOCX ZIP data-descriptor entries are not supported by this browser tool.');
+    const name = normalizedEntryName(utf8.decode(bytes.subarray(nameStart, nameStart + nameLength)));
+    const expected = expectedFiles.get(name.toLowerCase());
+
+    if (name.endsWith('/')) {
+      if (compressedBytes !== 0 || uncompressedBytes !== 0) malformed('A DOCX ZIP directory entry contains an unexpected payload.');
+    } else {
+      if (!expected
+        || expected.localHeaderOffset !== cursor
+        || expected.compressionMethod !== method
+        || expected.compressedBytes !== compressedBytes
+        || expected.uncompressedBytes !== uncompressedBytes) {
+        malformed('A DOCX ZIP local header does not match its central-directory entry.');
+      }
+      expectedFiles.delete(name.toLowerCase());
+    }
+
+    cursor = dataEnd;
+    localEntries += 1;
+  }
+
+  if (cursor !== centralOffset || localEntries !== totalEntries || expectedFiles.size !== 0) {
+    malformed('The DOCX ZIP local-file area does not match the central directory.');
+  }
+}
+
+async function readZipEntry(
+  bytes: Uint8Array,
+  entry: DocxPackageEntry,
+  maxOutputBytes: number,
+  collect: boolean,
+): Promise<ZipEntryReadResult> {
+  const dataEnd = localEntryDataEnd(bytes, entry);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const offset = entry.localHeaderOffset;
+  const nameLength = view.getUint16(offset + 26, true);
+  const extraLength = view.getUint16(offset + 28, true);
+  const dataStart = offset + 30 + nameLength + extraLength;
+
   if (entry.compressionMethod === 0) {
-    output = new Uint8Array(compressed);
-  } else {
+    if (entry.compressedBytes !== entry.uncompressedBytes) {
+      malformed('A stored DOCX ZIP entry has inconsistent compressed and uncompressed sizes.');
+    }
+    if (entry.uncompressedBytes > maxOutputBytes) {
+      resourceLimit('A DOCX ZIP entry exceeds an actual decompression limit.');
+    }
+    return {
+      bytes: collect ? new Uint8Array(copiedArrayBuffer(bytes, dataStart, dataEnd)) : null,
+      actualBytes: entry.uncompressedBytes,
+    };
+  }
+
+  const compressed = copiedArrayBuffer(bytes, dataStart, dataEnd);
+  let reader: ReadableStreamDefaultReader<Uint8Array>;
+  try {
+    const decompressor = new DecompressionStream('deflate-raw');
+    reader = new Blob([compressed]).stream().pipeThrough(decompressor).getReader();
+  } catch {
+    unsupported('This browser cannot safely inspect compressed DOCX entries.');
+  }
+
+  const chunks: Uint8Array[] = [];
+  let actualBytes = 0;
+  while (true) {
+    let result: ReadableStreamReadResult<Uint8Array>;
     try {
-      const decompressor = new DecompressionStream('deflate-raw');
-      const stream = new Blob([compressed]).stream().pipeThrough(decompressor);
-      output = new Uint8Array(await new Response(stream).arrayBuffer());
+      result = await reader.read();
     } catch {
       malformed('A compressed DOCX ZIP entry could not be decompressed locally.');
     }
+    if (result.done) break;
+    const chunk = result.value;
+    actualBytes += chunk.byteLength;
+    const actualRatio = entry.compressedBytes === 0
+      ? Number.POSITIVE_INFINITY
+      : actualBytes / entry.compressedBytes;
+    if (actualRatio > DOCX_PACKAGE_LIMITS.maxCompressionRatio) {
+      await reader.cancel();
+      resourceLimit(`A DOCX ZIP entry exceeds the ${DOCX_PACKAGE_LIMITS.maxCompressionRatio}:1 actual compression-ratio limit.`);
+    }
+    if (actualBytes > maxOutputBytes) {
+      await reader.cancel();
+      resourceLimit('A DOCX ZIP entry exceeds an actual decompression limit.');
+    }
+    if (actualBytes > entry.uncompressedBytes) {
+      await reader.cancel();
+      malformed('A DOCX ZIP entry decompressed beyond its declared size.');
+    }
+    if (collect) chunks.push(chunk.slice());
   }
-  if (output.byteLength !== entry.uncompressedBytes) malformed('A DOCX ZIP entry decompressed to an unexpected size.');
-  return output;
+
+  if (actualBytes !== entry.uncompressedBytes) malformed('A DOCX ZIP entry decompressed to an unexpected size.');
+  if (!collect) return { bytes: null, actualBytes };
+
+  const output = new Uint8Array(actualBytes);
+  let cursor = 0;
+  for (const chunk of chunks) {
+    output.set(chunk, cursor);
+    cursor += chunk.byteLength;
+  }
+  return { bytes: output, actualBytes };
 }
 
 function relationshipAttributes(tag: string): Record<string, string> {
@@ -227,6 +351,7 @@ export function preflightDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceC
 
     if (entryEnd > eocdOffset) malformed('A DOCX ZIP entry exceeds the central-directory boundary.');
     if ((flags & 0x0001) !== 0) unsupported('Encrypted DOCX ZIP entries are not supported.');
+    if ((flags & 0x0008) !== 0) unsupported('DOCX ZIP data-descriptor entries are not supported by this browser tool.');
     if (diskStart !== 0) unsupported('Multi-disk DOCX ZIP entries are not supported.');
     if (compressedBytes === ZIP64_U32 || uncompressedBytes === ZIP64_U32 || localOffset === ZIP64_U32) unsupported('ZIP64 DOCX entries are not supported.');
     if (method !== 0 && method !== 8) unsupported(`DOCX ZIP compression method ${method} is not supported.`);
@@ -262,23 +387,34 @@ export function preflightDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceC
 
 export async function inspectDocxPackage(bytes: Uint8Array, deviceClass: FileDeviceClass): Promise<DocxPackageInspection> {
   const preflight = preflightDocxPackage(bytes, deviceClass);
-  const inspectEntries = preflight.entries.filter((entry) => {
-    const lower = entry.name.toLowerCase();
-    return lower === '[content_types].xml' || lower.endsWith('.rels');
-  });
+  validateLocalEntryLayout(bytes, preflight.entries);
   let inspectedBytes = 0;
+  let actualTotalBytes = 0;
   let externalHyperlinks = 0;
   let inspectedRelationshipFiles = 0;
+  const maxEntry = deviceEntryLimit(deviceClass);
+  const maxTotal = deviceUncompressedLimit(deviceClass);
 
-  for (const entry of inspectEntries) {
-    if (entry.uncompressedBytes > MAX_INSPECT_XML_BYTES) resourceLimit('A DOCX metadata XML part exceeds the safe inspection limit.');
-    inspectedBytes += entry.uncompressedBytes;
-    if (inspectedBytes > MAX_INSPECT_XML_TOTAL_BYTES) resourceLimit('DOCX metadata XML exceeds the safe total inspection limit.');
-    const xmlBytes = await readZipEntry(bytes, entry);
+  for (const entry of preflight.entries) {
+    const lowerName = entry.name.toLowerCase();
+    const inspectXml = lowerName === '[content_types].xml' || lowerName.endsWith('.rels');
+    if (inspectXml) {
+      if (entry.uncompressedBytes > MAX_INSPECT_XML_BYTES) resourceLimit('A DOCX metadata XML part exceeds the safe inspection limit.');
+      inspectedBytes += entry.uncompressedBytes;
+      if (inspectedBytes > MAX_INSPECT_XML_TOTAL_BYTES) resourceLimit('DOCX metadata XML exceeds the safe total inspection limit.');
+    }
+
+    const remainingTotal = maxTotal - actualTotalBytes;
+    const result = await readZipEntry(bytes, entry, Math.min(maxEntry, remainingTotal), inspectXml);
+    actualTotalBytes += result.actualBytes;
+    if (actualTotalBytes > maxTotal) resourceLimit('The DOCX package exceeds the actual total decompression limit for this device.');
+    if (!inspectXml) continue;
+    const xmlBytes = result.bytes;
+    if (!xmlBytes) malformed('A DOCX metadata XML part was not retained for inspection.');
     const xml = decodeXmlPart(xmlBytes);
     xmlBytes.fill(0);
 
-    if (entry.name.toLowerCase() === '[content_types].xml') {
+    if (lowerName === '[content_types].xml') {
       if (/(macroenabled|vbaproject|activex)/i.test(xml)) {
         unsupported('Macro-enabled or active-content DOCX packages are not supported.');
       }

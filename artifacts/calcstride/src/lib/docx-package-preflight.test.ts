@@ -82,6 +82,10 @@ function hasCode(code: string) {
   return (error: unknown) => error instanceof FileToolError && error.code === code;
 }
 
+function hasAnyCode(...codes: string[]) {
+  return (error: unknown) => error instanceof FileToolError && codes.includes(error.code);
+}
+
 test('FT-07 DOCX picker rule requires .docx plus ZIP signature', () => {
   assert.deepEqual(DOCX_FILE_RULES.map((rule) => rule.id), ['docx']);
   assert.deepEqual(DOCX_FILE_RULES[0].extensions, ['docx']);
@@ -154,6 +158,32 @@ test('FT-07 inspects DEFLATE metadata locally and allows ordinary external hyper
   ]), 'desktop');
   assert.equal(result.externalHyperlinks, 1);
   assert.equal(result.inspectedRelationshipFiles, 2);
+});
+
+test('FT-07 rejects forged declared sizes using actual DEFLATE output for document and media entries', async () => {
+  const bomb = new Uint8Array(1024 * 1024).fill(0x41);
+  for (const target of ['word/document.xml', 'word/media/image1.png']) {
+    const entries = baseEntries().map((entry) => entry.name === target
+      ? { ...entry, data: bomb, method: 8, uncompressedBytes: 1 }
+      : entry);
+    if (target.startsWith('word/media/')) {
+      entries.push({ name: target, data: bomb, method: 8, uncompressedBytes: 1 });
+    }
+    await assert.rejects(
+      inspectDocxPackage(syntheticZip(entries), 'desktop'),
+      hasAnyCode('resource-limit', 'malformed'),
+      target,
+    );
+  }
+});
+
+test('FT-07 rejects hidden stored payload bytes outside declared local and central sizes', async () => {
+  await assert.rejects(
+    inspectDocxPackage(syntheticZip(baseEntries([
+      { name: 'word/media/hidden.bin', data: 'hidden payload', compressedBytes: 1, uncompressedBytes: 1 },
+    ])), 'desktop'),
+    hasCode('malformed'),
+  );
 });
 
 test('FT-07 rejects renamed macro-enabled packages by content type', async () => {
