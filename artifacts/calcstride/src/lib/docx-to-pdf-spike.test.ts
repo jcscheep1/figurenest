@@ -17,6 +17,8 @@ test('DOCX converter renders its picker inside the responsive upload panel', () 
   assert.match(source, /<LocalFileDropzone/);
   assert.match(source, /Convert and download PDF/);
   assert.match(source, /Download PDF again/);
+  assert.match(source, /Upload DOCX to enable download/);
+  assert.match(source, /downloadStepRef\.current\?\.scrollIntoView/);
   assert.match(source, /className="docx-information-sections"/);
 });
 
