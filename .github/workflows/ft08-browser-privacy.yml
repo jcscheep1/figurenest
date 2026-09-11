@@ -181,6 +181,12 @@ jobs:
             });
             await command('Page.enable');
             await command('Runtime.enable');
+            await command('Emulation.setDeviceMetricsOverride', {
+              width: Number(width),
+              height: Number(height),
+              deviceScaleFactor: 1,
+              mobile: mode === 'mobile',
+            });
             await command('Page.navigate', {url: `http://127.0.0.1:4174/pdf-docx-qa.html?mode=${mode}`});
             const deadline = Date.now() + 120_000;
             let completed = false;
