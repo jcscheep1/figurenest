@@ -1,4 +1,4 @@
-# retrigger: add DOCX category-content parity and regenerate SEO before publication tests
+# retrigger: package-scoped site audit after proving the root command lacked tsx
 name: FT-07 Publish Surface Integration
 on:
   push:
@@ -180,7 +180,7 @@ jobs:
       - name: Generate publication SEO and sitemap
         run: pnpm --filter @workspace/calcstride generate:seo
       - name: Test site-audit publication parity
-        run: pnpm exec tsx --test artifacts/calcstride/src/lib/site-audit.test.ts
+        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/site-audit.test.ts
       - name: Test publication surface
         run: pnpm --filter @workspace/calcstride test
       - name: Build publication client
