@@ -20,44 +20,45 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Apply publication metadata candidate
+      - name: Apply publication candidate exactly
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          cat=Path('artifacts/calcstride/src/lib/file-tools-catalog.ts')
-          c=cat.read_text(); marker="  'pdf-to-text': {"
-          entry="""  'docx-to-pdf': {\n    slug: 'docx-to-pdf', name: 'DOCX to PDF', description: 'Convert a DOCX document to a best-effort PDF locally in your browser, with a sanitized preview before download and no document upload.', category: FILE_TOOLS_CATEGORY.name, categorySlug: FILE_TOOLS_CATEGORY.slug, href: '/file-tools/docx-to-pdf', tags: ['docx to pdf', 'word to pdf', 'document to pdf', 'private docx converter', 'browser word converter'], featured: false, h1: 'Convert DOCX to PDF', seoTitle: 'Free DOCX to PDF Converter | Private Browser | FigureNest', seoDescription: 'Convert DOCX to PDF locally in your browser. Preview the sanitized best-effort layout before download without uploading your document.', privacySummary: 'The DOCX, filename, extracted document content, preview and generated PDF remain in this browser tab and are not uploaded to a FigureNest conversion server.', limitations: ['Conversion is best-effort rather than a pixel-perfect copy of Microsoft Word.'], faqs: [{ question: 'Does FigureNest upload my DOCX?', answer: 'No. Conversion runs locally in your browser.' }], relatedRoutes: ['/file-tools/pdf-sign-edit', '/file-tools/pdf-to-text', '/file-tools/image-to-pdf'],\n  },\n"""
-          if "'docx-to-pdf': {" not in c: c=c.replace(marker, entry+marker)
-          cat.write_text(c)
-          guide=Path('artifacts/calcstride/src/lib/file-tools-category-content.ts'); g=guide.read_text()
-          if "slug: 'docx-to-pdf'" not in g:
-              needle="    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },"
-              assert needle in g
-              g=g.replace(needle, needle+"\n    { slug: 'docx-to-pdf', description: 'Convert a DOCX file locally to a sanitized best-effort browser preview, then create and download a PDF without uploading document bytes, names, or extracted content.' },")
-          guide.write_text(g)
+          text=Path('.github/workflows/ft07-publish-surface.yml').read_text()
+          marker='      - name: Wire public DOCX to PDF surface\n'
+          start=text.index(marker)+len(marker)
+          end=text.index('      - name: Build workspace type dependency\n', start)
+          section=text[start:end]
+          run_marker='        run: |\n'
+          assert section.startswith('        shell: bash\n'+run_marker)
+          body=section[len('        shell: bash\n'+run_marker):]
+          lines=[]
+          for line in body.splitlines():
+              assert not line or line.startswith('          '), repr(line)
+              lines.append(line[10:] if line else '')
+          Path('/tmp/apply-ft07.sh').write_text('\n'.join(lines)+'\n')
           PY
+          bash /tmp/apply-ft07.sh
+      - run: pnpm exec tsc -b lib/api-client-react
+      - run: pnpm --filter @workspace/calcstride typecheck
       - run: pnpm --filter @workspace/calcstride generate:seo
-      - name: Capture full site-audit output
+      - name: Capture full Calcstride test output
         shell: bash
         run: |
           set +e
-          pnpm exec tsx --test artifacts/calcstride/src/lib/site-audit.test.ts > /tmp/site-audit.log 2>&1
+          pnpm --filter @workspace/calcstride test > /tmp/full-test.log 2>&1
           code=$?
           set -e
-          if [ "$code" -eq 0 ]; then
-            printf '# FT-07 site-audit diagnostic\n\nFull site-audit passed for the publication metadata candidate.\n' > FT07_SITE_AUDIT_DIAGNOSTIC.md
-          else
-            {
-              printf '# FT-07 site-audit diagnostic\n\nFull site-audit failed for the publication metadata candidate. Exact output follows.\n\n```text\n'
-              cat /tmp/site-audit.log
-              printf '\n```\n'
-            } > FT07_SITE_AUDIT_DIAGNOSTIC.md
-          fi
+          {
+            printf '# FT-07 full-suite diagnostic\n\nExit code: %s\n\n```text\n' "$code"
+            cat /tmp/full-test.log
+            printf '\n```\n'
+          } > FT07_FULL_TEST_DIAGNOSTIC.md
       - name: Commit diagnostic evidence
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add FT07_SITE_AUDIT_DIAGNOSTIC.md
-          git commit -m 'FT-07: record exact site-audit diagnostic'
+          git add FT07_FULL_TEST_DIAGNOSTIC.md
+          git commit -m 'FT-07: record exact full-suite diagnostic'
           git push origin HEAD:expansion/ft-07-docx-pdf-gate
