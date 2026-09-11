@@ -85,7 +85,9 @@ export function DocxToPdfPage() {
         <p>{definition.description}</p>
         <p><strong>Your files stay on this device.</strong> {definition.privacySummary}</p>
       </header>
-      <LocalFileDropzone accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" status={status} fileName={fileName || undefined} error={error || undefined} onSelect={select} onCancel={() => abortRef.current?.abort()} onReset={reset} />
+      <section className="file-upload-panel" aria-label="DOCX file selection">
+        <LocalFileDropzone accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" status={status} fileName={fileName || undefined} error={error || undefined} onSelect={select} onCancel={() => abortRef.current?.abort()} onReset={reset} />
+      </section>
       {html ? <section aria-labelledby="docx-preview-heading">
         <h2 id="docx-preview-heading">Preview before download</h2>
         <p>This is a best-effort document layout. Complex Word pagination, fonts, fields, tracked changes, headers and footers may differ from Word.</p>
