@@ -12,15 +12,21 @@ Simple documents are the supported target: headings, paragraphs, lists, simple t
 
 ## Dependency direction
 
-Primary spike:
+Primary DOCX spike:
 
 - `mammoth@1.12.2` — BSD-2-Clause; semantic DOCX → HTML, browser-capable, not a layout-faithful Word renderer and does not sanitize output.
 - `dompurify@3.4.15` — Apache-2.0 OR MPL-2.0; sanitizer candidate for all Mammoth-generated HTML before any preview DOM insertion.
-- existing `pdf-lib@1.17.1` remains the approved PDF writer where suitable; do not add a second PDF framework without a demonstrated blocker.
+- Existing `pdf-lib@1.17.1` remains approved for existing PDF workflows, but **must not be treated as the DOCX HTML renderer**: pdf-lib explicitly does not render HTML/CSS.
+
+Primary PDF-output spike:
+
+- `jspdf@4.2.1` — MIT; candidate local PDF writer for the sanitized HTML path. Its HTML method lazy-loads `html2canvas` and `dompurify` when used. The FT-07 route must keep these chunks lazy and must disable/avoid any proxy, remote resource or CDN behavior.
+- `html2canvas` is accepted only as a route-local rendering dependency if fixture, memory and privacy tests pass. Cross-origin/proxy loading is not allowed for document resources.
 
 Benchmark only:
 
 - `docx-preview@0.4.0` — Apache-2.0. Compare accepted fixtures for visual fidelity, but do not select it solely because the preview looks more Word-like. Its public/stable surface must be reviewed before any production use.
+- `html2pdf.js@0.14.0` — MIT. Benchmark PDF pagination/output only; do not select it by default because its own documentation records html2canvas rendering limitations and node-cloning issues.
 
 All selected dependencies must be exact-version pinned and recorded with license, transitive dependency count, lazy chunk impact, maintenance/security notes and runtime-network behavior.
 
@@ -37,6 +43,12 @@ Before Mammoth, docx-preview or any renderer sees document content, the local pr
 - prohibit macro execution and active content;
 - prohibit external relationship/resource loading (`http:`, `https:`, remote templates, external images, OLE/package links and similar fetch-capable relationships);
 - never send file bytes, filenames, extracted text, HTML, images or generated PDF content to FigureNest APIs, analytics or logs.
+
+Concrete current package limits are: maximum 2,000 ZIP entries; maximum 100:1 per-entry compression ratio; maximum uncompressed total 80 MB mobile / 250 MB desktop; maximum single uncompressed entry 40 MB mobile / 100 MB desktop; metadata XML inspection maximum 2 MB per part / 8 MB total. Any later threshold change requires a fixture/performance reason and QA re-approval.
+
+The preflight itself remains dependency-free. It parses the ZIP central directory before conversion, rejects ZIP64/multi-disk/encrypted/unsupported compression, path traversal, duplicate case-insensitive names, `vbaProject`, ActiveX, embedded OLE/package objects and custom UI. Small `[Content_Types].xml` and `.rels` parts are then read locally with STORE or the browser-native `DecompressionStream('deflate-raw')` path. Macro-enabled content types, unsafe external resources and unsafe external hyperlink schemes are rejected before Mammoth sees the file. Ordinary `http:`, `https:`, `mailto:` and `tel:` hyperlinks may remain as links but are never fetched automatically.
+
+Mammoth `externalFileAccess` must remain false (its default). Do not enable it for this product.
 
 ## Sanitization gate
 
@@ -96,6 +108,8 @@ The PDF stage must:
 - expose progress, cancel and reset;
 - release ArrayBuffers, Object URLs, temporary DOM/resources and output buffers on reset, navigation, cancellation, failure and completed download.
 
+Rasterized/text-image output is not an automatic blocker for the first best-effort release, but it must be disclosed and must remain readable at normal zoom. Excessive file size, blurred text, clipped content, unusable mobile memory, or loss of the accepted fixture subset blocks publication.
+
 ## Accessibility / UX gate
 
 - Keyboard-operable file picker, preview controls, export, cancel and reset.
@@ -112,6 +126,7 @@ Record on the exact release head:
 - initial-site gzip delta (route must remain lazy; target effectively zero outside shared metadata);
 - Mammoth lazy chunk size;
 - DOMPurify lazy chunk size;
+- jsPDF/html2canvas lazy chunk size if selected;
 - any benchmark-only dependency must not ship in production unless explicitly selected and justified;
 - mobile processing time and peak-memory observations for small, medium and limit-adjacent fixtures;
 - cleanup verification after repeated convert/reset cycles.
@@ -130,6 +145,12 @@ The same PR must update all relevant sources of truth together:
 - sitemap/prerender/static audit;
 - `toolApplicability` explicit unitless classification only if required by the existing parity contract;
 - representative regressions for PDF Sign & Edit, PDF → JPG/PNG, JPG/PNG → PDF and PDF → Text.
+
+## Current implementation checkpoint
+
+PR #130 now contains a dependency-free package guard in `artifacts/calcstride/src/lib/docx-package-preflight.ts` plus hostile-input regression tests. The initial central-directory guard passed FigureNest typecheck, unit tests and production build on head `c2b87fbe3011d6732f1c49a7fb02f9306ef75e9a`. The next head extends that guard to inspect content types and relationships locally before renderer dependencies are introduced.
+
+The next Build step is not public-route integration. It is the exact-pinned Mammoth + DOMPurify + jsPDF/html2canvas spike with fixture evidence and lockfile-safe installation. Do not add the public route until the publication threshold passes.
 
 ## Stop condition
 
