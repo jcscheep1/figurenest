@@ -44,23 +44,26 @@ jobs:
           cat.write_text(c)
           guide=Path('artifacts/calcstride/src/lib/file-tools-category-content.ts'); g=guide.read_text()
           if "slug: 'docx-to-pdf'" not in g:
-              g=g.replace("    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },", "    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },\n    { slug: 'docx-to-pdf', description: 'Convert a DOCX file locally to a sanitized best-effort browser preview, then create and download a PDF without uploading document bytes, names, or extracted content.' },")
+              needle="    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },"
+              assert needle in g, 'stable PDF-to-text guide marker missing'
+              g=g.replace(needle, needle+"\n    { slug: 'docx-to-pdf', description: 'Convert a DOCX file locally to a sanitized best-effort browser preview, then create and download a PDF without uploading document bytes, names, or extracted content.' },")
           guide.write_text(g)
           PY
       - run: pnpm --filter @workspace/calcstride generate:seo
       - name: Run direct assertion
         env:
           CHECK: ${{ matrix.check }}
+        working-directory: artifacts/calcstride
         run: |
-          cat > /tmp/ft07-diagnostic.ts <<'TS'
+          cat > src/lib/ft07-diagnostic.ts <<'TS'
           import assert from 'node:assert/strict';
           import fs from 'node:fs';
-          import { catalogCategories, catalogTools } from '${{ github.workspace }}/artifacts/api-server/src/routes/catalog.ts';
-          import { localCategories, localTools, publishedToolCount, publishedTools } from '${{ github.workspace }}/artifacts/calcstride/src/lib/catalog.ts';
-          import { categoryContent } from '${{ github.workspace }}/artifacts/calcstride/src/lib/category-content.ts';
-          import { getSeoForPath, publicRouteKeys } from '${{ github.workspace }}/artifacts/calcstride/src/lib/seo.ts';
-          import { relatedToolGraph, getRelatedTools } from '${{ github.workspace }}/artifacts/calcstride/src/lib/related-tools.ts';
-          import { toPublicPath } from '${{ github.workspace }}/artifacts/calcstride/src/lib/public-url.ts';
+          import { catalogCategories, catalogTools } from '../../../api-server/src/routes/catalog';
+          import { localCategories, localTools, publishedToolCount, publishedTools } from './catalog';
+          import { categoryContent } from './category-content';
+          import { getSeoForPath, publicRouteKeys } from './seo';
+          import { relatedToolGraph, getRelatedTools } from './related-tools';
+          import { toPublicPath } from './public-url';
           const check = process.env.CHECK;
           const toolShape=(x:any)=>({slug:x.slug,name:x.name,description:x.description,category:x.category,categorySlug:x.categorySlug,href:x.href,featured:x.featured,lastUpdated:x.lastUpdated});
           const catShape=(x:any)=>({slug:x.slug,name:x.name,description:x.description,accent:x.accent,toolCount:x.toolCount});
@@ -70,6 +73,7 @@ jobs:
           if(check==='meta'){const d=publicRouteKeys.map(p=>getSeoForPath(p).description); for(const [i,x] of d.entries()){assert.ok(x.length>=70&&x.length<=160,`${publicRouteKeys[i]}:${x.length}`); assert.match(x,/[.!?]$/);} assert.equal(new Set(d).size,d.length);}
           if(check==='counts'){assert.equal(localTools.length,publishedToolCount); assert.equal(localCategories.reduce((n,x)=>n+x.toolCount,0),publishedToolCount);}
           if(check==='related'){assert.equal(relatedToolGraph.size,publishedTools.length); for(const t of publishedTools) assert.ok(getRelatedTools(t.slug).length>=2,t.slug);}
-          if(check==='sitemap'){const xml=fs.readFileSync('${{ github.workspace }}/artifacts/calcstride/public/sitemap.xml','utf8'); const got=[...xml.matchAll(/<loc>https:\/\/figurenest\.com([^<]*)<\/loc>/g)].map(m=>m[1]||'/').sort(); const expected=[...new Set(publicRouteKeys.map(toPublicPath))].sort(); assert.deepEqual(got,expected);}
+          if(check==='sitemap'){const xml=fs.readFileSync('public/sitemap.xml','utf8'); const got=[...xml.matchAll(/<loc>https:\/\/figurenest\.com([^<]*)<\/loc>/g)].map(m=>m[1]||'/').sort(); const expected=[...new Set(publicRouteKeys.map(toPublicPath))].sort(); assert.deepEqual(got,expected);}
           TS
-          pnpm exec tsx /tmp/ft07-diagnostic.ts
+          pnpm exec tsx src/lib/ft07-diagnostic.ts
+          rm src/lib/ft07-diagnostic.ts
