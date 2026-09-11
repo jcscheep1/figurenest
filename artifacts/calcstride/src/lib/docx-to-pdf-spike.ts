@@ -62,6 +62,46 @@ function scrubPreviewResources(container: HTMLElement): void {
   }
 }
 
+export function assertDocxPreviewIsLocalOnly(container: HTMLElement): void {
+  const forbiddenTags = ['iframe', 'object', 'embed', 'form', 'link', 'meta', 'script', 'style'];
+  for (const tag of forbiddenTags) {
+    if (container.querySelector(tag)) {
+      throw new Error(`DOCX preview contains forbidden ${tag} content and cannot be exported.`);
+    }
+  }
+
+  for (const image of container.querySelectorAll('img')) {
+    const src = image.getAttribute('src');
+    if (src && !isAllowedDocxPreviewResourceUrl(src)) {
+      throw new Error('DOCX preview contains a non-local image resource and cannot be exported.');
+    }
+    if (image.hasAttribute('srcset') || image.hasAttribute('crossorigin')) {
+      throw new Error('DOCX preview contains network-capable image attributes and cannot be exported.');
+    }
+  }
+
+  const networkAttributes = ['src', 'srcset', 'poster', 'background', 'formaction'];
+  for (const element of container.querySelectorAll<HTMLElement>('*')) {
+    if (element.hasAttribute('style')) {
+      throw new Error('DOCX preview contains inline style content and cannot be exported.');
+    }
+    if (element.tagName.toLowerCase() !== 'img') {
+      for (const attribute of networkAttributes) {
+        if (element.hasAttribute(attribute)) {
+          throw new Error(`DOCX preview contains network-capable ${attribute} content and cannot be exported.`);
+        }
+      }
+    }
+  }
+
+  for (const anchor of container.querySelectorAll('a[href]')) {
+    const href = anchor.getAttribute('href') ?? '';
+    if (!isAllowedDocxPreviewLinkUrl(href)) {
+      throw new Error('DOCX preview contains a disallowed hyperlink and cannot be exported.');
+    }
+  }
+}
+
 export async function sanitizeDocxHtml(html: string): Promise<string> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     throw new Error('DOCX preview sanitization is only available in the browser.');
@@ -74,6 +114,7 @@ export async function sanitizeDocxHtml(html: string): Promise<string> {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = sanitized;
   scrubPreviewResources(wrapper);
+  assertDocxPreviewIsLocalOnly(wrapper);
   return wrapper.innerHTML;
 }
 
@@ -134,6 +175,8 @@ export async function exportSanitizedPreviewToPdf(
   preview: HTMLElement,
   options: DocxPdfExportOptions = {},
 ): Promise<Blob> {
+  assertDocxPreviewIsLocalOnly(preview);
+
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
     import('html2canvas'),
     import('jspdf'),
