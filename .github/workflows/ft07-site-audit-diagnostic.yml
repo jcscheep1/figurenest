@@ -4,22 +4,10 @@ on:
     branches: [expansion/ft-07-docx-pdf-gate]
     paths: ['.github/workflows/ft07-site-audit-diagnostic.yml']
 permissions:
-  contents: read
+  contents: write
 jobs:
-  isolate:
-    name: ${{ matrix.label }}
+  capture:
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { label: API tool catalog parity, check: api-tools }
-          - { label: API category parity, check: api-categories }
-          - { label: File-tools guide coverage, check: guide }
-          - { label: Meta description safety, check: meta }
-          - { label: Tool-count parity, check: counts }
-          - { label: Related-tool graph, check: related }
-          - { label: Sitemap exact parity, check: sitemap }
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,35 +33,31 @@ jobs:
           guide=Path('artifacts/calcstride/src/lib/file-tools-category-content.ts'); g=guide.read_text()
           if "slug: 'docx-to-pdf'" not in g:
               needle="    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },"
-              assert needle in g, 'stable PDF-to-text guide marker missing'
+              assert needle in g
               g=g.replace(needle, needle+"\n    { slug: 'docx-to-pdf', description: 'Convert a DOCX file locally to a sanitized best-effort browser preview, then create and download a PDF without uploading document bytes, names, or extracted content.' },")
           guide.write_text(g)
           PY
       - run: pnpm --filter @workspace/calcstride generate:seo
-      - name: Run direct assertion
-        env:
-          CHECK: ${{ matrix.check }}
-        working-directory: artifacts/calcstride
+      - name: Capture full site-audit output
+        shell: bash
         run: |
-          cat > src/lib/ft07-diagnostic.ts <<'TS'
-          import assert from 'node:assert/strict';
-          import fs from 'node:fs';
-          import { catalogCategories, catalogTools } from '../../../api-server/src/routes/catalog';
-          import { localCategories, localTools, publishedToolCount, publishedTools } from './catalog';
-          import { categoryContent } from './category-content';
-          import { getSeoForPath, publicRouteKeys } from './seo';
-          import { relatedToolGraph, getRelatedTools } from './related-tools';
-          import { toPublicPath } from './public-url';
-          const check = process.env.CHECK;
-          const toolShape=(x:any)=>({slug:x.slug,name:x.name,description:x.description,category:x.category,categorySlug:x.categorySlug,href:x.href,featured:x.featured,lastUpdated:x.lastUpdated});
-          const catShape=(x:any)=>({slug:x.slug,name:x.name,description:x.description,accent:x.accent,toolCount:x.toolCount});
-          if(check==='api-tools') assert.deepEqual(localTools.map(toolShape).sort((a,b)=>a.slug.localeCompare(b.slug)), catalogTools.map(toolShape).sort((a,b)=>a.slug.localeCompare(b.slug)));
-          if(check==='api-categories') assert.deepEqual(localCategories.map(catShape).sort((a,b)=>a.slug.localeCompare(b.slug)), catalogCategories.map(catShape).sort((a,b)=>a.slug.localeCompare(b.slug)));
-          if(check==='guide'){const described=new Set(categoryContent['file-tools'].toolDescriptions.map(x=>x.slug)); for(const tool of publishedTools.filter(x=>x.categorySlug==='file-tools')) assert.ok(described.has(tool.slug),tool.slug);}
-          if(check==='meta'){const d=publicRouteKeys.map(p=>getSeoForPath(p).description); for(const [i,x] of d.entries()){assert.ok(x.length>=70&&x.length<=160,`${publicRouteKeys[i]}:${x.length}`); assert.match(x,/[.!?]$/);} assert.equal(new Set(d).size,d.length);}
-          if(check==='counts'){assert.equal(localTools.length,publishedToolCount); assert.equal(localCategories.reduce((n,x)=>n+x.toolCount,0),publishedToolCount);}
-          if(check==='related'){assert.equal(relatedToolGraph.size,publishedTools.length); for(const t of publishedTools) assert.ok(getRelatedTools(t.slug).length>=2,t.slug);}
-          if(check==='sitemap'){const xml=fs.readFileSync('public/sitemap.xml','utf8'); const got=[...xml.matchAll(/<loc>https:\/\/figurenest\.com([^<]*)<\/loc>/g)].map(m=>m[1]||'/').sort(); const expected=[...new Set(publicRouteKeys.map(toPublicPath))].sort(); assert.deepEqual(got,expected);}
-          TS
-          pnpm exec tsx src/lib/ft07-diagnostic.ts
-          rm src/lib/ft07-diagnostic.ts
+          set +e
+          pnpm exec tsx --test artifacts/calcstride/src/lib/site-audit.test.ts > /tmp/site-audit.log 2>&1
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            printf '# FT-07 site-audit diagnostic\n\nFull site-audit passed for the publication metadata candidate.\n' > FT07_SITE_AUDIT_DIAGNOSTIC.md
+          else
+            {
+              printf '# FT-07 site-audit diagnostic\n\nFull site-audit failed for the publication metadata candidate. Exact output follows.\n\n```text\n'
+              cat /tmp/site-audit.log
+              printf '\n```\n'
+            } > FT07_SITE_AUDIT_DIAGNOSTIC.md
+          fi
+      - name: Commit diagnostic evidence
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add FT07_SITE_AUDIT_DIAGNOSTIC.md
+          git commit -m 'FT-07: record exact site-audit diagnostic'
+          git push origin HEAD:expansion/ft-07-docx-pdf-gate
