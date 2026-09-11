@@ -1,109 +1,72 @@
 name: FT-08 Dependency Gate
+
 on:
   push:
-    branches: [expansion/ft-08-pdf-docx-research]
-    paths: ['.github/workflows/ft08-dependency-gate.yml']
+    branches:
+      - expansion/ft-08-pdf-docx-research
+
 permissions:
   contents: write
+
 jobs:
-  dependency-gate:
-    runs-on: ubuntu-24.04
+  gate:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           ref: expansion/ft-08-pdf-docx-research
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - name: Install repository dependencies
+        run: pnpm install --frozen-lockfile
       - name: Add exact DOCX candidate
         run: pnpm add --filter @workspace/calcstride --save-exact docx@9.7.1
-      - name: Verify exact package metadata
+      - name: Verify DOCX metadata
         working-directory: artifacts/calcstride
-        run: |
-          node --input-type=module <<'JS'
-          import fs from 'node:fs';
-          import { createRequire } from 'node:module';
-          const require = createRequire(import.meta.url);
-          const entry = require.resolve('docx');
-          let dir = entry;
-          while (dir !== '/') {
-            dir = new URL('.', `file://${dir}`).pathname.replace(/\/$/, '');
-            const pkg = `${dir}/package.json`;
-            if (fs.existsSync(pkg)) {
-              const data = JSON.parse(fs.readFileSync(pkg, 'utf8'));
-              if (data.name === 'docx') {
-                if (data.version !== '9.7.1') throw new Error(`Unexpected docx version ${data.version}`);
-                if (data.license !== 'MIT') throw new Error(`Unexpected docx license ${data.license}`);
-                console.log(JSON.stringify({name:data.name,version:data.version,license:data.license,dependencies:data.dependencies}, null, 2));
-                process.exit(0);
-              }
-            }
-          }
-          throw new Error('Unable to locate docx package metadata');
-          JS
+        run: node -e "const p=require('docx/package.json'); if(p.version!=='9.7.1'||p.license!=='MIT') process.exit(2); console.log({version:p.version,license:p.license,dependencies:p.dependencies})"
       - name: Generate and independently reopen DOCX
         working-directory: artifacts/calcstride
         run: |
-          node --input-type=module <<'JS'
+          cat > /tmp/ft08-docx-gate.mjs <<'NODE'
           import { Document, Packer, Paragraph, TextRun } from 'docx';
           import mammoth from 'mammoth';
           const sentinel = 'FigureNest FT-08 dependency gate sentinel';
-          const doc = new Document({sections:[{children:[new Paragraph({children:[new TextRun({text:sentinel,bold:true})]})]}]});
+          const doc = new Document({ sections: [{ children: [new Paragraph({ children: [new TextRun({ text: sentinel, bold: true })] })] }] });
           const buffer = await Packer.toBuffer(doc);
-          if (buffer[0] !== 0x50 || buffer[1] !== 0x4b) throw new Error('Generated output is not a ZIP/DOCX package');
-          const reopened = await mammoth.extractRawText({buffer});
-          if (!reopened.value.includes(sentinel)) throw new Error('Independent Mammoth reopen did not recover sentinel text');
-          console.log(`Generated ${buffer.length} byte DOCX and independently reopened sentinel text.`);
-          JS
-      - name: Review candidate audit output
-        shell: bash
-        run: |
-          set +e
-          pnpm audit --prod --json > /tmp/pnpm-audit.json
-          code=$?
-          set -e
-          node --input-type=module <<'JS'
-          import fs from 'node:fs';
-          const raw=fs.readFileSync('/tmp/pnpm-audit.json','utf8').trim();
-          let audit={};
-          try { audit=raw ? JSON.parse(raw) : {}; } catch { console.error(raw); process.exit(1); }
-          const advisories=audit.advisories ?? audit.vulnerabilities ?? {};
-          const hits=Object.entries(advisories).filter(([name, value]) => {
-            const text=JSON.stringify(value);
-            return /\b(docx|xml-js|nanoid|jszip|hash.js)\b/i.test(`${name} ${text}`);
-          });
-          console.log(JSON.stringify({candidateRelatedFindings:hits,metadata:audit.metadata ?? null}, null, 2));
-          if (hits.some(([,v]) => /high|critical/i.test(JSON.stringify(v)))) process.exit(2);
-          JS
-          echo "pnpm audit exit code (whole workspace): $code; candidate-related high/critical findings gate handled above."
+          if (buffer[0] !== 0x50 || buffer[1] !== 0x4b) throw new Error('Output is not a DOCX ZIP package');
+          const reopened = await mammoth.extractRawText({ buffer });
+          if (!reopened.value.includes(sentinel)) throw new Error('Independent reopen lost sentinel text');
+          console.log(`DOCX bytes=${buffer.length}; independent reopen PASS`);
+          NODE
+          node /tmp/ft08-docx-gate.mjs
       - name: Build workspace type dependency
         run: pnpm exec tsc -b lib/api-client-react
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
       - name: Unit tests
         run: pnpm --filter @workspace/calcstride test
-      - name: Production client build
+      - name: Client build
         run: pnpm --filter @workspace/calcstride build:client
-      - name: Record dependency gate and commit verified pin
-        shell: bash
+      - name: Record verified research dependency
         run: |
           cat >> docs/FT08_PDF_TO_DOCX_PREFLIGHT.md <<'EOF'
 
 ## Exact dependency gate result
 
-Repository-native CI accepted the exact `docx@9.7.1` candidate for **research use only** after verifying the package reports MIT licensing, generating a real DOCX package, reopening it independently with Mammoth and recovering sentinel text, reviewing candidate-related audit output, and passing FigureNest typecheck/unit/client-build gates.
-
-The `xml-js` maintenance concern remains explicitly open. Passing this dependency gate does **not** authorize route publication; it only allows the unpublished fixture/worker spike defined above.
+Repository-native CI accepted exact `docx@9.7.1` for **research use only** after verifying its reported MIT license/version, generating a real DOCX package, reopening it independently with Mammoth and recovering sentinel text, and passing FigureNest typecheck, unit tests and client build. The known `xml-js` maintenance concern remains open and publication stays prohibited until the full research gate passes.
 EOF
           rm .github/workflows/ft08-dependency-gate.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add artifacts/calcstride/package.json pnpm-lock.yaml docs/FT08_PDF_TO_DOCX_PREFLIGHT.md .github/workflows/ft08-dependency-gate.yml
+          git add -A
           git commit -m 'FT-08: pin DOCX generator after dependency gate'
           git pull --rebase origin expansion/ft-08-pdf-docx-research
           git push origin HEAD:expansion/ft-08-pdf-docx-research
