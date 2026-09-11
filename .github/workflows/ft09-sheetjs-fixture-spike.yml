@@ -1,0 +1,179 @@
+name: FT-09 SheetJS Fixture Spike
+
+on:
+  push:
+    branches: [expansion/ft-09-csv-xlsx-gate]
+    paths:
+      - .github/workflows/ft09-sheetjs-fixture-spike.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  spike:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: expansion/ft-09-csv-xlsx-gate
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install current lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Add exact authoritative SheetJS CE research dependency
+        run: pnpm --filter @workspace/calcstride add --save-exact 'xlsx@https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz'
+
+      - name: Write executable conversion/reopen research fixture
+        shell: bash
+        run: |
+          cat > artifacts/calcstride/src/lib/ft09-sheetjs-research.test.ts <<'EOF'
+          import assert from 'node:assert/strict';
+          import test from 'node:test';
+          import * as XLSX from 'xlsx';
+          import { preflightXlsxZip } from './xlsx-zip-preflight';
+          import { quoteCsvCell } from './csv-spreadsheet-safety';
+
+          function rowsToSafeCsv(rows: unknown[][]): string {
+            return rows.map((row) => row.map(quoteCsvCell).join(',')).join('\r\n');
+          }
+
+          test('FT-09 SheetJS spike round-trips CSV through XLSX and reopens deterministically', () => {
+            const sourceCsv = [
+              'id,name,note,amount',
+              '00123,Zoë,"hello, world",-12.5',
+              '00456,李,"line one\nline two",3.25',
+            ].join('\r\n');
+
+            const csvWorkbook = XLSX.read(sourceCsv, { type: 'string', raw: true });
+            const sourceSheet = csvWorkbook.Sheets[csvWorkbook.SheetNames[0]];
+            const sourceRows = XLSX.utils.sheet_to_json<unknown[]>(sourceSheet, {
+              header: 1,
+              raw: true,
+              defval: '',
+            });
+
+            assert.deepEqual(sourceRows, [
+              ['id', 'name', 'note', 'amount'],
+              ['00123', 'Zoë', 'hello, world', '-12.5'],
+              ['00456', '李', 'line one\nline two', '3.25'],
+            ]);
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(sourceRows), 'Data');
+            const xlsxBytes = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx', compression: true });
+
+            const zipEvidence = preflightXlsxZip(new Uint8Array(xlsxBytes));
+            assert.ok(zipEvidence.entryCount > 0);
+            assert.ok(zipEvidence.totalUncompressedBytes > 0);
+
+            const reopened = XLSX.read(xlsxBytes, { type: 'buffer', raw: true });
+            const reopenedRows = XLSX.utils.sheet_to_json<unknown[]>(reopened.Sheets.Data, {
+              header: 1,
+              raw: true,
+              defval: '',
+            });
+            assert.deepEqual(reopenedRows, sourceRows);
+          });
+
+          test('FT-09 SheetJS spike preserves formula text as data and safe CSV export neutralizes injection', () => {
+            const rows = [
+              ['payload', 'negative'],
+              ['=2+2', '-1'],
+              ['+SUM(A1:A2)', '-0.25'],
+              ['@cmd', '-1e6'],
+              ['-HYPERLINK("https://example.invalid")', '-.5'],
+            ];
+
+            const sheet = XLSX.utils.aoa_to_sheet(rows);
+            assert.equal(sheet.A2.t, 's');
+            assert.equal(sheet.A2.f, undefined);
+            assert.equal(sheet.A3.t, 's');
+            assert.equal(sheet.A3.f, undefined);
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, sheet, 'Data');
+            const xlsxBytes = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+            const reopened = XLSX.read(xlsxBytes, { type: 'buffer', raw: true, cellFormula: true });
+            const reopenedRows = XLSX.utils.sheet_to_json<unknown[]>(reopened.Sheets.Data, {
+              header: 1,
+              raw: true,
+              defval: '',
+            });
+
+            assert.equal(reopened.Sheets.Data.A2.f, undefined);
+            assert.equal(reopened.Sheets.Data.A2.v, '=2+2');
+
+            const csv = rowsToSafeCsv(reopenedRows);
+            assert.match(csv, /'=2\+2/);
+            assert.match(csv, /'\+SUM\(A1:A2\)/);
+            assert.match(csv, /'@cmd/);
+            assert.match(csv, /'-HYPERLINK/);
+            assert.match(csv, /,-1(?:\r?\n|$)/);
+            assert.match(csv, /,-0\.25(?:\r?\n|$)/);
+            assert.match(csv, /,-1e6(?:\r?\n|$)/);
+            assert.match(csv, /,-\.5(?:\r?\n|$)/);
+          });
+          EOF
+
+      - name: Focused FT-09 tests
+        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/xlsx-zip-preflight.test.ts src/lib/csv-spreadsheet-safety.test.ts src/lib/ft09-sheetjs-research.test.ts
+
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+
+      - name: Typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
+
+      - name: Full unit tests
+        run: pnpm --filter @workspace/calcstride test
+
+      - name: Production build
+        run: pnpm --filter @workspace/calcstride build
+
+      - name: Record dependency tarball checksum and spike evidence
+        shell: bash
+        run: |
+          curl -fsSL 'https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz' -o /tmp/xlsx-0.20.3.tgz
+          SHA256=$(sha256sum /tmp/xlsx-0.20.3.tgz | awk '{print $1}')
+          cat >> docs/FT09_CSV_XLSX_RESEARCH_GATE.md <<EOF
+
+          ## Executable SheetJS CE 0.20.3 fixture spike
+
+          Guarded CI installed the authoritative exact-version tarball only after the dependency-independent ZIP and CSV-safety gates were green.
+
+          - source: \`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz\`
+          - observed tarball SHA-256 in the guarded spike: \`${SHA256}\`
+          - deterministic CSV → XLSX → reopen fixture: PASS before commit
+          - Unicode, quoted comma, quoted newline and leading-zero text preservation: PASS before commit
+          - formula-leading strings remain string cells (no generated formula field): PASS before commit
+          - CSV export applies FigureNest formula-injection neutralization while preserving genuine negative numbers: PASS before commit
+          - XLSX ZIP preflight runs against generated OOXML before reopen: PASS before commit
+          - repository typecheck, full unit suite and production build: PASS before commit
+
+          This remains research evidence. Runtime CDN loading is forbidden. Publication still requires browser privacy/storage interception, mobile/resource and lazy-bundle measurements, and a final immutable verified/vendored dependency disposition.
+          EOF
+
+      - name: Remove one-time workflow and commit guarded evidence
+        shell: bash
+        run: |
+          rm .github/workflows/ft09-sheetjs-fixture-spike.yml
+          git config user.name 'FigureNest Pipeline'
+          git config user.email 'actions@users.noreply.github.com'
+          git add artifacts/calcstride/package.json pnpm-lock.yaml artifacts/calcstride/src/lib/ft09-sheetjs-research.test.ts docs/FT09_CSV_XLSX_RESEARCH_GATE.md .github/workflows/ft09-sheetjs-fixture-spike.yml
+          git commit -m 'test(ft-09): prove SheetJS conversion and reopen spike'
+          git push origin HEAD:expansion/ft-09-csv-xlsx-gate
