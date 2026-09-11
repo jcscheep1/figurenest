@@ -34,7 +34,7 @@ export const fileToolDefinitions = {
     tags: ['sign pdf', 'edit pdf', 'add signature to pdf', 'fill pdf', 'pdf signer', 'pdf editor', 'private pdf tool'],
     featured: false,
     h1: 'Sign & Edit a PDF Online',
-    seoTitle: 'Free PDF Sign & Edit Tool — Private in Your Browser | FigureNest',
+    seoTitle: 'Free PDF Sign & Edit Tool | Private Browser | FigureNest',
     seoDescription: 'Sign and edit a PDF in your browser. Add text, initials, dates, checkmarks or a signature, then export the edited PDF without uploading the file.',
     privacySummary: 'Your PDF is processed in this browser tab. FigureNest does not upload the document, its name, its extracted contents, signatures, or the edited result.',
     limitations: [
