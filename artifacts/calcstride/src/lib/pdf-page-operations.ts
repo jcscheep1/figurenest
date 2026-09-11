@@ -13,8 +13,10 @@ export type PreparedPdfPageOperations = {
 };
 
 export function normalizeQuarterTurn(value: number): PdfQuarterTurn {
-  if (!Number.isFinite(value)) throw new FileToolError('malformed', 'The page rotation is invalid.');
-  const normalized = ((Math.round(value / 90) * 90) % 360 + 360) % 360;
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value % 90 !== 0) {
+    throw new FileToolError('malformed', 'The page rotation must use 90-degree steps.');
+  }
+  const normalized = ((value % 360) + 360) % 360;
   if (normalized !== 0 && normalized !== 90 && normalized !== 180 && normalized !== 270) {
     throw new FileToolError('malformed', 'The page rotation must use 90-degree steps.');
   }
