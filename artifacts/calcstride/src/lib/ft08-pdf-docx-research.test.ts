@@ -90,3 +90,36 @@ test('FT-08 text-first spike carries selectable PDF text into a reopenable edita
     await loadingTask.destroy();
   }
 });
+
+test('FT-08 classifies a PDF with no text layer as OCR-required instead of emitting an empty DOCX', async () => {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([612, 792]);
+
+  // A graphics-only page models the important scanned-PDF condition for this
+  // research gate: PDF.js has no selectable text items to reconstruct.
+  page.drawRectangle({ x: 72, y: 600, width: 240, height: 120 });
+
+  const pdfBytes = await pdf.save();
+  const loadingTask = getDocument({ data: pdfBytes });
+  const parsedPdf = await loadingTask.promise;
+
+  try {
+    const parsedPage = await parsedPdf.getPage(1);
+    const textContent = await parsedPage.getTextContent();
+    const selectableText = textContent.items
+      .filter((item): item is Extract<(typeof textContent.items)[number], { str: string }> => 'str' in item)
+      .map((item) => item.str.trim())
+      .filter(Boolean);
+
+    assert.deepEqual(selectableText, []);
+
+    const classification = selectableText.length === 0 ? 'ocr-required' : 'selectable-text';
+    assert.equal(
+      classification,
+      'ocr-required',
+      'PDFs without a usable text layer must be rejected honestly rather than producing an empty editable DOCX',
+    );
+  } finally {
+    await loadingTask.destroy();
+  }
+});
