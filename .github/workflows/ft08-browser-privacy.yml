@@ -31,7 +31,7 @@ jobs:
         working-directory: artifacts/calcstride
         run: |
           cat > pdf-docx-qa.html <<'HTML'
-          <!doctype html><html><body><main id="app"></main><script type="module" src="/src/pdf-docx-qa.ts"></script></body></html>
+          <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main id="app"></main><script type="module" src="/src/pdf-docx-qa.ts"></script></body></html>
           HTML
           cat > src/pdf-docx-qa.ts <<'TS'
           import { Document, Packer, Paragraph } from 'docx';
