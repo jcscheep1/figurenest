@@ -1,0 +1,71 @@
+name: FT-07 Site Audit Diagnostic
+on:
+  push:
+    branches: [expansion/ft-07-docx-pdf-gate]
+    paths: ['.github/workflows/ft07-site-audit-diagnostic.yml']
+permissions:
+  contents: read
+jobs:
+  isolate:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: API tool catalog parity
+            pattern: API and local fallback catalogs expose the same published tools
+          - label: API category parity
+            pattern: API and local fallback catalogs expose the same non-empty categories
+          - label: Category FAQ schema
+            pattern: every public non-construction category has substantive visible guide content and FAQ schema
+          - label: File-tools guide coverage
+            pattern: new category guides describe every published tool in their category
+          - label: Guide identity parity
+            pattern: category guide tool descriptions use published tool identities
+          - label: Meta description safety
+            pattern: every public meta description is complete, unique, and snippet-safe
+          - label: Tool-count parity
+            pattern: all site-wide tool and category counts derive from published tool pages
+          - label: Unique catalog identity
+            pattern: tool slugs, names, descriptions, and destinations are unique
+          - label: Metadata uniqueness
+            pattern: tool metadata has no malformed, generic, or duplicated descriptions
+          - label: Related-tool graph
+            pattern: canonical related-tool graph covers every published tool with reciprocal semantic links
+          - label: Destination family
+            pattern: every catalog destination matches its slug and route family
+          - label: Sitemap exact parity
+            pattern: sitemap exactly matches all indexable app pages
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: expansion/ft-07-docx-pdf-gate
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply publication metadata candidate
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          cat=Path('artifacts/calcstride/src/lib/file-tools-catalog.ts')
+          c=cat.read_text()
+          marker="  'pdf-to-text': {"
+          entry="""  'docx-to-pdf': {\n    slug: 'docx-to-pdf',\n    name: 'DOCX to PDF',\n    description: 'Convert a DOCX document to a best-effort PDF locally in your browser, with a sanitized preview before download and no document upload.',\n    category: FILE_TOOLS_CATEGORY.name,\n    categorySlug: FILE_TOOLS_CATEGORY.slug,\n    href: '/file-tools/docx-to-pdf',\n    tags: ['docx to pdf', 'word to pdf', 'document to pdf', 'private docx converter', 'browser word converter'],\n    featured: false,\n    h1: 'Convert DOCX to PDF',\n    seoTitle: 'Free DOCX to PDF Converter | Private Browser | FigureNest',\n    seoDescription: 'Convert DOCX to PDF locally in your browser. Preview the sanitized best-effort layout before download without uploading your document.',\n    privacySummary: 'The DOCX, filename, extracted document content, preview and generated PDF remain in this browser tab and are not uploaded to a FigureNest conversion server.',\n    limitations: ['Conversion is best-effort rather than a pixel-perfect copy of Microsoft Word.'],\n    faqs: [{ question: 'Does FigureNest upload my DOCX?', answer: 'No. Conversion runs locally in your browser.' }],\n    relatedRoutes: ['/file-tools/pdf-sign-edit', '/file-tools/pdf-to-text', '/file-tools/image-to-pdf'],\n  },\n"""
+          if "'docx-to-pdf': {" not in c: c=c.replace(marker, entry+marker)
+          cat.write_text(c)
+          guide=Path('artifacts/calcstride/src/lib/file-tools-category-content.ts')
+          g=guide.read_text()
+          if "slug: 'docx-to-pdf'" not in g:
+              g=g.replace("    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },", "    { slug: 'pdf-to-text', description: 'Extract the PDF text layer from selected pages locally, preview the result, and download a UTF-8 TXT file with clear page separators.' },\n    { slug: 'docx-to-pdf', description: 'Convert a DOCX file locally to a sanitized best-effort browser preview, then create and download a PDF without uploading document bytes, names, or extracted content.' },")
+          guide.write_text(g)
+          PY
+      - run: pnpm --filter @workspace/calcstride generate:seo
+      - name: Run isolated assertion
+        run: pnpm exec tsx --test --test-name-pattern="${{ matrix.pattern }}" artifacts/calcstride/src/lib/site-audit.test.ts
