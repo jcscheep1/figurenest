@@ -154,6 +154,8 @@ PR #130 contains the dependency-free package guard in `artifacts/calcstride/src/
 
 The current Build repair no longer trusts central-directory size declarations as the resource boundary. It validates every local header against the central directory, rejects data-descriptor ambiguity and hidden/overlapping payload bytes, and bounded-stream decompresses every stored or deflated file while enforcing actual per-entry, cumulative and compression-ratio limits. Only the two small package metadata files are retained for relationship/content inspection; all other decompressed output is counted and discarded. Regression fixtures cover forged sizes in both `word/document.xml` and media entries plus undeclared stored payload bytes.
 
+Exact-head QA then found a separate filename-interpretation ambiguity: JSZip honors the Info-ZIP Unicode Path extra field (`0x7075`) when the UTF-8 flag is unset, while the dependency-free guard previously inspected only the visible central/local filename. A hostile entry could therefore be inspected under a benign name and later exposed to Mammoth under a different relationship or blocked-part name. The guard now fails closed on Unicode-path aliases in both central and local extra fields, validates extra-field boundaries, and carries focused regressions for both locations. Ordinary DOCX package paths remain supported without this alias mechanism.
+
 After QA accepts that exact hostile-input guard, the next Build step is not public-route integration. It is the exact-pinned Mammoth + DOMPurify + jsPDF/html2canvas spike with fixture evidence and lockfile-safe installation. Do not add the public route until the publication threshold passes.
 
 ## Stop condition
