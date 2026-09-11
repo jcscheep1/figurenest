@@ -61,6 +61,21 @@ export type PdfViewportBox = {
   height: number;
 };
 
+export async function withPdfPageCleanup<T extends { cleanup(): unknown }>(
+  pagePromise: Promise<T>,
+  isCancelled: () => boolean,
+  render: (page: T) => Promise<void>,
+): Promise<void> {
+  let page: T | null = null;
+  try {
+    page = await pagePromise;
+    if (isCancelled()) return;
+    await render(page);
+  } finally {
+    page?.cleanup();
+  }
+}
+
 function clonePoint(point: PdfPoint): PdfPoint {
   return { x: point.x, y: point.y };
 }

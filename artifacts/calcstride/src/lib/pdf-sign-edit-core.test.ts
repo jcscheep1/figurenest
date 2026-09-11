@@ -15,6 +15,7 @@ import {
   validatePdfPageCount,
   validateSignatureImageDimensions,
   viewportDeltaToPdfDelta,
+  withPdfPageCleanup,
   viewportPointToPdf,
   type PdfEditObject,
 } from './pdf-sign-edit-core';
@@ -44,6 +45,48 @@ test('FT-02 coordinate transforms remain stable across zoom and PDF.js-style Y i
 
   const box = pdfRectToViewportBox(transform, { x: 40, y: 60, width: 100, height: 30 });
   assert.deepEqual(box, { left: 80, top: 620, width: 200, height: 60 });
+});
+
+test('FT-02 releases every acquired PDF.js page after success, cancellation and render failure', async () => {
+  const events: string[] = [];
+  const page = { cleanup: () => { events.push('cleanup'); return true; } };
+
+  await withPdfPageCleanup(Promise.resolve(page), () => false, async () => {
+    events.push('render');
+  });
+  assert.deepEqual(events, ['render', 'cleanup']);
+
+  events.length = 0;
+  await withPdfPageCleanup(Promise.resolve(page), () => true, async () => {
+    events.push('unexpected-render');
+  });
+  assert.deepEqual(events, ['cleanup']);
+
+  events.length = 0;
+  let rejectRender: ((error: Error) => void) | null = null;
+  const pendingRender = new Promise<void>((_resolve, reject) => {
+    rejectRender = reject;
+  });
+  const cancelledRender = withPdfPageCleanup(Promise.resolve(page), () => false, async () => {
+    events.push('render');
+    await pendingRender;
+  });
+  await Promise.resolve();
+  rejectRender?.(new Error('RenderingCancelledException'));
+  await assert.rejects(
+    cancelledRender,
+    /RenderingCancelledException/,
+  );
+  assert.deepEqual(events, ['render', 'cleanup']);
+
+  events.length = 0;
+  await assert.rejects(
+    withPdfPageCleanup(Promise.resolve(page), () => false, async () => {
+      throw new Error('canvas failed');
+    }),
+    /canvas failed/,
+  );
+  assert.deepEqual(events, ['cleanup']);
 });
 
 test('FT-02 edit objects clamp to page bounds and use useful defaults', () => {

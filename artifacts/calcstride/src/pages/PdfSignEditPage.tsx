@@ -28,6 +28,7 @@ import {
   validatePdfPageCount,
   validateSignatureImageDimensions,
   viewportDeltaToPdfDelta,
+  withPdfPageCleanup,
   type PdfEditKind,
   type PdfEditObject,
   type PdfPageBounds,
@@ -214,8 +215,7 @@ export function PdfSignEditPage() {
     let cancelled = false;
     let renderTask: ReturnType<PdfJsPage['render']> | null = null;
 
-    void document.getPage(pageIndex + 1).then(async (page) => {
-      if (cancelled) return;
+    void withPdfPageCleanup(document.getPage(pageIndex + 1), () => cancelled, async (page) => {
       const viewport = page.getViewport({ scale: zoom });
       const transform = viewport.transform;
       if (transform.length !== 6) throw new FileToolError('malformed', 'Unexpected PDF viewport transform.');
@@ -240,7 +240,6 @@ export function PdfSignEditPage() {
         transform: ratio === 1 ? undefined : [ratio, 0, 0, ratio, 0, 0],
       });
       await renderTask.promise;
-      page.cleanup();
     }).catch((caught) => {
       if (!cancelled) setError(errorMessage(caught));
     });
