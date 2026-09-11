@@ -2,7 +2,7 @@
 
 Status: **RESEARCH / PREFLIGHT — NOT PUBLISHABLE**
 
-Base: production `main` after FT-08 merge `5fedf320827c021f7f34821242e0fdc57f056495`.
+Base at lane creation: production `main` after FT-08 merge `5fedf320827c021f7f34821242e0fdc57f056495`.
 
 ## Product goal
 
@@ -114,5 +114,15 @@ The spike is permitted only under these additional constraints:
 - formulas must remain inert data; no calculation engine or macro path may be introduced;
 - CSV export safety must distinguish text beginning with `=`, `+`, `-`, `@` (including leading whitespace) from genuine numeric negative values, with fixtures locking the policy;
 - the spike may add dependencies, fixtures, tests and research evidence only. It must not add `/file-tools/csv-to-xlsx`, `/file-tools/xlsx-to-csv`, catalog records, sitemap URLs, schema promises or tool-count changes.
+
+### Distribution stability decision
+
+The authoritative SheetJS bundler documentation also recommends vendoring the tarball for general stability. For the **research spike**, the exact versioned CDN tarball URL is acceptable so the package manager can resolve and lock the dependency reproducibly. Before a public FT-09 release, the dependency review must decide between a repository-vendored exact tarball and an equivalently immutable verified source. Runtime CDN loading remains forbidden either way: browser production code must import the bundled local dependency only.
+
+### Reconciliation / exact-head evidence
+
+The dependency-independent ZIP preflight head `c8d6827e6ae6434995cf863d73dcc52706718605` passed `Validate FigureNest #681` and both authoritative Vercel previews. The retired Netlify deploy preview is the only red legacy status and is non-authoritative.
+
+Production `main` has since advanced independently to `b2b0b10c7fb33d8e54d66dbb5a1c4032c3c97e87` with a File Tools mobile-contrast/calculator-export repair. FT-09 is four commits ahead of the common FT-08 merge base and one commit behind current `main`; its three changed paths remain isolated to the FT-09 ZIP preflight and this research record. The branch must reconcile that newer main before any publication or merge decision, and no older QA verdict can be treated as release approval after such reconciliation.
 
 Resume condition for implementation approval: exact-head tests must demonstrate deterministic CSV→XLSX→reopen and XLSX→CSV value preservation, hostile ZIP/resource rejection before uncontrolled expansion, formula non-execution, injection-safe CSV output, and acceptable route-lazy bundle measurements. Until then FT-09 remains **RESEARCH / NOT PUBLISHABLE**.
