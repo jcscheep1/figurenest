@@ -562,7 +562,7 @@ export function PdfSignEditPage() {
 
   return <Shell>
     <Seo path={definition.href} />
-    <main className="file-tool-page" data-testid="page-pdf-sign-edit">
+    <div className="file-tool-page" data-testid="page-pdf-sign-edit">
       <nav className="calc-breadcrumb" aria-label="Breadcrumb">
         <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
         <Link href="/category/file-tools">PDF &amp; File Tools</Link>
@@ -691,7 +691,7 @@ export function PdfSignEditPage() {
       </section>}
 
       <section className="file-tool-content">
-        <article>
+        <article className="advanced-content">
           <div className="eyebrow">HOW IT WORKS</div>
           <h2>Fill and sign without sending the document away.</h2>
           <p>Select a PDF, place the fill-and-sign items you need, then export a flattened edited copy. Object positions are stored in PDF page coordinates rather than screen pixels, so changing preview zoom does not change where a mark is written into the downloaded file.</p>
@@ -711,6 +711,6 @@ export function PdfSignEditPage() {
         <div className="section-heading"><div><div className="eyebrow">RELATED TOOLS</div><h2 id="pdf-related-tools">Useful image and sizing tools.</h2></div></div>
         <div className="tool-list-grid">{relatedTools.map((tool) => <Link key={tool.slug} href={tool.href} className="home-article-card"><span className="mono">{tool.category}</span><h3>{tool.name}</h3><p>Open this related FigureNest tool.</p></Link>)}</div>
       </section>
-    </main>
+    </div>
   </Shell>;
 }
