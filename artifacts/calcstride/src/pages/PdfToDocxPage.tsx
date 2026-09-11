@@ -6,8 +6,27 @@ import { Link } from '@/components/PublicLink';
 import { Seo } from '@/pages/AppPages';
 import { FILE_INPUT_LIMITS, FILE_RESOURCE_LIMITS, ObjectUrlRegistry, type FileDeviceClass, type FileJobStatus } from '@/lib/file-tools-foundation';
 import { convertPdfTextToDocx, pdfToDocxOutputName, type PdfToDocxResult } from '@/lib/pdf-to-docx';
-import { fileToolDefinitions } from '@/lib/file-tools-catalog';
 import '@/styles/file-tools.css';
+
+const PDF_TO_DOCX_PAGE = {
+  href: '/file-tools/pdf-to-docx',
+  h1: 'Convert PDF Text to Editable DOCX',
+  description: 'Turn selectable PDF text into an editable DOCX locally in your browser, with clear warnings for scans, images and complex layout.',
+  privacySummary: 'The PDF, filename, extracted text and generated DOCX stay in this browser tab. FigureNest does not upload the document or conversion output.',
+  limitations: [
+    'This tool converts selectable text into an editable DOCX on a best-effort basis. It is not a pixel-perfect PDF-to-Word recreation, so columns, tables, fonts, spacing and pagination may differ.',
+    'Scanned or image-only PDFs need OCR, which this version does not perform. Those files are rejected rather than returning an empty DOCX or sending the document to a server.',
+    'Raster images are detected, but their placement is not preserved in this version. Selectable text can still be converted and the tool shows an image-placement warning.',
+    'Password-protected, malformed, oversized and over-100-page PDFs are rejected locally. PDF scripts, launch actions, embedded executables and other active content are not carried into the DOCX.',
+  ],
+  faqs: [
+    { question: 'Does FigureNest upload my PDF to convert it?', answer: 'No. PDF parsing, selectable-text extraction and DOCX generation run in your browser. The PDF bytes, filename, extracted text and generated DOCX are not sent to a FigureNest conversion server.' },
+    { question: 'Will the DOCX look exactly like the PDF?', answer: 'No. PDFs store positioned drawing instructions rather than Word document structure. FigureNest creates useful editable text with best-effort reading order, but complex columns, tables, fonts and pagination can differ.' },
+    { question: 'Can this convert scanned PDFs?', answer: 'Not in this version. If the PDF has no usable selectable text, FigureNest reports that OCR is required instead of pretending the conversion succeeded.' },
+    { question: 'What happens to images in the PDF?', answer: 'The converter detects raster imagery and warns that image placement is not preserved. Selectable text remains the intended editable output for this release.' },
+    { question: 'How large can the PDF be?', answer: 'The shared local-file limits currently allow up to 25 MB on mobile-class devices or 75 MB on desktop-class devices, with a maximum of 100 PDF pages.' },
+  ],
+} as const;
 
 function currentDeviceClass(): FileDeviceClass {
   if (typeof window === 'undefined') return 'desktop';
@@ -19,7 +38,7 @@ function sizeLimitLabel(deviceClass: FileDeviceClass): string {
 }
 
 export function PdfToDocxPage() {
-  const definition = fileToolDefinitions['pdf-to-docx'];
+  const definition = PDF_TO_DOCX_PAGE;
   const [status, setStatus] = useState<FileJobStatus>('idle');
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState('');
