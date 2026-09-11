@@ -45,4 +45,10 @@ Publication itself must rerun those properties against the real route and final 
 6. both authoritative Vercel frontend/API statuses;
 7. expected-head-protected merge followed by production smoke of the new route plus robots, sitemap, canonical, schema, catalog/tool-count parity and representative existing calculators/file tools.
 
+## Publication-head handoff
+
+The guarded publication integration passed its full pre-commit gate and created publication commit `2011284b7050b5e3d5f8c553c903d622683f305e`, including route/catalog, applicability, File Tools guide metadata and regenerated sitemap changes. GitHub did not execute the ordinary pull-request jobs for that bot-authored commit and reported `action_required`, so that state is explicitly **not** treated as QA evidence. This documentation commit exists only to place a normal author commit on top of the identical publication code and bind fresh pull-request validation, browser/privacy and deployment statuses to the resulting exact head.
+
+No merge is permitted from `2011284b…` or any older SHA. Only the newest head that contains the publication commit and passes all required exact-head checks can be released.
+
 Until all of these are satisfied, this lane remains **NOT READY FOR DEPLOY**.
