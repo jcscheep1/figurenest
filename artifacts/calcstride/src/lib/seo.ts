@@ -142,7 +142,7 @@ const categoryMetadata: Record<string, { title: string; description: string }> =
   'printing-design': { title: 'Printing & Design Calculators | FigureNest', description: 'Calculate DPI, PPI, image dimensions, scaling, and pixels-to-centimetres for practical print preparation and digital design work.' },
   health: { title: 'Health & Fitness Calculators | FigureNest', description: 'Use BMI, body fat, calorie, pregnancy, pace, and sleep calculators with transparent methods and clear safety limitations.' },
   education: { title: 'Education Calculators | FigureNest', description: 'Calculate points-earned course percentages and weighted GPA with free academic tools that show the arithmetic and grading-scale limits.' },
-  'file-tools': { title: 'Free PDF & File Tools | Private Browser Processing | FigureNest', description: 'Edit and sign PDFs with free FigureNest file tools designed to keep document content in your browser instead of sending files to a conversion server.' },
+  'file-tools': { title: 'Private PDF & File Tools | FigureNest', description: 'Edit and sign PDFs with free FigureNest file tools designed to keep document content in your browser instead of sending files to a conversion server.' },
 };
 
 const breadcrumb = (items: { name: string; path: string }[]) => breadcrumbListSchema(
