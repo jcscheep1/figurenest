@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
 import { FileToolError } from './file-tools-foundation';
 import { exportEditedPdf, type PdfEditObject } from './pdf-sign-edit-core';
 import {
@@ -20,6 +20,14 @@ async function threePagePdf(): Promise<ArrayBuffer> {
   doc.addPage([300, 400]);
   doc.addPage([500, 200]);
   doc.addPage([250, 600]);
+  const bytes = await doc.save();
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
+async function sourceRotatedPdf(): Promise<ArrayBuffer> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([300, 400]);
+  page.setRotation(degrees(90));
   const bytes = await doc.save();
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
@@ -99,6 +107,14 @@ test('FT-04 export plan preserves page identity for annotations after reorder, r
   assert.equal(reopened.getPageCount(), 2);
   assert.equal(reopened.getPage(0).getRotation().angle, 90);
   assert.equal(reopened.getPage(1).getRotation().angle, 180);
+});
+
+test('FT-04 adds user rotation to a page that already has source rotation', async () => {
+  const original = await sourceRotatedPdf();
+  const prepared = await preparePdfPageOperations(original, [], [{ sourcePageIndex: 0, rotation: 90 }]);
+  const reopened = await PDFDocument.load(prepared.buffer);
+  assert.equal(reopened.getPageCount(), 1);
+  assert.equal(reopened.getPage(0).getRotation().angle, 180);
 });
 
 test('FT-04 editor wires preview, controls and export through stable source-page identity', () => {
