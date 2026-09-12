@@ -225,7 +225,9 @@ export function XlsxToCsvPage() {
     setCsv('');
   };
 
-  useEffect(() => () => bytes?.fill(0), [bytes]);
+  useEffect(() => () => {
+    bytes?.fill(0);
+  }, [bytes]);
 
   const select = async (file: File) => {
     reset();
