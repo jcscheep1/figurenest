@@ -54,7 +54,7 @@ jobs:
           grep -F "input[type='file']" artifacts/calcstride/src/styles/file-tool-buttons.css
 
       - name: Verify sitemap publication
-        run: grep -F '<loc>https://figurenest.com/file-tools/image-converter</loc>' artifacts/calcstride/public/sitemap.xml
+        run: grep -F '<loc>https://figurenest.com/file-tools/image-converter/</loc>' artifacts/calcstride/public/sitemap.xml
 
       - name: Focused image converter tests
         run: pnpm --filter @workspace/calcstride exec node --import tsx --test src/lib/image-converter-core.test.ts
