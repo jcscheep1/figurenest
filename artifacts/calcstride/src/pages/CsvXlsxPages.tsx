@@ -191,6 +191,12 @@ export function CsvToXlsxPage() {
         <CheckCircle2 size={25} aria-hidden="true" /><div><h2>Your XLSX is ready</h2><Summary summary={summary} /></div>
         <button type="button" onClick={download}><Download size={18} aria-hidden="true" /> Download XLSX</button>
       </section> : null}
+
+      <div className="docx-information-sections">
+        <section><h2>How CSV to XLSX conversion works</h2><p>FigureNest reads the UTF-8 text in your browser, separates fields with the delimiter you choose, and writes those rows into one worksheet. The preview helps you catch an incorrect delimiter before export: if a comma-separated file is interpreted as semicolon-separated, each line will usually appear in one column. The worksheet name is cleaned to meet Excel's 31-character naming rules.</p></section>
+        <section><h2>What the workbook preserves</h2><p>CSV stores values in rows and columns, not spreadsheet presentation. The generated XLSX preserves the parsed cell text and table shape, but it cannot recover formulas, colours, fonts, charts, merged cells or column widths that were never present in the CSV. Dates and long numbers may be interpreted by spreadsheet software, so verify identifiers, leading zeroes and date-like values after opening the download.</p></section>
+        <section><h2>Safe conversion checklist</h2><ul><li>Confirm the preview has the expected number of columns.</li><li>Choose the delimiter used by the source system.</li><li>Open the XLSX and spot-check headings, non-ASCII characters and leading zeroes.</li><li>Keep the original CSV until the workbook has been verified.</li></ul></section>
+      </div>
     </div>
   </Shell>;
 }
@@ -312,6 +318,12 @@ export function XlsxToCsvPage() {
         <h3>Local preview</h3>
         <pre className="file-tool-preview" aria-label="Converted CSV preview">{csv.slice(0, 5000)}{csv.length > 5000 ? '\n… preview truncated …' : ''}</pre>
       </section> : null}
+
+      <div className="docx-information-sections">
+        <section><h2>How XLSX to CSV conversion works</h2><p>Choose one worksheet and FigureNest reads its populated cell range locally, then serializes the values as UTF-8 comma-separated text. Fields containing commas, quotes or line breaks are quoted according to CSV conventions. Formula cells use the value stored in the workbook; this browser tool does not execute formulas, macros or external data connections.</p></section>
+        <section><h2>Important format limitations</h2><p>A CSV file represents one flat table. It cannot retain additional worksheets, formatting, charts, images, comments, merged cells, validation rules or workbook metadata. Blank rows and cells inside the selected sheet's used range may remain part of the output. Review the local preview and row, column and cell summary before downloading.</p></section>
+        <section><h2>Spreadsheet safety and verification</h2><p>Values that begin with spreadsheet formula characters are escaped in the exported text to reduce formula-injection risk when the CSV is reopened. That protection is useful for untrusted data, but it does not replace reviewing the file before sharing it. Spot-check headings, accented characters, dates, decimal separators and long account-style identifiers against the original workbook.</p></section>
+      </div>
     </div>
   </Shell>;
 }

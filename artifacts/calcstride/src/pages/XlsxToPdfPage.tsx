@@ -218,6 +218,11 @@ export function XlsxToPdfPage() {
       <div><h2>Your searchable PDF is ready</h2><p>{previewRows.length.toLocaleString()} rows selected · {(output.byteLength / 1024).toFixed(1)} kB local output</p></div>
       <button type="button" onClick={() => downloadPdf(output, fileName)}><Download size={18} aria-hidden="true" /> Download PDF</button>
     </section> : null}
+    <div className="docx-information-sections">
+      <section><h2>How XLSX to PDF works</h2><p>FigureNest reads the worksheet and optional A1-style range in your browser, lays the selected values into a bounded table, and creates a searchable PDF. Portrait suits narrow tables; landscape gives wider sheets more horizontal room. A4 and Letter change the printable page dimensions, while the preview shows the text and rows that will be included.</p></section>
+      <section><h2>What the PDF does and does not preserve</h2><p>The output is designed for readable data, not pixel-perfect Excel printing. Cell values and basic table structure are retained, but formulas are not recalculated. Charts, pivot tables, macros, conditional formatting, comments, workbook print areas, exact fonts, custom row heights and complex merged layouts are not reproduced. Use Excel's own print workflow when exact visual fidelity is required.</p></section>
+      <section><h2>Choose a useful printable range</h2><p>Start with the populated range, then narrow it when a workbook contains distant helper cells or very wide tables. Confirm headings and representative rows in the preview before creating the PDF. After download, open the PDF and check page count, column readability, non-ASCII text and important totals against the workbook. Keep the source XLSX as the authoritative editable copy.</p></section>
+    </div>
     </div>
   </Shell>;
 }

@@ -218,7 +218,12 @@ export function TrustPage({ kind }: { kind: TrustPageKind }) {
       <p>{page.intro}</p>
       {kind !== 'contact' && <p className="mono">EFFECTIVE AND LAST UPDATED: <time dateTime={UPDATED_ISO}>{UPDATED.toUpperCase()}</time></p>}
     </section>
-    {kind === 'contact' ? <ContactForm /> : <article className="legal-article">
+    {kind === 'contact' ? <><ContactForm /><article className="legal-article">
+      {page.sections.map((section, index) => <section key={section.heading}>
+        <span className="mono">{String(index + 1).padStart(2, '0')}</span>
+        <div><h2>{section.heading}</h2><p>{section.body}</p></div>
+      </section>)}
+    </article></> : <article className="legal-article">
       {page.sections.map((section, index) => <section key={section.heading}>
         <span className="mono">{String(index + 1).padStart(2, '0')}</span>
         <div><h2>{section.heading}</h2><p>{section.body}</p></div>
