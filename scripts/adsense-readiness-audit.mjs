@@ -146,6 +146,10 @@ if (thinCandidates.length) warn(`${thinCandidates.length} SEO-bearing source fil
 else pass('no structurally short SEO-bearing source files found');
 
 console.log(`\nAdSense readiness baseline: ${failures.length} failure(s), ${warnings.length} warning(s).`);
-console.log('This gate is a baseline detector, not permission to resubmit AdSense. A full rendered desktop/mobile audit must pass first.');
+console.log('This gate is a release detector, not permission to resubmit AdSense. A full rendered desktop/mobile audit must pass first.');
 
-if (failures.length) process.exit(1);
+if (warnings.length) {
+  console.error(`\nRELEASE BLOCKED: ${warnings.length} unresolved AdSense readiness warning(s). Convert each warning into a reviewed remediation, explicit noindex/merge decision, or evidence-backed exception before resubmission.`);
+}
+
+if (failures.length || warnings.length) process.exit(1);
