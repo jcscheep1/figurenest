@@ -176,7 +176,7 @@ export const fileToolDefinitions = {
     featured: false,
     h1: 'Convert CSV to XLSX',
     seoTitle: 'Free CSV to XLSX Converter | Private Browser | FigureNest',
-    seoDescription: 'Convert UTF-8 CSV to XLSX locally in your browser. Choose a delimiter and worksheet name, then download an Excel-compatible workbook without uploading your spreadsheet.',
+    seoDescription: 'Convert CSV to XLSX locally in your browser. Choose a delimiter and sheet name, then download an Excel-compatible workbook without uploading spreadsheet data.',
     privacySummary: 'The CSV, filename, cell values and generated XLSX remain in this browser tab. FigureNest does not upload spreadsheet content to a conversion server.',
     limitations: [
       'Input must be UTF-8 CSV and must stay within the local device file-size limit and workbook-shape guards.',
@@ -203,7 +203,7 @@ export const fileToolDefinitions = {
     featured: false,
     h1: 'Convert XLSX to CSV',
     seoTitle: 'Free XLSX to CSV Converter | Private Browser | FigureNest',
-    seoDescription: 'Convert one XLSX worksheet to CSV locally in your browser. Suspicious workbook packages are rejected and spreadsheet-injection-safe CSV is downloaded without uploading the workbook.',
+    seoDescription: 'Convert one XLSX sheet to CSV locally in your browser. Unsafe workbook packages are rejected, and the CSV is downloaded without uploading spreadsheet data.',
     privacySummary: 'The XLSX, filename, worksheet names, cell values and generated CSV remain in this browser tab. FigureNest does not upload spreadsheet content to a conversion server.',
     limitations: [
       'Only XLSX workbooks that pass local ZIP/package safety checks are opened. Malformed, encrypted, oversized or suspicious packages are rejected locally.',
