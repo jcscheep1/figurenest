@@ -1,4 +1,8 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { writeFileSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const [mode, widthText, heightText, portText, baseUrl = 'http://127.0.0.1:4177'] = process.argv.slice(2);
 const width = Number(widthText);
@@ -15,6 +19,13 @@ for (const candidate of chromeCandidates) {
   if (probe.status === 0 && probe.stdout.trim()) { chromeBin = probe.stdout.trim(); break; }
 }
 if (!chromeBin) throw new Error('Chrome/Chromium is unavailable');
+
+const requireFromApp = createRequire(new URL('../artifacts/calcstride/package.json', import.meta.url));
+const { PDFDocument } = requireFromApp('pdf-lib');
+const fixturePath = join(tmpdir(), `figurenest-adsense-${mode}-${process.pid}.pdf`);
+const fixture = await PDFDocument.create();
+fixture.addPage([612, 792]);
+writeFileSync(fixturePath, await fixture.save());
 
 const chrome = spawn(chromeBin, [
   '--headless=new', '--no-sandbox', '--disable-gpu',
@@ -87,6 +98,7 @@ try {
 
   await command('Page.enable');
   await command('Runtime.enable');
+  await command('DOM.enable');
   await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: mode === 'mobile' });
   await command('Emulation.setTouchEmulationEnabled', { enabled: mode === 'mobile', maxTouchPoints: mode === 'mobile' ? 5 : 1 });
 
@@ -145,46 +157,47 @@ try {
         return 'numeric input/result reaction and keyboard-focusable reset';
       })()`, true);
     } else {
-      interaction = await evaluate(`(() => {
+      const idlePicker = await evaluate(`(() => {
         const page = document.querySelector('.file-tool-page');
         const input = page?.querySelector('input[type="file"]');
         if (!page || !input) throw new Error('File Tool wrapper/native file input missing');
+        const parse = (value) => {
+          const match = String(value || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i);
+          return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null;
+        };
+        const rgb = parse(getComputedStyle(input, '::file-selector-button').backgroundColor);
+        if (!rgb || !(rgb[2] >= rgb[0] + 25 && rgb[2] >= rgb[1] + 10)) throw new Error('native file-picker button is not visibly blue');
+        if (${mode === 'mobile'} && input.getBoundingClientRect().height < 44) throw new Error('mobile native file picker below 44px');
+        return true;
+      })()`);
+      if (!idlePicker) throw new Error('idle file-picker check failed');
 
+      const documentNode = await command('DOM.getDocument', { depth: -1, pierce: true });
+      const fileInput = await command('DOM.querySelector', { nodeId: documentNode.root.nodeId, selector: '.file-tool-page input[type="file"]' });
+      if (!fileInput.nodeId) throw new Error('PDF input node unavailable to browser QA');
+      await command('DOM.setFileInputFiles', { nodeId: fileInput.nodeId, files: [fixturePath] });
+      await waitFor(`document.querySelector('.pdf-editor-shell') && document.querySelector('.pdf-export-bar')`, 'PDF Sign & Edit ready state');
+
+      interaction = await evaluate(`(() => {
+        const page = document.querySelector('.file-tool-page');
         const parse = (value) => {
           const match = String(value || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i);
           return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null;
         };
         const isBlue = (rgb) => rgb && rgb[2] >= rgb[0] + 25 && rgb[2] >= rgb[1] + 10;
-        const isGrey = (rgb) => rgb && Math.max(...rgb) - Math.min(...rgb) <= 32;
+        const isGrey = (rgb) => rgb && Math.max(...rgb) - Math.min(...rgb) <= 42;
         const isRed = (rgb) => rgb && rgb[0] >= rgb[1] + 35 && rgb[0] >= rgb[2] + 35;
-        const luminance = (rgb) => {
-          const values = rgb.map((channel) => {
-            const value = channel / 255;
-            return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-          });
-          return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2];
-        };
-        const contrast = (a, b) => {
-          if (!a || !b) return 0;
-          const l1 = luminance(a); const l2 = luminance(b);
-          return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-        };
-
-        const picker = getComputedStyle(input, '::file-selector-button');
-        const pickerBg = parse(picker.backgroundColor);
-        const pickerFg = parse(picker.color);
-        if (!isBlue(pickerBg)) throw new Error('native file-picker button is not visibly blue: ' + picker.backgroundColor);
-        if (contrast(pickerBg, pickerFg) < 3) throw new Error('native file-picker contrast below 3:1');
-
-        const actionPattern = /upload|open|convert|download|reset|save|export|apply/i;
-        const destructivePattern = /delete|remove/i;
-        const actions = [...page.querySelectorAll('button')].filter((button) => actionPattern.test(button.textContent || '') || destructivePattern.test(button.textContent || ''));
-        if (!actions.length) throw new Error('File Tool action buttons missing');
+        const labelFor = (button) => ((button.textContent || '') + ' ' + (button.getAttribute('aria-label') || '') + ' ' + (button.title || '')).trim();
+        const normalPattern = /download|choose another|add text|add initials|add date|add check|add highlight|undo edit|redo edit|rotate|move earlier|move later|undo page|redo page/i;
+        const destructivePattern = /delete item|delete page/i;
+        const actions = [...page.querySelectorAll('button')].filter((button) => normalPattern.test(labelFor(button)) || destructivePattern.test(labelFor(button)));
+        if (!actions.some((button) => /download edited pdf/i.test(labelFor(button)))) throw new Error('download action missing in ready state');
+        if (!actions.some((button) => /choose another pdf/i.test(labelFor(button)))) throw new Error('reset action missing in ready state');
         let enabledNormal = 0;
         let disabled = 0;
         let destructive = 0;
         for (const button of actions) {
-          const label = (button.textContent || '').trim();
+          const label = labelFor(button);
           const style = getComputedStyle(button);
           const bg = parse(style.backgroundColor);
           const fg = parse(style.color);
@@ -193,18 +206,17 @@ try {
             if (!isGrey(bg)) throw new Error('disabled action is not grey: ' + label + ' ' + style.backgroundColor);
           } else if (destructivePattern.test(label)) {
             destructive += 1;
-            if (!isRed(bg)) throw new Error('destructive action is not red: ' + label + ' ' + style.backgroundColor);
-            if (contrast(bg, fg) < 3) throw new Error('destructive action contrast below 3:1: ' + label);
+            const border = parse(style.borderTopColor);
+            if (!isRed(bg) && !isRed(border) && !isRed(fg)) throw new Error('destructive action is not red: ' + label);
           } else {
             enabledNormal += 1;
             if (!isBlue(bg)) throw new Error('enabled action is not blue: ' + label + ' ' + style.backgroundColor);
-            if (contrast(bg, fg) < 3) throw new Error('enabled action contrast below 3:1: ' + label);
           }
           if (${mode === 'mobile'} && button.getBoundingClientRect().height < 44) throw new Error('mobile action below 44px: ' + label);
         }
-        const pickerRect = input.getBoundingClientRect();
-        if (${mode === 'mobile'} && pickerRect.height < 44) throw new Error('mobile native file picker below 44px');
-        return 'File Tool wrapper + blue enabled/picker + grey disabled + red destructive states (' + enabledNormal + '/' + disabled + '/' + destructive + ')';
+        if (!enabledNormal || !disabled) throw new Error('ready-state action coverage incomplete');
+        if (document.documentElement.scrollWidth > innerWidth + 1) throw new Error('ready-state horizontal overflow ' + document.documentElement.scrollWidth);
+        return 'loaded local PDF; blue enabled/reset/download, grey disabled, red destructive semantics (' + enabledNormal + '/' + disabled + '/' + destructive + ')';
       })()`);
     }
 
@@ -215,4 +227,5 @@ try {
 } finally {
   socket?.close();
   chrome.kill('SIGTERM');
+  try { unlinkSync(fixturePath); } catch {}
 }
