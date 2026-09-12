@@ -9,6 +9,10 @@ on:
       - 'artifacts/calcstride/src/lib/ft10-xlsx-pdf.test.ts'
       - 'artifacts/calcstride/src/lib/xlsx-zip-preflight.ts'
       - 'artifacts/calcstride/src/lib/ft09-sheetjs-loader.ts'
+      - 'artifacts/calcstride/src/App.tsx'
+      - 'artifacts/calcstride/src/lib/file-tools-catalog.ts'
+      - 'artifacts/calcstride/src/lib/units-preferences.ts'
+      - 'artifacts/calcstride/public/sitemap.xml'
       - 'artifacts/calcstride/package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ft10-publication-browser-qa.yml'
@@ -190,10 +194,12 @@ jobs:
       - name: Mobile 390x844 actual-page publication gate
         run: node /tmp/ft10-publication-cdp.mjs 390 844 9273
 
-      - name: Keep public wiring closed until publication commit
+      - name: Require atomic FT-10 publication wiring
         working-directory: artifacts/calcstride
         run: |
-          if grep -R -n "xlsx-to-pdf" src --exclude='*.test.ts' --exclude='XlsxToPdfPage.tsx' --exclude='ft10-publication-qa.tsx' --exclude='ft10-browser-qa.ts'; then
-            echo 'FT-10 public wiring detected before publication commit'; exit 1
-          fi
+          grep -F 'path="/file-tools/xlsx-to-pdf"' src/App.tsx
+          grep -F "'xlsx-to-pdf': {" src/lib/file-tools-catalog.ts
+          grep -F "'xlsx-to-pdf': unitless()" src/lib/units-preferences.ts
+          pnpm run generate:seo
+          grep -F 'https://figurenest.com/file-tools/xlsx-to-pdf/' public/sitemap.xml
           pnpm run build
