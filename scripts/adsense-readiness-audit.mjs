@@ -69,11 +69,18 @@ else pass(`category FAQ corpus is substantial (${faqQuestionCount} questions)`);
 
 if (!appPages.includes('categoryContent[category.slug')) fail('CategoryPage no longer consumes category-content data');
 else pass('CategoryPage is connected to the category-content source of truth');
-if (/introduction\[0\]\s*\?\?\s*category\.description/.test(appPages)) {
-  warn('CategoryPage currently renders only the first category introduction paragraph; next remediation slice must surface the richer questions, choosing guidance, unit/currency guidance, guides and FAQs already present in category-content.ts');
-} else {
-  pass('CategoryPage is not limited to the first category introduction paragraph');
-}
+const categoryRenderMarkers = [
+  'content.questionsAnswered.map',
+  'content.choosingTools.map',
+  'content.unitCurrencyGuidance.map',
+  'content.relatedGuides.map',
+  'content.faqs.map',
+  'category-tool-guide-grid',
+  'category-trust-links',
+];
+const missingCategoryRenderMarkers = categoryRenderMarkers.filter((marker) => !appPages.includes(marker));
+if (missingCategoryRenderMarkers.length) fail(`CategoryPage does not render the complete category-quality corpus: ${missingCategoryRenderMarkers.join(', ')}`);
+else pass('CategoryPage renders questions, choosing guidance, unit/currency guidance, tool guidance, related guides, FAQs and trust links');
 
 const qualitySignals = [
   ['FAQ content', /\bFAQ|Common .* questions/i],
