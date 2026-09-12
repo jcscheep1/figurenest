@@ -1,0 +1,143 @@
+name: FT-12 Image Hostile Browser QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/pages/ImageConverterPage.tsx'
+      - 'artifacts/calcstride/src/lib/image-converter-core.ts'
+      - 'artifacts/calcstride/src/lib/file-tools-foundation.ts'
+      - '.github/workflows/ft12-image-hostile-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hostile-orientation-pixels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: artifacts/calcstride
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create unpublished component harness and hostile fixtures
+        run: |
+          cat > ft12-hostile-qa.html <<'HTML'
+          <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="root"></div><script type="module" src="/src/ft12-hostile-qa.tsx"></script></body></html>
+          HTML
+          cat > src/ft12-hostile-qa.tsx <<'TSX'
+          import React from 'react';
+          import { createRoot } from 'react-dom/client';
+          import { ImageConverterPage } from '@/pages/ImageConverterPage';
+          import '@/index.css';
+          createRoot(document.getElementById('root')!).render(<React.StrictMode><ImageConverterPage /></React.StrictMode>);
+          TSX
+          printf '\211PNG\r\n\032\nTRUNCATED' > /tmp/FT12_CORRUPT.png
+          printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAarVyFEAAAAASUVORK5CYII=' | base64 -d > /tmp/FT12_VALID.png
+
+      - name: Create focused Chrome CDP runner
+        run: |
+          cat > /tmp/ft12-hostile-runner.mjs <<'JS'
+          import fs from 'node:fs';
+          import { spawn, spawnSync } from 'node:child_process';
+
+          const bins = [process.env.CHROME_BIN, 'google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean);
+          let chromeBin = '';
+          for (const candidate of bins) {
+            const probe = spawnSync('which', [candidate], {encoding: 'utf8'});
+            if (probe.status === 0 && probe.stdout.trim()) { chromeBin = probe.stdout.trim(); break; }
+          }
+          if (!chromeBin) throw new Error('Chrome/Chromium is unavailable');
+
+          const port = 9252;
+          const chrome = spawn(chromeBin, ['--headless=new','--no-sandbox','--disable-gpu','--window-size=1280,900',`--remote-debugging-port=${port}`,'--user-data-dir=/tmp/ft12-hostile-chrome','about:blank'], {stdio:['ignore','ignore','pipe']});
+          let diagnostics = '';
+          chrome.stderr.on('data', chunk => { diagnostics += String(chunk); });
+          const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+          async function connect() {
+            for (let i=0;i<80;i+=1) {
+              try {
+                const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then(r=>r.json());
+                const target = targets.find(x=>x.type==='page');
+                if (target?.webSocketDebuggerUrl) return new WebSocket(target.webSocketDebuggerUrl);
+              } catch {}
+              await sleep(250);
+            }
+            throw new Error(`Chrome DevTools did not start. ${diagnostics}`);
+          }
+          const socket = await connect();
+          try {
+            await new Promise((resolve,reject)=>{socket.addEventListener('open',resolve,{once:true});socket.addEventListener('error',reject,{once:true});});
+            let sequence=0; const pending=new Map();
+            socket.addEventListener('message', event => {
+              const msg=JSON.parse(String(event.data));
+              if (!msg.id || !pending.has(msg.id)) return;
+              const p=pending.get(msg.id); pending.delete(msg.id);
+              msg.error ? p.reject(new Error(msg.error.message)) : p.resolve(msg.result);
+            });
+            const command=(method,params={})=>new Promise((resolve,reject)=>{const id=++sequence;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
+            const evaluate=async(expression,awaitPromise=false)=>{const r=await command('Runtime.evaluate',{expression,awaitPromise,returnByValue:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.text||'browser evaluation failed');return r.result?.value;};
+            const waitFor=async(expression,label)=>{const deadline=Date.now()+60000;while(Date.now()<deadline){try{if(await evaluate(expression,true))return;}catch{}await sleep(200);}throw new Error(`Timed out waiting for ${label}. ${diagnostics}`);};
+            const inputNode=async()=>{const root=await command('DOM.getDocument',{depth:-1,pierce:true});const q=await command('DOM.querySelector',{nodeId:root.root.nodeId,selector:'[data-testid="page-image-converter-unpublished"] input[type="file"]'});if(!q.nodeId)throw new Error('native file input missing');return q.nodeId;};
+            const setFile=async path=>command('DOM.setFileInputFiles',{nodeId:await inputNode(),files:[path]});
+            const reset=async()=>{await evaluate(`(()=>{const b=[...document.querySelectorAll('.file-tool-page button')].find(x=>x.textContent.includes('Reset'));if(b&&!b.disabled)b.click();return true})()`);await sleep(100);};
+
+            await command('Page.enable'); await command('Runtime.enable'); await command('DOM.enable');
+            await command('Page.navigate',{url:'http://127.0.0.1:4177/ft12-hostile-qa.html'});
+            await waitFor(`document.querySelector('[data-testid="page-image-converter-unpublished"] input[type="file"]') !== null`,'image converter');
+
+            // Corrupt image: valid PNG signature but undecodable payload must fail closed.
+            await setFile('/tmp/FT12_CORRUPT.png');
+            await waitFor(`document.querySelector('.file-tool-error') !== null`,'corrupt-image error');
+            const corrupt=await evaluate(`(()=>({hasSource:!!document.querySelector('.file-tool-summary'),downloadDisabled:document.querySelector('.file-tool-action-link')?.getAttribute('aria-disabled')}))()`);
+            if(corrupt.hasSource || corrupt.downloadDisabled!=='true') throw new Error('corrupt image did not fail closed');
+            await reset();
+
+            // Decoded pixel ceiling: simulate hostile decoder dimensions without allocating a giant bitmap.
+            await evaluate(`(()=>{globalThis.__ft12Decode=HTMLImageElement.prototype.decode;globalThis.__ft12NW=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,'naturalWidth');globalThis.__ft12NH=Object.getOwnPropertyDescriptor(HTMLImageElement.prototype,'naturalHeight');HTMLImageElement.prototype.decode=function(){return Promise.resolve();};Object.defineProperty(HTMLImageElement.prototype,'naturalWidth',{configurable:true,get(){return 10000;}});Object.defineProperty(HTMLImageElement.prototype,'naturalHeight',{configurable:true,get(){return 5000;}});return true})()`);
+            await setFile('/tmp/FT12_VALID.png');
+            await waitFor(`document.querySelector('.file-tool-error')?.textContent.includes('40,000,000 pixel safety limit')`,'decoded-pixel limit');
+            const huge=await evaluate(`(()=>({source:!!document.querySelector('.file-tool-summary'),downloadDisabled:document.querySelector('.file-tool-action-link')?.getAttribute('aria-disabled')}))()`);
+            if(huge.source || huge.downloadDisabled!=='true') throw new Error('oversized decoded image did not fail closed');
+            await evaluate(`(()=>{HTMLImageElement.prototype.decode=globalThis.__ft12Decode;if(globalThis.__ft12NW)Object.defineProperty(HTMLImageElement.prototype,'naturalWidth',globalThis.__ft12NW);if(globalThis.__ft12NH)Object.defineProperty(HTMLImageElement.prototype,'naturalHeight',globalThis.__ft12NH);return true})()`);
+            await reset();
+
+            // Build a real 2x1 JPEG in Chrome, inject EXIF Orientation=6, then re-upload it.
+            const jpeg64=await evaluate(`(()=>{const c=document.createElement('canvas');c.width=2;c.height=1;const x=c.getContext('2d');x.fillStyle='#f00';x.fillRect(0,0,1,1);x.fillStyle='#00f';x.fillRect(1,0,1,1);return c.toDataURL('image/jpeg',0.92).split(',')[1]})()`);
+            const base=Buffer.from(jpeg64,'base64');
+            const tiff=Buffer.from([0x49,0x49,0x2a,0x00,0x08,0x00,0x00,0x00,0x01,0x00,0x12,0x01,0x03,0x00,0x01,0x00,0x00,0x00,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00]);
+            const payload=Buffer.concat([Buffer.from('Exif\0\0','binary'),tiff]);
+            const app1=Buffer.alloc(4); app1[0]=0xff; app1[1]=0xe1; app1.writeUInt16BE(payload.length+2,2);
+            const oriented=Buffer.concat([base.subarray(0,2),app1,payload,base.subarray(2)]);
+            fs.writeFileSync('/tmp/FT12_ORIENTATION_6.jpg',oriented);
+            await setFile('/tmp/FT12_ORIENTATION_6.jpg');
+            await waitFor(`document.querySelector('.file-tool-summary') !== null`,'orientation fixture decode');
+            const orientation=await evaluate(`(()=>document.querySelector('.file-tool-summary')?.innerText||'')()`);
+            if(!orientation.includes('1 × 2px')) throw new Error('EXIF Orientation=6 was not reflected in browser-decoded dimensions: '+orientation);
+            const overflow=await evaluate(`document.documentElement.scrollWidth > innerWidth`);
+            if(overflow) throw new Error('orientation state caused horizontal overflow');
+
+            console.log('FT12_HOSTILE_BROWSER_PASS', JSON.stringify({corrupt,huge,orientation}));
+          } finally { socket.close(); chrome.kill('SIGTERM'); }
+          JS
+
+      - name: Start unpublished Vite harness
+        run: |
+          pnpm exec vite --host 127.0.0.1 --port 4177 > /tmp/ft12-hostile-vite.log 2>&1 &
+          for i in {1..40}; do curl -fsS http://127.0.0.1:4177/ft12-hostile-qa.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/ft12-hostile-vite.log
+          exit 1
+
+      - name: Corrupt, pixel-ceiling and EXIF orientation browser gate
+        run: node /tmp/ft12-hostile-runner.mjs
