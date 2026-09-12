@@ -216,8 +216,74 @@ export function CategoryPage() {
   const category = categories.find((item) => item.slug === params?.slug) ?? localCategories.find((item) => item.slug === params?.slug);
   const visible = tools.filter((tool) => tool.categorySlug === params?.slug);
   if (!category) return <Shell><NotFoundInner /></Shell>;
-  const introduction = categoryContent[category.slug as keyof typeof categoryContent]?.introduction[0] ?? category.description;
-  return <Shell><Seo path={`/category/${category.slug}`} /><section className="page-intro category-intro"><Link href="/calculators" className="back-link" data-testid="link-back-home"><ArrowLeft size={15} aria-hidden="true" /> All calculators</Link><div className="eyebrow">CATEGORY / {category.name.toUpperCase()}</div><h1>{category.name}<span>.</span></h1><p>{introduction}</p><div className="intro-meta mono">{visible.length} PUBLISHED TOOLS</div></section><section className="section-block category-results"><div className="section-heading"><h2>Tools in {category.name.toLowerCase()}</h2><span className="mono result-count">{visible.length} RESULTS</span></div>{visible.length ? <div className="tool-list-grid">{visible.map((tool) => <ToolCard tool={tool} key={tool.slug} />)}</div> : <EmptyState />}</section></Shell>;
+  const content = categoryContent[category.slug as keyof typeof categoryContent];
+  const introductions = content?.introduction?.length ? content.introduction : [category.description];
+  const describedTools = content?.toolDescriptions
+    .map((item) => ({ ...item, tool: visible.find((tool) => tool.slug === item.slug) }))
+    .filter((item) => item.tool) ?? [];
+  return <Shell><Seo path={`/category/${category.slug}`} />
+    <section className="page-intro category-intro">
+      <Link href="/calculators" className="back-link" data-testid="link-back-home"><ArrowLeft size={15} aria-hidden="true" /> All calculators</Link>
+      <div className="eyebrow">CATEGORY / {category.name.toUpperCase()}</div>
+      <h1>{category.name}<span>.</span></h1>
+      <p>{introductions[0]}</p>
+      <div className="intro-meta mono">{visible.length} PUBLISHED TOOLS</div>
+    </section>
+    <section className="section-block category-results">
+      <div className="section-heading"><h2>Tools in {category.name.toLowerCase()}</h2><span className="mono result-count">{visible.length} RESULTS</span></div>
+      {visible.length ? <div className="tool-list-grid">{visible.map((tool) => <ToolCard tool={tool} key={tool.slug} />)}</div> : <EmptyState />}
+    </section>
+    {content && <section className="section-block category-editorial" aria-label={`${category.name} calculator guidance`}>
+      <div className="category-editorial-grid">
+        <article className="category-content-card category-content-card-wide">
+          <div className="eyebrow">USE THIS CATEGORY WELL</div>
+          <h2>What these {category.name.toLowerCase()} tools help you work out</h2>
+          {introductions.slice(1).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          <ul>{content.questionsAnswered.map((question) => <li key={question}>{question}</li>)}</ul>
+        </article>
+
+        <article className="category-content-card">
+          <div className="eyebrow">CHOOSING A TOOL</div>
+          <h2>Start with the question, not the calculator name</h2>
+          {content.choosingTools.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        </article>
+
+        <article className="category-content-card">
+          <div className="eyebrow">UNITS, CURRENCY &amp; INPUTS</div>
+          <h2>Keep the assumptions consistent</h2>
+          {content.unitCurrencyGuidance.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        </article>
+      </div>
+
+      {describedTools.length > 0 && <div className="category-content-section">
+        <div className="section-heading"><div><div className="eyebrow">TOOL GUIDE</div><h2>Which calculator should I use?</h2></div></div>
+        <div className="category-tool-guide-grid">
+          {describedTools.map(({ slug, description, tool }) => tool && <Link href={tool.href} className="category-tool-guide" key={slug}>
+            <strong>{tool.name}</strong><p>{description}</p><span>Open tool <ArrowRight size={14} aria-hidden="true" /></span>
+          </Link>)}
+        </div>
+      </div>}
+
+      {content.relatedGuides.length > 0 && <div className="category-content-section">
+        <div className="section-heading"><div><div className="eyebrow">RELATED GUIDES</div><h2>Understand the method behind the result</h2></div></div>
+        <div className="category-related-guides">
+          {content.relatedGuides.map((guide) => <Link href={guide.href} className="category-guide-card" key={guide.href}>
+            <strong>{guide.label}</strong><p>{guide.description}</p><span>Read guide <ArrowRight size={14} aria-hidden="true" /></span>
+          </Link>)}
+        </div>
+      </div>}
+
+      {content.faqs.length > 0 && <div className="category-content-section category-faq-section">
+        <div className="eyebrow">COMMON QUESTIONS</div><h2>{category.name} calculator FAQs</h2>
+        <div className="category-faq-list">{content.faqs.map((faq) => <details className="category-faq-item" key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</div>
+      </div>}
+
+      <div className="category-trust-links" aria-label="FigureNest calculation standards">
+        <strong>Check how FigureNest builds and reviews results.</strong>
+        <div><Link href="/methodology">Methodology &amp; accuracy <ArrowRight size={14} aria-hidden="true" /></Link><Link href="/disclaimer">Important limitations <ArrowRight size={14} aria-hidden="true" /></Link><Link href="/about">About FigureNest <ArrowRight size={14} aria-hidden="true" /></Link></div>
+      </div>
+    </section>}
+  </Shell>;
 }
 
 function EmptyState() { return <div className="empty-state"><Sparkles size={22} aria-hidden="true" /><h3>That shelf is still being stocked.</h3><p>Try another category, or search the full toolkit.</p><Link href="/calculators" className="text-link" data-testid="link-empty-home">Back to all tools <ArrowRight size={15} aria-hidden="true" /></Link></div>; }

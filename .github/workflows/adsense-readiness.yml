@@ -1,0 +1,44 @@
+name: AdSense Readiness Gate
+
+on:
+  push:
+    branches:
+      - adsense/low-value-content-gate
+  pull_request:
+    paths:
+      - 'artifacts/calcstride/**'
+      - 'scripts/adsense-readiness-audit.mjs'
+      - '.github/workflows/adsense-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adsense-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build workspace type dependencies
+        run: pnpm exec tsc -b lib/api-client-react
+      - name: Typecheck Calcstride
+        run: pnpm --filter @workspace/calcstride typecheck
+      - name: Run static AdSense readiness audit
+        run: node scripts/adsense-readiness-audit.mjs
+      - name: Build public site
+        run: pnpm --filter @workspace/calcstride build
+      - name: Enforce no-resubmission marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/adsense/LOW_VALUE_CONTENT_GATE.md
+          grep -Fq 'DO NOT RESUBMIT ADSENSE' docs/adsense/LOW_VALUE_CONTENT_GATE.md

@@ -942,3 +942,42 @@ button:disabled { cursor: not-allowed; opacity: .55; transform: none !important;
   .calculator-card { padding-inline: 12px; }
   .mode-selector { flex-direction: column; }
 }
+
+
+/* AdSense category destination content */
+.category-editorial { padding-top: 12px; padding-bottom: 72px; }
+.category-editorial-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.category-content-card { border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: clamp(22px, 3vw, 34px); box-shadow: var(--shadow-sm); }
+.category-content-card-wide { grid-column: 1 / -1; }
+.category-content-card h2, .category-content-section h2 { font: 700 clamp(24px, 3vw, 34px)/1.15 var(--app-font-sans); letter-spacing: -0.02em; margin: 10px 0 16px; color: var(--ink); }
+.category-content-card p, .category-content-card li, .category-tool-guide p, .category-guide-card p, .category-faq-item p { color: #475569; font-size: 15px; line-height: 1.7; }
+.category-content-card p + p { margin-top: 14px; }
+.category-content-card ul { margin: 18px 0 0; padding-left: 20px; display: grid; gap: 9px; }
+.category-content-section { margin-top: 56px; }
+.category-content-section .section-heading { margin-bottom: 20px; }
+.category-tool-guide-grid, .category-related-guides { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.category-tool-guide, .category-guide-card { display: flex; flex-direction: column; gap: 10px; min-height: 100%; border: 1px solid var(--border); border-radius: 8px; background: var(--card); padding: 20px; box-shadow: var(--shadow-xs); transition: transform .2s, box-shadow .2s, border-color .2s; }
+.category-tool-guide:hover, .category-guide-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #9fb8ed; }
+.category-tool-guide strong, .category-guide-card strong { color: var(--ink); font-size: 16px; }
+.category-tool-guide p, .category-guide-card p { flex: 1; margin: 0; }
+.category-tool-guide span, .category-guide-card span { display: inline-flex; align-items: center; gap: 6px; color: var(--brand-blue); font-size: 13px; font-weight: 700; }
+.category-faq-section { max-width: 880px; }
+.category-faq-list { border-top: 1px solid var(--border); }
+.category-faq-item { border-bottom: 1px solid var(--border); padding: 0; }
+.category-faq-item summary { cursor: pointer; list-style-position: inside; padding: 18px 0; color: var(--ink); font-weight: 700; font-size: 16px; }
+.category-faq-item p { margin: -4px 0 18px; max-width: 760px; }
+.category-trust-links { margin-top: 54px; padding: 22px 24px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; }
+.category-trust-links strong { display: block; color: var(--ink); margin-bottom: 12px; }
+.category-trust-links > div { display: flex; flex-wrap: wrap; gap: 12px 22px; }
+.category-trust-links a { display: inline-flex; align-items: center; gap: 5px; color: var(--brand-blue); font-size: 13px; font-weight: 700; }
+@media (max-width: 900px) {
+  .category-editorial-grid, .category-tool-guide-grid, .category-related-guides { grid-template-columns: 1fr; }
+  .category-content-card-wide { grid-column: auto; }
+}
+@media (max-width: 640px) {
+  .category-editorial { padding-top: 0; padding-bottom: 48px; }
+  .category-content-card { padding: 20px; }
+  .category-content-section { margin-top: 42px; }
+  .category-trust-links { padding: 18px; }
+  .category-trust-links > div { flex-direction: column; gap: 10px; }
+}
