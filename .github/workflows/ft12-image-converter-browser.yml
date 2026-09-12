@@ -1,0 +1,278 @@
+name: FT-12 Image Converter Browser QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/pages/ImageConverterPage.tsx'
+      - 'artifacts/calcstride/src/lib/image-converter-core.ts'
+      - 'artifacts/calcstride/src/lib/file-tools-foundation.ts'
+      - 'artifacts/calcstride/src/styles/file-tool-buttons.css'
+      - '.github/workflows/ft12-image-converter-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-image-converter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: artifacts/calcstride
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create unpublished component harness and transparent fixture
+        run: |
+          cat > ft12-browser-qa.html <<'HTML'
+          <!doctype html>
+          <html>
+            <head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+            <body><div id="root"></div><script type="module" src="/src/ft12-browser-qa.tsx"></script></body>
+          </html>
+          HTML
+          cat > src/ft12-browser-qa.tsx <<'TSX'
+          import React from 'react';
+          import { createRoot } from 'react-dom/client';
+          import { ImageConverterPage } from '@/pages/ImageConverterPage';
+          import '@/index.css';
+
+          createRoot(document.getElementById('root')!).render(
+            <React.StrictMode><ImageConverterPage /></React.StrictMode>,
+          );
+          TSX
+          printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAarVyFEAAAAASUVORK5CYII=' | base64 -d > /tmp/FT12_PRIVATE_SENTINEL_8427.png
+          file /tmp/FT12_PRIVATE_SENTINEL_8427.png
+
+      - name: Create CDP browser runner
+        run: |
+          cat > /tmp/ft12-cdp-runner.mjs <<'JS'
+          import { spawn, spawnSync } from 'node:child_process';
+
+          const [mode, widthText, heightText, portText] = process.argv.slice(2);
+          const width = Number(widthText);
+          const height = Number(heightText);
+          const port = Number(portText);
+          const candidates = [process.env.CHROME_BIN, 'google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean);
+          let chromeBin = '';
+          for (const candidate of candidates) {
+            const probe = spawnSync('which', [candidate], {encoding: 'utf8'});
+            if (probe.status === 0 && probe.stdout.trim()) { chromeBin = probe.stdout.trim(); break; }
+          }
+          if (!chromeBin) throw new Error('Chrome/Chromium is unavailable');
+
+          const chrome = spawn(chromeBin, [
+            '--headless=new', '--no-sandbox', '--disable-gpu',
+            `--window-size=${width},${height}`,
+            `--remote-debugging-port=${port}`,
+            `--user-data-dir=/tmp/ft12-chrome-${mode}`,
+            'about:blank',
+          ], {stdio: ['ignore', 'ignore', 'pipe']});
+          let diagnostics = '';
+          chrome.stderr.on('data', (chunk) => { diagnostics += String(chunk); });
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          async function connect() {
+            for (let attempt = 0; attempt < 80; attempt += 1) {
+              try {
+                const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) => response.json());
+                const target = targets.find((candidate) => candidate.type === 'page');
+                if (target?.webSocketDebuggerUrl) return new WebSocket(target.webSocketDebuggerUrl);
+              } catch {}
+              await sleep(250);
+            }
+            throw new Error(`Chrome DevTools did not start. ${diagnostics}`);
+          }
+
+          let socket;
+          try {
+            socket = await connect();
+            await new Promise((resolve, reject) => {
+              socket.addEventListener('open', resolve, {once: true});
+              socket.addEventListener('error', reject, {once: true});
+            });
+            let sequence = 0;
+            const pending = new Map();
+            socket.addEventListener('message', (event) => {
+              const message = JSON.parse(String(event.data));
+              if (!message.id || !pending.has(message.id)) return;
+              const handlers = pending.get(message.id);
+              pending.delete(message.id);
+              if (message.error) handlers.reject(new Error(message.error.message));
+              else handlers.resolve(message.result);
+            });
+            const command = (method, params = {}) => new Promise((resolve, reject) => {
+              const id = ++sequence;
+              pending.set(id, {resolve, reject});
+              socket.send(JSON.stringify({id, method, params}));
+            });
+            const evaluate = async (expression, awaitPromise = false) => {
+              const result = await command('Runtime.evaluate', {expression, awaitPromise, returnByValue: true});
+              if (result.exceptionDetails) throw new Error(result.exceptionDetails.text || 'Browser evaluation failed');
+              return result.result?.value;
+            };
+            const waitFor = async (expression, label) => {
+              const deadline = Date.now() + 120_000;
+              while (Date.now() < deadline) {
+                try { if (await evaluate(expression, true)) return; } catch {}
+                await sleep(250);
+              }
+              throw new Error(`Timed out waiting for ${label}. ${diagnostics}`);
+            };
+
+            await command('Page.enable');
+            await command('Runtime.enable');
+            await command('DOM.enable');
+            await command('Emulation.setDeviceMetricsOverride', {
+              width, height, deviceScaleFactor: 1, mobile: mode === 'mobile',
+            });
+            await command('Emulation.setTouchEmulationEnabled', {
+              enabled: mode === 'mobile', maxTouchPoints: mode === 'mobile' ? 5 : 1,
+            });
+            await command('Page.addScriptToEvaluateOnNewDocument', {source: `
+              globalThis.__ft12Privacy = {active: false, violations: []};
+              const record = (value) => {
+                if (globalThis.__ft12Privacy.active) globalThis.__ft12Privacy.violations.push(String(value));
+              };
+              const originalFetch = globalThis.fetch.bind(globalThis);
+              globalThis.fetch = async (input, init) => {
+                const request = input instanceof Request ? input : null;
+                const url = request?.url ?? String(input);
+                const method = (init?.method ?? request?.method ?? 'GET').toUpperCase();
+                const resolved = new URL(url, location.href);
+                if (globalThis.__ft12Privacy.active && (resolved.origin !== location.origin || method !== 'GET' || init?.body != null)) {
+                  record('fetch:' + method + ':' + url);
+                }
+                return originalFetch(input, init);
+              };
+              const OriginalXHR = globalThis.XMLHttpRequest;
+              class GuardedXHR extends OriginalXHR {
+                open(method, url, ...rest) { this.__ft12Method = method; this.__ft12Url = String(url); return super.open(method, url, ...rest); }
+                send(body) {
+                  if (globalThis.__ft12Privacy.active) {
+                    const resolved = new URL(this.__ft12Url || '', location.href);
+                    if (resolved.origin !== location.origin || String(this.__ft12Method || 'GET').toUpperCase() !== 'GET' || body != null) {
+                      record('xhr:' + this.__ft12Method + ':' + this.__ft12Url);
+                    }
+                  }
+                  return super.send(body);
+                }
+              }
+              globalThis.XMLHttpRequest = GuardedXHR;
+              if (navigator.sendBeacon) {
+                Object.defineProperty(navigator, 'sendBeacon', {configurable: true, value: (url) => { record('beacon:' + url); return false; }});
+              }
+              const originalWebSocketSend = WebSocket.prototype.send;
+              WebSocket.prototype.send = function(data) { record('websocket-send'); return originalWebSocketSend.call(this, data); };
+              for (const name of ['setItem', 'removeItem', 'clear']) {
+                const original = Storage.prototype[name];
+                Storage.prototype[name] = function(...args) { record('storage:' + name); return original.apply(this, args); };
+              }
+              const originalIndexedOpen = indexedDB.open.bind(indexedDB);
+              indexedDB.open = (...args) => { record('indexeddb-open'); return originalIndexedOpen(...args); };
+              if (globalThis.caches?.open) {
+                const originalCacheOpen = globalThis.caches.open.bind(globalThis.caches);
+                globalThis.caches.open = (...args) => { record('cache-open'); return originalCacheOpen(...args); };
+              }
+              const originalSubmit = HTMLFormElement.prototype.submit;
+              HTMLFormElement.prototype.submit = function() { record('form-submit'); return originalSubmit.call(this); };
+            `});
+
+            await command('Page.navigate', {url: `http://127.0.0.1:4175/ft12-browser-qa.html?mode=${mode}`});
+            await waitFor(`document.querySelector('[data-testid="page-image-converter"] input[type="file"]') !== null`, 'image converter component');
+
+            const initial = await evaluate(`(() => {
+              const page = document.querySelector('.file-tool-page');
+              const input = page.querySelector('input[type="file"]');
+              const buttons = [...page.querySelectorAll('button')];
+              const convert = buttons.find((button) => button.textContent.includes('Convert image'));
+              const reset = buttons.find((button) => button.textContent.includes('Reset'));
+              const download = page.querySelector('.file-tool-action-link');
+              const picker = getComputedStyle(input, '::file-selector-button');
+              const convertStyle = getComputedStyle(convert);
+              if (!page || !document.querySelector('h1')?.textContent.includes('Image Converter')) throw new Error('page contract missing');
+              if (!convert.disabled || !reset.disabled || download.getAttribute('aria-disabled') !== 'true' || download.tabIndex !== -1) throw new Error('initial disabled states are unsafe');
+              if (picker.backgroundColor === 'rgba(0, 0, 0, 0)' || picker.color === picker.backgroundColor) throw new Error('native picker lacks visible contrast');
+              return {pickerBackground: picker.backgroundColor, pickerColor: picker.color, convertBackground: convertStyle.backgroundColor, viewport: innerWidth + 'x' + innerHeight};
+            })()`);
+            if (initial.viewport !== `${width}x${height}`) throw new Error(`viewport mismatch: ${initial.viewport}`);
+
+            await evaluate(`globalThis.__ft12Privacy.active = true; true`);
+            const root = await command('DOM.getDocument', {depth: -1, pierce: true});
+            const inputNode = await command('DOM.querySelector', {nodeId: root.root.nodeId, selector: '[data-testid="page-image-converter"] input[type="file"]'});
+            if (!inputNode.nodeId) throw new Error('native file input not found');
+            await command('DOM.setFileInputFiles', {nodeId: inputNode.nodeId, files: ['/tmp/FT12_PRIVATE_SENTINEL_8427.png']});
+            await waitFor(`document.body.innerText.includes('1 × 1px')`, 'fixture decode');
+
+            const ready = await evaluate(`(() => {
+              const page = document.querySelector('.file-tool-page');
+              const buttons = [...page.querySelectorAll('button')];
+              const convert = buttons.find((button) => button.textContent.includes('Convert image'));
+              const reset = buttons.find((button) => button.textContent.includes('Reset'));
+              const minimum = ${mode === 'mobile' ? 46 : 42};
+              if (convert.disabled || reset.disabled) throw new Error('ready actions did not enable');
+              if (parseFloat(getComputedStyle(convert).minHeight) < minimum || parseFloat(getComputedStyle(reset).minHeight) < minimum) throw new Error('action touch target is too small');
+              if (document.documentElement.scrollWidth > innerWidth) throw new Error('horizontal overflow');
+              convert.click();
+              return true;
+            })()`);
+            if (!ready) throw new Error('ready state failed');
+            await waitFor(`document.querySelector('.file-tool-action-link')?.href.startsWith('blob:')`, 'JPEG conversion');
+
+            const result = await evaluate(`(async () => {
+              const page = document.querySelector('.file-tool-page');
+              const download = page.querySelector('.file-tool-action-link');
+              const href = download.href;
+              const response = await fetch(href);
+              const blob = await response.blob();
+              if (blob.type !== 'image/jpeg' || download.download !== 'FT12_PRIVATE_SENTINEL_8427-converted.jpg') throw new Error('output MIME/name mismatch');
+              const bitmap = await createImageBitmap(blob);
+              const canvas = document.createElement('canvas');
+              canvas.width = bitmap.width; canvas.height = bitmap.height;
+              const context = canvas.getContext('2d');
+              context.drawImage(bitmap, 0, 0);
+              const pixel = [...context.getImageData(0, 0, 1, 1).data];
+              bitmap.close();
+              if (pixel[0] < 245 || pixel[1] < 245 || pixel[2] < 245 || pixel[3] !== 255) throw new Error('transparent PNG was not flattened onto white');
+              const reset = [...page.querySelectorAll('button')].find((button) => button.textContent.includes('Reset'));
+              reset.click();
+              await new Promise((resolve) => setTimeout(resolve, 50));
+              let revoked = false;
+              try { await fetch(href); } catch { revoked = true; }
+              if (!revoked) throw new Error('result Object URL survived reset');
+              if (download.getAttribute('aria-disabled') !== 'true' || download.tabIndex !== -1) throw new Error('download did not return to disabled state');
+              if (page.querySelector('input[type="file"]').value !== '') throw new Error('native picker was not cleared');
+              const violations = globalThis.__ft12Privacy.violations;
+              if (violations.length) throw new Error('privacy violations: ' + violations.join(','));
+              return {mime: blob.type, bytes: blob.size, pixel, revoked, viewport: innerWidth + 'x' + innerHeight};
+            })()`, true);
+
+            console.log('FT12_BROWSER_PASS', mode, JSON.stringify({initial, result}));
+          } finally {
+            socket?.close();
+            chrome.kill('SIGTERM');
+          }
+          JS
+
+      - name: Start unpublished Vite harness
+        run: |
+          pnpm exec vite --host 127.0.0.1 --port 4175 > /tmp/ft12-vite.log 2>&1 &
+          for i in {1..40}; do curl -fsS http://127.0.0.1:4175/ft12-browser-qa.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/ft12-vite.log
+          exit 1
+
+      - name: Desktop native picker, conversion, privacy and cleanup
+        run: node /tmp/ft12-cdp-runner.mjs desktop 1440 1200 9242
+
+      - name: Mobile 390x844 native picker, conversion, privacy and cleanup
+        run: node /tmp/ft12-cdp-runner.mjs mobile 390 844 9243

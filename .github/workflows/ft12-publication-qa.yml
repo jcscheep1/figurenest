@@ -1,0 +1,70 @@
+name: FT-12 Image Converter Publication QA
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/calcstride/src/App.tsx'
+      - 'artifacts/calcstride/src/lib/file-tools-catalog.ts'
+      - 'artifacts/calcstride/src/lib/file-tools-category-content.ts'
+      - 'artifacts/calcstride/src/pages/ImageConverterPage.tsx'
+      - 'artifacts/calcstride/public/sitemap.xml'
+      - 'artifacts/calcstride/src/styles/file-tool-buttons.css'
+      - '.github/workflows/ft12-publication-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  publication-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify public route and lazy page loading
+        run: |
+          grep -F "ImageConverterPage" artifacts/calcstride/src/App.tsx
+          grep -F 'path="/file-tools/image-converter"' artifacts/calcstride/src/App.tsx
+
+      - name: Verify catalog and SEO contract
+        run: |
+          grep -F "'image-converter':" artifacts/calcstride/src/lib/file-tools-catalog.ts
+          grep -F "href: '/file-tools/image-converter'" artifacts/calcstride/src/lib/file-tools-catalog.ts
+          grep -F "h1:" artifacts/calcstride/src/lib/file-tools-catalog.ts
+          grep -F "seoTitle:" artifacts/calcstride/src/lib/file-tools-catalog.ts
+          grep -F "seoDescription:" artifacts/calcstride/src/lib/file-tools-catalog.ts
+          grep -F "faqs:" artifacts/calcstride/src/lib/file-tools-catalog.ts
+          grep -F '<Seo path="/file-tools/image-converter" />' artifacts/calcstride/src/pages/ImageConverterPage.tsx
+
+      - name: Verify shared File Tool UI contract
+        run: |
+          grep -F 'className="file-tool-page"' artifacts/calcstride/src/pages/ImageConverterPage.tsx
+          grep -F "file-tool-buttons.css" artifacts/calcstride/src/pages/ImageConverterPage.tsx artifacts/calcstride/src/App.tsx artifacts/calcstride/src/main.tsx || true
+          grep -F "input[type='file']" artifacts/calcstride/src/styles/file-tool-buttons.css
+
+      - name: Verify sitemap publication
+        run: grep -F '<loc>https://figurenest.com/file-tools/image-converter/</loc>' artifacts/calcstride/public/sitemap.xml
+
+      - name: Focused image converter tests
+        run: pnpm --filter @workspace/calcstride exec node --import tsx --test src/lib/image-converter-core.test.ts
+
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
+
+      - name: Typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
+
+      - name: Production build
+        run: pnpm --filter @workspace/calcstride build
