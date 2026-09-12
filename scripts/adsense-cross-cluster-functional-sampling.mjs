@@ -8,9 +8,7 @@ const [mode, widthText, heightText, portText, baseUrl = 'http://127.0.0.1:4177']
 const width = Number(widthText);
 const height = Number(heightText);
 const port = Number(portText);
-if (!['desktop', 'mobile'].includes(mode) || !width || !height || !port) {
-  throw new Error('Usage: node scripts/adsense-cross-cluster-functional-sampling.mjs <desktop|mobile> <width> <height> <debug-port> [base-url]');
-}
+if (!['desktop', 'mobile'].includes(mode) || !width || !height || !port) throw new Error('Usage: node scripts/adsense-cross-cluster-functional-sampling.mjs <desktop|mobile> <width> <height> <debug-port> [base-url]');
 
 const chromeCandidates = [process.env.CHROME_BIN, 'google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean);
 let chromeBin = '';
@@ -106,10 +104,7 @@ try {
   for (const [name, route] of routes) {
     runtimeErrors.length = 0;
     await command('Page.navigate', { url: new URL(route, baseUrl).href });
-    await waitFor(`document.readyState === 'complete'
-      && location.pathname.replace(/\\/$/, '') === ${JSON.stringify(route.replace(/\/$/, ''))}
-      && document.querySelector('main h1')
-      && Object.keys(document.getElementById('root') || {}).some((key) => key.startsWith('__reactContainer'))`, `${name} hydrated render`);
+    await waitFor(`document.readyState === 'complete' && location.pathname.replace(/\\/$/, '') === ${JSON.stringify(route.replace(/\/$/, ''))} && document.querySelector('main h1') && Object.keys(document.getElementById('root') || {}).some((key) => key.startsWith('__reactContainer'))`, `${name} hydrated render`);
 
     const general = await evaluate(`(() => {
       const route = ${JSON.stringify(route)};
@@ -137,34 +132,32 @@ try {
 
     let interaction;
     if (name === 'health-bmr' || name === 'electrical-ohms-law') {
-      interaction = await evaluate(`(async () => {
+      const inputState = await evaluate(`(() => {
         const main = document.querySelector('main');
-        const inputs = [...main.querySelectorAll('input[type="number"]')].filter((input) => !input.disabled);
-        if (!inputs.length) throw new Error('numeric calculator inputs missing');
-        const input = inputs[0];
-        const before = main.innerText;
-        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-        const current = Number(input.value);
-        setter.call(input, String(Number.isFinite(current) ? current + 1 : 2));
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        await new Promise((resolve) => setTimeout(resolve, 180));
-        if (main.innerText === before) throw new Error('calculator did not react to valid numeric input');
+        const input = [...main.querySelectorAll('input[type="number"]')].find((candidate) => !candidate.disabled);
+        if (!input) throw new Error('numeric calculator inputs missing');
+        const result = main.querySelector('[data-testid^="result-"]') || main.querySelector('.advanced-result strong');
+        input.focus(); input.select();
+        if (document.activeElement !== input) throw new Error('numeric input is not focusable');
+        return { current: Number(input.value), beforeResult: result?.textContent || '', beforeMain: main.innerText };
+      })()`);
+      const nextValue = String(Number.isFinite(inputState.current) ? inputState.current + 1 : 2);
+      await command('Input.insertText', { text: nextValue });
+      await waitFor(`(() => { const main=document.querySelector('main'); const result=main.querySelector('[data-testid^="result-"]') || main.querySelector('.advanced-result strong'); return (result?.textContent || '') !== ${JSON.stringify(inputState.beforeResult)} || main.innerText !== ${JSON.stringify(inputState.beforeMain)}; })()`, `${name} result reaction`);
+      interaction = await evaluate(`(() => {
+        const main = document.querySelector('main');
         const reset = [...main.querySelectorAll('button')].find((button) => /reset/i.test(button.textContent || ''));
         if (!reset) throw new Error('reset control missing');
         reset.focus();
         if (document.activeElement !== reset) throw new Error('reset is not keyboard focusable');
-        return 'numeric input/result reaction and keyboard-focusable reset';
-      })()`, true);
+        return 'trusted numeric input/result reaction and keyboard-focusable reset';
+      })()`);
     } else {
       const idlePicker = await evaluate(`(() => {
         const page = document.querySelector('.file-tool-page');
         const input = page?.querySelector('input[type="file"]');
         if (!page || !input) throw new Error('File Tool wrapper/native file input missing');
-        const parse = (value) => {
-          const match = String(value || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i);
-          return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null;
-        };
+        const parse = (value) => { const match = String(value || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i); return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null; };
         const rgb = parse(getComputedStyle(input, '::file-selector-button').backgroundColor);
         if (!rgb || !(rgb[2] >= rgb[0] + 25 && rgb[2] >= rgb[1] + 10)) throw new Error('native file-picker button is not visibly blue');
         if (${mode === 'mobile'} && input.getBoundingClientRect().height < 44) throw new Error('mobile native file picker below 44px');
@@ -180,10 +173,7 @@ try {
 
       interaction = await evaluate(`(() => {
         const page = document.querySelector('.file-tool-page');
-        const parse = (value) => {
-          const match = String(value || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i);
-          return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null;
-        };
+        const parse = (value) => { const match = String(value || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i); return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null; };
         const isBlue = (rgb) => rgb && rgb[2] >= rgb[0] + 25 && rgb[2] >= rgb[1] + 10;
         const isGrey = (rgb) => rgb && Math.max(...rgb) - Math.min(...rgb) <= 42;
         const isRed = (rgb) => rgb && rgb[0] >= rgb[1] + 35 && rgb[0] >= rgb[2] + 35;
