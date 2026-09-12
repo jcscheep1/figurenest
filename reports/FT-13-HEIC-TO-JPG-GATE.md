@@ -1,6 +1,6 @@
 # FT-13 — HEIC/HEIF to JPG Research Gate
 
-Status: **RESEARCH ONLY / NOT PUBLISHABLE**
+Status: **NOT PUBLISHABLE — ADVANCE ROADMAP**
 
 Proposed route: `/file-tools/heic-to-jpg`
 
@@ -44,17 +44,25 @@ The previous authorization to begin an executable `heic-to@1.5.2` fixture spike 
 
 This lower-level package is also too old for the current libheif security floor and remains LGPL-3.0. It must not be used as a fallback merely to keep FT-13 moving.
 
-### `@stacksjs/ts-heic` — research watchlist only
+### `@stacksjs/ts-heic` source candidate — REJECTED FOR CURRENT FIGURENEST SPIKE
 
-A pure-TypeScript decoder remains architecturally interesting because it avoids the vulnerable libheif/WASM lineage and LGPL distribution concerns. It is **not approved**: release maturity, hostile-input hardening, representative iPhone/HEIF coverage, 10-bit/HDR behavior, auxiliary/multi-image behavior, memory limits and browser fidelity still require independent evidence.
+The source repository currently declares version `0.0.1`, MIT licensing, and no runtime dependencies. Its architecture is attractive because it is pure TypeScript with no native module or WASM requirement, and its documentation claims real-iPhone fixture coverage, orientation transforms, HEIF grid stitching and malformed-input tests.
+
+However, the documented decoder scope is materially narrower than the FT-13 acceptance matrix: current decoding targets 8-bit HEVC Main-profile still images and explicitly excludes 10-bit/12-bit pixel decoding, auxiliary alpha-plane decoding and animated image sequences. Those exclusions are not automatically unsafe if they fail closed, but they require executable proof before FigureNest can rely on them.
+
+The exact registry preflight added on PR #138 failed at the package-metadata step before any package was installed or packed. At this checkpoint FigureNest therefore does **not** have a verified exact npm artefact, integrity record, distributable footprint, or browser bundle to test. The source project is also at an initial `0.0.1` maturity level. FigureNest will not consume an unverified Git/source dependency merely to bypass the package gate.
+
+Result: **do not install, route or publish `@stacksjs/ts-heic` now.** Revisit only after there is a verifiable exact distribution artefact and enough release maturity to justify hostile-fixture, mobile-memory and browser-fidelity testing.
 
 ### Current security floor and next candidate rule
 
 Any future libheif-derived browser candidate must prove that its distributed decoder is based on **libheif >= 1.23.4** (or a newer upstream security release current at the time of evaluation), with no known unpatched high/critical advisory applicable to the shipped decode path. Package-wrapper version numbers are insufficient; the embedded decoder revision must be evidenced directly from the distributed artefact/source.
 
-Do not resume libheif-derived fixture testing until a browser package satisfying that floor exists. In parallel, non-libheif candidates may be researched without exposing a public route.
+Any future non-libheif candidate must provide a verifiable exact distribution artefact, current licence, reproducible source mapping, explicit unsupported-format behavior and enough release maturity to justify running hostile user-controlled ISO-BMFF/HEVC input through it.
 
-## Hostile-input and resource contract
+Do not resume decoder fixture testing until one of those candidate rules is satisfied.
+
+## Hostile-input and resource contract for a future revisit
 
 - Validate extension, MIME, ISO-BMFF `ftyp` structure and accepted HEIC/HEIF brands before decoder import.
 - Reject malformed/truncated boxes, unsafe box lengths, integer overflow, excessive nesting, unsupported sequences/animations and ambiguous multi-image containers.
@@ -63,11 +71,11 @@ Do not resume libheif-derived fixture testing until a browser package satisfying
 - Perform one-file/one-frame work with cancellation and deterministic release of ArrayBuffers, decoder/WASM objects, canvas state and Object URLs on success, failure, reset and unmount.
 - JPEG output must flatten alpha onto white, use a verified `image/jpeg` encoder result, preserve browser-decoded orientation, and disclose metadata/ICC/HDR/depth/Live Photo loss.
 
-## Required fixtures and QA
+## Required fixtures for a future revisit
 
 1. iPhone portrait HEIC with orientation metadata.
 2. Landscape HEIC and HEIF-brand variant.
-3. 10-bit/HDR input with explicit SDR/fidelity outcome.
+3. 10-bit/HDR input with explicit SDR/fidelity outcome or verified fail-closed rejection.
 4. Alpha/depth/auxiliary-image container with documented behavior.
 5. Multi-image/sequence/Live Photo input: deterministic primary-image handling or fail-closed rejection.
 6. Malformed/truncated ISO-BMFF boxes and forged size fields.
@@ -78,12 +86,12 @@ Do not resume libheif-derived fixture testing until a browser package satisfying
 
 ## UI and publication contract
 
-Any published implementation must render inside `.file-tool-page` and inherit `file-tool-buttons.css`: enabled picker/convert/download/reset actions blue with contrasting text, disabled actions grey, destructive actions red. Verify native picker and touch targets on desktop and 390×844 mobile.
+Any future published implementation must render inside `.file-tool-page` and inherit `file-tool-buttons.css`: enabled picker/convert/download/reset actions blue with contrasting text, disabled actions grey, destructive actions red. Verify native picker and touch targets on desktop and 390×844 mobile.
 
 Before publication add unique HEIC-to-JPG search intent, H1/title/meta, meaningful tags and description, canonical, breadcrumb/WebApplication/FAQ schema, useful FAQs, non-thin privacy/fidelity guidance, catalog/category/applicability/sitemap parity and related links to Image Converter and Image to PDF.
 
-## Publish / stop rule
+## Final decision for this lane
 
-FT-13 remains **NOT PUBLISHABLE** while no decoder clears the security floor. Publish only after an exact-pinned candidate passes current advisory review, licence/source obligations, exact-head focused tests, full validation/build, route-lazy bundle measurements, hostile fixtures, desktop/mobile browser QA, privacy interception, output reopening and both authoritative Vercel previews.
+FT-13 is **NOT PUBLISHABLE as of 2026-09-12**. The safe libheif-derived browser wrappers observed do not meet the current libheif security floor, and the non-libheif TypeScript source candidate does not yet provide a verified exact distribution package/maturity boundary suitable for hostile-file processing.
 
-If no candidate meets licence, security, fidelity or mobile-resource limits, keep the route absent and advance the roadmap without forcing a bad HEIC tool.
+Keep `/file-tools/heic-to-jpg` absent. Do not add decoder dependencies, catalog/schema/sitemap entries or placeholder SEO content. Advance FigureNest to evidence-based calculator/content expansion. Reopen FT-13 only when a candidate materially changes the security/distribution evidence rather than on a timer.
