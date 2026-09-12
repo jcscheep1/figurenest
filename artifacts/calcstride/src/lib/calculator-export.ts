@@ -39,7 +39,7 @@ export function buildCalculatorCsv(snapshot: CalculatorExportSnapshot, scope: Ex
 }
 
 export function buildCalculatorExcelHtml(snapshot: CalculatorExportSnapshot, scope: ExportScope): string {
-  const rows = exportRows(snapshot, scope).map((row) => `<tr><td>${escapeHtml(row.label)}</td><td>${escapeHtml(row.value)}</td></tr>`).join('');
+  const rows = exportRows(snapshot, scope).map((row) => `<tr><td>${escapeHtml(spreadsheetSafe(row.label))}</td><td>${escapeHtml(spreadsheetSafe(row.value))}</td></tr>`).join('');
   return `<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif}table{border-collapse:collapse;width:100%}td{border:1px solid #bbb;padding:8px;vertical-align:top}td:first-child{font-weight:600;width:35%}</style></head><body><table>${rows}</table></body></html>`;
 }
 
@@ -52,6 +52,6 @@ export function buildCalculatorPrintHtml(snapshot: CalculatorExportSnapshot, sco
 }
 
 export function safeExportFilename(title: string): string {
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80).replace(/-+$/g, '');
   return slug || 'figurenest-calculation';
 }
