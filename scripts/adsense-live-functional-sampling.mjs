@@ -104,7 +104,10 @@ try {
   for (const [name, route] of routes) {
     runtimeErrors.length = 0;
     await command('Page.navigate', { url: new URL(route, baseUrl).href });
-    await waitFor(`document.readyState === 'complete' && location.pathname.replace(/\\/$/, '') === ${JSON.stringify(route.replace(/\/$/, ''))} && document.querySelector('main h1')`, `${name} render`);
+    await waitFor(`document.readyState === 'complete'
+      && location.pathname.replace(/\\/$/, '') === ${JSON.stringify(route.replace(/\/$/, ''))}
+      && document.querySelector('main h1')
+      && Object.keys(document.getElementById('root') || {}).some((key) => key.startsWith('__reactContainer'))`, `${name} hydrated render`);
     const general = await evaluate(`(() => {
       const route = ${JSON.stringify(route)};
       const h1 = document.querySelector('main h1');
