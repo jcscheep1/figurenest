@@ -2,7 +2,8 @@
    Keep every newly added PDF/file tool visually consistent on desktop and mobile. */
 
 .file-tool-page button:not(.danger-action),
-.file-tool-page .image-pdf-file-button {
+.file-tool-page .image-pdf-file-button,
+.file-tool-page .file-tool-action-link {
   min-height: 42px;
   border: 1px solid hsl(var(--primary)) !important;
   border-radius: 10px;
@@ -11,6 +12,15 @@
   font-weight: 800;
   cursor: pointer;
   transition: filter 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.file-tool-page .file-tool-action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  text-decoration: none;
 }
 
 /* The shared file picker is used by PDF→image, PDF→DOCX, DOCX→PDF,
@@ -73,25 +83,29 @@
 
 .file-tool-page button:not(.danger-action):not(:disabled):hover,
 .file-tool-page .image-pdf-file-button:hover,
+.file-tool-page .file-tool-action-link:not([aria-disabled='true']):hover,
 .file-tool-page input[type='file']:not(:disabled)::file-selector-button:hover,
 .file-tool-page input[type='file']:not(:disabled)::-webkit-file-upload-button:hover {
   filter: brightness(.93);
 }
 
 .file-tool-page button:not(.danger-action):not(:disabled):active,
-.file-tool-page .image-pdf-file-button:active {
+.file-tool-page .image-pdf-file-button:active,
+.file-tool-page .file-tool-action-link:not([aria-disabled='true']):active {
   transform: translateY(1px);
 }
 
 .file-tool-page button:not(.danger-action):focus-visible,
 .file-tool-page .image-pdf-file-button:focus-within,
+.file-tool-page .file-tool-action-link:focus-visible,
 .file-tool-page input[type='file']:focus-visible {
   outline: 3px solid hsl(var(--primary) / 28%);
   outline-offset: 2px;
   box-shadow: 0 0 0 1px hsl(var(--primary));
 }
 
-.file-tool-page button:not(.danger-action):disabled {
+.file-tool-page button:not(.danger-action):disabled,
+.file-tool-page .file-tool-action-link[aria-disabled='true'] {
   border-color: hsl(var(--border)) !important;
   background: hsl(var(--muted)) !important;
   color: hsl(var(--muted-foreground)) !important;
@@ -99,6 +113,7 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+  pointer-events: none;
 }
 
 /* Destructive actions stay clearly separate from the blue action system. */
@@ -125,7 +140,8 @@
 
 @media (max-width: 720px) {
   .file-tool-page button:not(.danger-action),
-  .file-tool-page .image-pdf-file-button {
+  .file-tool-page .image-pdf-file-button,
+  .file-tool-page .file-tool-action-link {
     min-height: 46px;
   }
 
