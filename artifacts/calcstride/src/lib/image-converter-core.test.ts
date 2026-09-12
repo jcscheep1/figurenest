@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   IMAGE_CONVERTER_DEFAULT_QUALITY,
@@ -96,4 +97,25 @@ test('rejects silent canvas MIME fallback for output formats', () => {
   assert.equal(encodedBlobMatchesTargetMime('IMAGE/JPEG', 'jpeg'), true);
   assert.equal(encodedBlobMatchesTargetMime('image/png', 'webp'), false);
   assert.equal(encodedBlobMatchesTargetMime('', 'jpeg'), false);
+});
+
+test('FT-12 unpublished converter has no direct network, persistence or logging surface', () => {
+  const page = readFileSync(new URL('../pages/ImageConverterPage.tsx', import.meta.url), 'utf8');
+  const core = readFileSync(new URL('./image-converter-core.ts', import.meta.url), 'utf8');
+  const productionSurface = `${page}\n${core}`;
+  for (const forbidden of [
+    'fetch(',
+    'XMLHttpRequest',
+    'sendBeacon',
+    'WebSocket',
+    'localStorage',
+    'sessionStorage',
+    'indexedDB',
+    'caches.',
+    'console.',
+    'form.submit(',
+    'requestSubmit(',
+  ]) {
+    assert.equal(productionSurface.includes(forbidden), false, forbidden);
+  }
 });
