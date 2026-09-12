@@ -10,6 +10,7 @@ const FT10_RESEARCH_LIMITS = {
   maxColumns: 25,
   maxCells: 5_000,
   maxPages: 40,
+  maxOutputBytes: 2 * 1024 * 1024,
   rowsPerPage: 24,
 } as const;
 
@@ -41,8 +42,12 @@ function readBoundedRows(bytes: Uint8Array): unknown[][] {
   return XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, defval: '' });
 }
 
+function expectedPageCount(rowCount: number): number {
+  return Math.max(1, Math.ceil(rowCount / FT10_RESEARCH_LIMITS.rowsPerPage));
+}
+
 function renderRowsToSearchablePdf(rows: unknown[][]): Uint8Array {
-  const pageCount = Math.max(1, Math.ceil(rows.length / FT10_RESEARCH_LIMITS.rowsPerPage));
+  const pageCount = expectedPageCount(rows.length);
   if (pageCount > FT10_RESEARCH_LIMITS.maxPages) throw new Error('FT-10 research page limit exceeded.');
 
   const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait', compress: true });
@@ -61,7 +66,9 @@ function renderRowsToSearchablePdf(rows: unknown[][]): Uint8Array {
     }
   }
 
-  return new Uint8Array(pdf.output('arraybuffer'));
+  const bytes = new Uint8Array(pdf.output('arraybuffer'));
+  if (bytes.byteLength > FT10_RESEARCH_LIMITS.maxOutputBytes) throw new Error('FT-10 research PDF output limit exceeded.');
+  return bytes;
 }
 
 test('FT-10 direct text rendering creates a reopenable searchable PDF without evaluating formulas', async () => {
@@ -74,9 +81,11 @@ test('FT-10 direct text rendering creates a reopenable searchable PDF without ev
   const boundedRows = readBoundedRows(xlsx);
   assert.equal(boundedRows.length, 31);
   assert.equal(boundedRows[2][2], '=2+2');
+  assert.equal(expectedPageCount(boundedRows.length), 2);
 
   const pdfBytes = renderRowsToSearchablePdf(boundedRows);
   assert.ok(pdfBytes.byteLength > 500);
+  assert.ok(pdfBytes.byteLength <= FT10_RESEARCH_LIMITS.maxOutputBytes);
 
   const loadingTask = getDocument({ data: pdfBytes, disableWorker: true });
   const reopened = await loadingTask.promise;
@@ -99,9 +108,20 @@ test('FT-10 direct text rendering creates a reopenable searchable PDF without ev
   }
 });
 
+test('FT-10 workbook bounds accept the exact column ceiling and reject wider sheets before rendering', () => {
+  const atColumnLimit = [Array.from({ length: FT10_RESEARCH_LIMITS.maxColumns }, (_, index) => `column-${index + 1}`)];
+  assert.equal(readBoundedRows(workbookBytes(atColumnLimit))[0].length, FT10_RESEARCH_LIMITS.maxColumns);
+
+  const tooWide = [Array.from({ length: FT10_RESEARCH_LIMITS.maxColumns + 1 }, (_, index) => `column-${index + 1}`)];
+  assert.throws(() => readBoundedRows(workbookBytes(tooWide)), /column limit exceeded/);
+});
+
 test('FT-10 research renderer rejects malformed XLSX before parsing and fails closed on page ceilings', () => {
   assert.throws(() => readBoundedRows(new TextEncoder().encode('not an xlsx archive')), /local safety validation/);
 
-  const tooManyRows = Array.from({ length: FT10_RESEARCH_LIMITS.rowsPerPage * FT10_RESEARCH_LIMITS.maxPages + 1 }, (_, index) => [`row-${index}`]);
+  const exactPageBoundary = Array.from({ length: FT10_RESEARCH_LIMITS.rowsPerPage * FT10_RESEARCH_LIMITS.maxPages }, (_, index) => [`row-${index}`]);
+  assert.equal(expectedPageCount(exactPageBoundary.length), FT10_RESEARCH_LIMITS.maxPages);
+
+  const tooManyRows = Array.from({ length: exactPageBoundary.length + 1 }, (_, index) => [`row-${index}`]);
   assert.throws(() => renderRowsToSearchablePdf(tooManyRows), /page limit exceeded/);
 });
