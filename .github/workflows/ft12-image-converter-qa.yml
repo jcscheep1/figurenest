@@ -1,0 +1,73 @@
+name: FT-12 Image Converter QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/lib/image-converter-core.ts'
+      - 'artifacts/calcstride/src/lib/image-converter-core.test.ts'
+      - 'artifacts/calcstride/src/pages/ImageConverterPage.tsx'
+      - 'artifacts/calcstride/src/styles/file-tool-buttons.css'
+      - 'artifacts/calcstride/src/App.tsx'
+      - 'artifacts/calcstride/src/lib/file-tools-catalog.ts'
+      - 'artifacts/calcstride/public/sitemap.xml'
+      - 'docs/file-tools/FT-12-IMAGE-CONVERTER-GATE.md'
+      - '.github/workflows/ft12-image-converter-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-converter-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Focused FT-12 format and security tests
+        working-directory: artifacts/calcstride
+        run: pnpm exec tsx --test src/lib/image-converter-core.test.ts
+
+      - name: Require shared File Tool UI contract
+        working-directory: artifacts/calcstride
+        run: |
+          grep -F 'className="file-tool-page"' src/pages/ImageConverterPage.tsx
+          grep -F "import '@/styles/file-tool-buttons.css'" src/pages/ImageConverterPage.tsx
+          grep -F 'className="file-tool-action-link"' src/pages/ImageConverterPage.tsx
+          grep -F 'type="file"' src/pages/ImageConverterPage.tsx
+          grep -F '.file-tool-action-link' src/styles/file-tool-buttons.css
+          grep -F 'input[type="file"]::file-selector-button' src/styles/file-tool-buttons.css
+
+      - name: Require safe conversion disclosures and guards
+        working-directory: artifacts/calcstride
+        run: |
+          grep -F 'Animated WebP is not supported' src/pages/ImageConverterPage.tsx
+          grep -F 'Canvas export may remove EXIF' src/pages/ImageConverterPage.tsx
+          grep -F 'assertDecodedImageSize' src/pages/ImageConverterPage.tsx
+          grep -F 'encodedBlobMatchesTargetMime' src/pages/ImageConverterPage.tsx
+
+      - name: Enforce unpublished boundary until publication gate passes
+        working-directory: artifacts/calcstride
+        run: |
+          if grep -F 'path="/file-tools/image-converter"' src/App.tsx; then
+            echo 'FT-12 route was published before privacy/mobile/SEO release gate'; exit 1
+          fi
+          if grep -F "'image-converter'" src/lib/file-tools-catalog.ts; then
+            echo 'FT-12 catalog entry was published before release gate'; exit 1
+          fi
+          if grep -F '<loc>https://figurenest.com/file-tools/image-converter/</loc>' public/sitemap.xml; then
+            echo 'FT-12 sitemap entry was published before release gate'; exit 1
+          fi
+
+      - name: Build unpublished site
+        working-directory: artifacts/calcstride
+        run: pnpm run build
