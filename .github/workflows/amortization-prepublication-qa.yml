@@ -1,0 +1,70 @@
+name: Amortization Prepublication QA
+
+on:
+  push:
+    branches:
+      - expansion/finance-amortization-gap
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  amortization-prepublication:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace type dependencies
+        run: pnpm --filter @workspace/api-client-react build
+
+      - name: Run amortization regression fixtures
+        run: pnpm --filter calcstride exec vitest run src/lib/amortization-schedule.test.ts
+
+      - name: Typecheck Calcstride
+        run: pnpm --filter calcstride typecheck
+
+      - name: Verify calculator page contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          PAGE=artifacts/calcstride/src/pages/AmortizationCalculatorPage.tsx
+          grep -F "const TOOL_PATH = '/calculators/amortization-calculator'" "$PAGE"
+          grep -F '<h1>Loan Amortization Calculator' "$PAGE"
+          grep -F '<Seo path={TOOL_PATH} />' "$PAGE"
+          grep -F 'AMORTIZATION SCHEDULE' "$PAGE"
+          grep -F 'Common amortization questions.' "$PAGE"
+          grep -F '/calculators/finance/mortgage-amortization' "$PAGE"
+          grep -F '/category/finance' "$PAGE"
+
+      - name: Verify publication boundary is still closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP=artifacts/calcstride/src/App.tsx
+          CATALOG=artifacts/calcstride/src/lib/catalog.ts
+          if grep -Fq 'component={AmortizationCalculatorPage}' "$APP"; then
+            echo 'Amortization route is public before the atomic publication change.' >&2
+            exit 1
+          fi
+          if grep -Fq "tool('amortization-calculator'" "$CATALOG"; then
+            echo 'Amortization catalog entry exists before the atomic publication change.' >&2
+            exit 1
+          fi
+
+      - name: Build Calcstride
+        run: pnpm --filter calcstride build
