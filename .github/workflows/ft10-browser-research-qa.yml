@@ -7,6 +7,9 @@ on:
       - 'artifacts/calcstride/src/lib/ft10-xlsx-pdf-spike.test.ts'
       - 'artifacts/calcstride/src/lib/ft09-sheetjs-loader.ts'
       - 'artifacts/calcstride/src/lib/xlsx-zip-preflight.ts'
+      - 'artifacts/calcstride/src/App.tsx'
+      - 'artifacts/calcstride/src/lib/file-tools-catalog.ts'
+      - 'artifacts/calcstride/public/sitemap.xml'
       - 'artifacts/calcstride/package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/ft10-browser-research-qa.yml'
@@ -242,10 +245,10 @@ jobs:
       - name: Mobile 390x844 privacy and resource research gate
         run: node /tmp/ft10-browser-cdp.mjs mobile 390 844 9263
 
-      - name: Verify no FT-10 public exposure and production build remains green
+      - name: Verify FT-10 publication parity and production build remains green
         working-directory: artifacts/calcstride
         run: |
-          if grep -R -n "xlsx-to-pdf" src --exclude='*.test.ts' --exclude='ft10-browser-qa.ts'; then
-            echo 'FT-10 public/runtime route exposure detected before research gate approval'; exit 1
-          fi
+          grep -F 'path="/file-tools/xlsx-to-pdf"' src/App.tsx
+          grep -F "'xlsx-to-pdf': {" src/lib/file-tools-catalog.ts
+          grep -F '<loc>https://figurenest.com/file-tools/xlsx-to-pdf/</loc>' public/sitemap.xml
           pnpm run build
