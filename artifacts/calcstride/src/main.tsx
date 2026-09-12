@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 
 import App from './App';
@@ -56,17 +57,10 @@ if (import.meta.env.PROD && monetizationConfig.verificationMetaName && monetizat
   document.head.appendChild(meta);
 }
 
-const app = (
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>
-);
-
 // PdfSignEditPage derives a device class from pointer media during render. SSR cannot
 // know that browser-only signal, so make the first client render match the desktop
-// SSR result, then restore the real media query and rerender before interaction.
-// This prevents mobile hydration mismatch while retaining the editor's stricter
-// mobile file/resource limits immediately after hydration.
+// SSR result. A post-hydration effect restores the browser's real media query and
+// forces a normal React rerender, preserving mobile limits without racing hydration.
 const isPdfSignEditRoute = window.location.pathname.replace(/\/+$/, '') === '/file-tools/pdf-sign-edit';
 const browserMatchMedia = window.matchMedia.bind(window);
 
@@ -88,8 +82,27 @@ if (isPdfSignEditRoute) {
   }) as typeof window.matchMedia;
 }
 
-const root = hydrateRoot(document.getElementById('root')!,
-  app,
+function HydrationSafeApp() {
+  const [, setMediaRestored] = useState(false);
+
+  useEffect(() => {
+    if (!isPdfSignEditRoute) return undefined;
+    window.matchMedia = browserMatchMedia;
+    setMediaRestored(true);
+    return () => {
+      window.matchMedia = browserMatchMedia;
+    };
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+hydrateRoot(document.getElementById('root')!,
+  <HydrationSafeApp />,
   {
   // Keeps caught errors off reportError(), which would raise the dev overlay.
   onCaughtError: (error, errorInfo) => {
@@ -97,10 +110,3 @@ const root = hydrateRoot(document.getElementById('root')!,
   },
   },
 );
-
-if (isPdfSignEditRoute) {
-  requestAnimationFrame(() => {
-    window.matchMedia = browserMatchMedia;
-    root.render(app);
-  });
-}
