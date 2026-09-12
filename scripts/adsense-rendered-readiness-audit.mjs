@@ -74,7 +74,7 @@ for (const url of urls) {
   const mainText = cleanText(mainHtml);
   const words = mainText ? mainText.split(/\s+/).filter(Boolean).length : 0;
   const h1Count = (mainHtml.match(/<h1\b/gi) ?? []).length;
-  const schemas = [...html.matchAll(/<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].length;
+  const schemas = [...html.matchAll(/<script\b[^>]*\btype=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].length;
 
   if (!title) fail(route, 'missing rendered title');
   else if (title.length > 65) warn(route, `title is ${title.length} characters`);
