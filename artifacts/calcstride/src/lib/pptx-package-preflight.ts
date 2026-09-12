@@ -207,18 +207,56 @@ export function preflightPptxPackage(
 
 export type PptxRelationshipInspectionResult = { ok: true } | { ok: false; reason: string };
 
+function decodeRelationshipTarget(value: string): string | null {
+  let malformed = false;
+  const decoded = value.replace(/&(?:#(x[0-9a-f]+|[0-9]+)|amp|apos|quot|lt|gt);/gi, (entity, numeric: string | undefined) => {
+    if (numeric) {
+      const radix = numeric[0]?.toLowerCase() === 'x' ? 16 : 10;
+      const raw = radix === 16 ? numeric.slice(1) : numeric;
+      const codePoint = Number.parseInt(raw, radix);
+      if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) {
+        malformed = true;
+        return '';
+      }
+      return String.fromCodePoint(codePoint);
+    }
+    switch (entity.toLowerCase()) {
+      case '&amp;': return '&';
+      case '&apos;': return "'";
+      case '&quot;': return '"';
+      case '&lt;': return '<';
+      case '&gt;': return '>';
+      default: return entity;
+    }
+  });
+  if (malformed || /&(?:#|[a-z])/i.test(decoded)) return null;
+  return decoded.trim();
+}
+
+function isUnsafeRelationshipTarget(target: string): boolean {
+  if (!target || target.includes('\0') || target.includes('\\')) return true;
+  if (target.startsWith('/') || target.startsWith('//')) return true;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(target)) return true;
+  return false;
+}
+
 /**
  * Runs only after package preflight and bounded XML inflation. Relationship XML
- * is treated as data; no target is fetched. Any explicit external relationship
- * or active URL scheme fails closed before rendering.
+ * is treated as data; no target is fetched. Explicit external relationships,
+ * URI schemes, absolute/protocol-relative paths and ambiguous encoded targets
+ * fail closed before rendering.
  */
 export function inspectPptxRelationshipXml(xmlParts: Iterable<string>): PptxRelationshipInspectionResult {
   for (const xml of xmlParts) {
     if (/TargetMode\s*=\s*["']External["']/i.test(xml)) {
       return { ok: false, reason: 'external-relationship-unsupported' };
     }
-    if (/Target\s*=\s*["']\s*(?:javascript|data|file|vbscript):/i.test(xml)) {
-      return { ok: false, reason: 'active-relationship-target-unsupported' };
+    const targets = xml.matchAll(/\bTarget\s*=\s*(["'])(.*?)\1/gi);
+    for (const match of targets) {
+      const target = decodeRelationshipTarget(match[2] ?? '');
+      if (target === null || isUnsafeRelationshipTarget(target)) {
+        return { ok: false, reason: 'active-relationship-target-unsupported' };
+      }
     }
     if (/Type\s*=\s*["'][^"']*(?:oleObject|package|activeX)[^"']*["']/i.test(xml)) {
       return { ok: false, reason: 'active-relationship-type-unsupported' };
