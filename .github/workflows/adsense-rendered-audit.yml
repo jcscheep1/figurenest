@@ -1,0 +1,43 @@
+name: AdSense Rendered Site Audit
+
+on:
+  pull_request:
+    paths:
+      - 'artifacts/calcstride/**'
+      - 'scripts/adsense-rendered-readiness-audit.mjs'
+      - '.github/workflows/adsense-rendered-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rendered-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build workspace type dependencies
+        run: pnpm exec tsc -b lib/api-client-react
+      - name: Generate SEO files
+        run: pnpm --filter @workspace/calcstride generate:seo
+      - name: Build prerendered public site
+        run: pnpm --filter @workspace/calcstride build
+      - name: Audit every sitemap route
+        run: node scripts/adsense-rendered-readiness-audit.mjs
+      - name: Upload rendered audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adsense-rendered-audit
+          path: artifacts/calcstride/dist/adsense-rendered-audit.json
+          if-no-files-found: warn
