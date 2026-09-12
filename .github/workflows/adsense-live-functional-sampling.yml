@@ -37,11 +37,11 @@ jobs:
           for i in {1..60}; do curl -fsS http://127.0.0.1:4177/ >/dev/null && exit 0; sleep 1; done
           cat /tmp/adsense-live-server.log
           exit 1
-      - name: Desktop 1440x1200 sampling
-        run: node scripts/adsense-live-functional-sampling.mjs desktop 1440 1200 9250
       - name: Desktop cross-cluster sampling
         run: node scripts/adsense-cross-cluster-functional-sampling.mjs desktop 1440 1200 9260
-      - name: Mobile 390x844 sampling
-        run: node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251
       - name: Mobile cross-cluster sampling
         run: node scripts/adsense-cross-cluster-functional-sampling.mjs mobile 390 844 9261
+      - name: Desktop 1440x1200 sampling
+        run: node scripts/adsense-live-functional-sampling.mjs desktop 1440 1200 9250
+      - name: Mobile 390x844 sampling
+        run: node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251
