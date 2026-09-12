@@ -79,6 +79,53 @@ export function webpSignatureMatches(header: Uint8Array): boolean {
   return riff && webp;
 }
 
+function asciiChunkId(bytes: Uint8Array, offset: number): string {
+  return String.fromCharCode(bytes[offset] ?? 0, bytes[offset + 1] ?? 0, bytes[offset + 2] ?? 0, bytes[offset + 3] ?? 0);
+}
+
+function littleEndianUint32(bytes: Uint8Array, offset: number): number {
+  return (
+    (bytes[offset] ?? 0)
+    | ((bytes[offset + 1] ?? 0) << 8)
+    | ((bytes[offset + 2] ?? 0) << 16)
+    | ((bytes[offset + 3] ?? 0) << 24)
+  ) >>> 0;
+}
+
+/**
+ * Detects WebP animation without decoding image frames. The parser walks RIFF
+ * chunks instead of searching arbitrary payload bytes, so an incidental "ANIM"
+ * sequence inside compressed image data cannot create a false positive.
+ */
+export function webpContainsAnimation(bytes: Uint8Array): boolean {
+  if (!webpSignatureMatches(bytes)) return false;
+
+  let offset = 12;
+  while (offset + 8 <= bytes.length) {
+    const chunkId = asciiChunkId(bytes, offset);
+    const chunkSize = littleEndianUint32(bytes, offset + 4);
+    const dataOffset = offset + 8;
+    const dataEnd = dataOffset + chunkSize;
+    if (!Number.isSafeInteger(dataEnd) || dataEnd > bytes.length) return false;
+
+    if (chunkId === 'ANIM' || chunkId === 'ANMF') return true;
+    if (chunkId === 'VP8X' && chunkSize >= 1 && (bytes[dataOffset] & 0x02) !== 0) return true;
+
+    offset = dataEnd + (chunkSize % 2);
+  }
+
+  return false;
+}
+
+/**
+ * Canvas encoders may silently fall back to PNG when a requested format is not
+ * supported. Publication code must reject that fallback rather than downloading
+ * a PNG payload with a .webp or .jpg filename.
+ */
+export function encodedBlobMatchesTargetMime(blobType: string, format: ImageConverterOutputFormat): boolean {
+  return blobType.trim().toLowerCase() === outputMime(format);
+}
+
 export function transparencyNotice(format: ImageConverterOutputFormat): string {
   return format === 'jpeg'
     ? 'JPEG does not support transparency. Transparent pixels are flattened onto white.'
