@@ -31,6 +31,7 @@ const contentTypes: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.map': 'application/json; charset=utf-8',
   '.png': 'image/png',
@@ -73,7 +74,6 @@ const securityHeaders = {
   'Content-Security-Policy-Report-Only': contentSecurityPolicyReportOnly,
   'Permissions-Policy': 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  // Deliberately protects the canonical and www hosts for two years; preload is intentionally omitted.
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
   'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
   'X-Content-Type-Options': 'nosniff',
