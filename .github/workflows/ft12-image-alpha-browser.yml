@@ -1,0 +1,214 @@
+name: FT-12 Image Alpha Browser QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/pages/ImageConverterPage.tsx'
+      - 'artifacts/calcstride/src/lib/image-converter-core.ts'
+      - '.github/workflows/ft12-image-alpha-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  alpha-and-encoder-fallback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: artifacts/calcstride
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create unpublished component harness
+        run: |
+          cat > ft12-alpha-qa.html <<'HTML'
+          <!doctype html>
+          <html>
+            <head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+            <body><div id="root"></div><script type="module" src="/src/ft12-alpha-qa.tsx"></script></body>
+          </html>
+          HTML
+          cat > src/ft12-alpha-qa.tsx <<'TSX'
+          import React from 'react';
+          import { createRoot } from 'react-dom/client';
+          import { ImageConverterPage } from '@/pages/ImageConverterPage';
+          import '@/index.css';
+          createRoot(document.getElementById('root')!).render(<React.StrictMode><ImageConverterPage /></React.StrictMode>);
+          TSX
+          printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAarVyFEAAAAASUVORK5CYII=' | base64 -d > /tmp/FT12_ALPHA_SENTINEL.png
+          file /tmp/FT12_ALPHA_SENTINEL.png
+
+      - name: Create focused Chrome CDP runner
+        run: |
+          cat > /tmp/ft12-alpha-runner.mjs <<'JS'
+          import { spawn, spawnSync } from 'node:child_process';
+
+          const candidates = [process.env.CHROME_BIN, 'google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean);
+          let chromeBin = '';
+          for (const candidate of candidates) {
+            const probe = spawnSync('which', [candidate], {encoding: 'utf8'});
+            if (probe.status === 0 && probe.stdout.trim()) { chromeBin = probe.stdout.trim(); break; }
+          }
+          if (!chromeBin) throw new Error('Chrome/Chromium is unavailable');
+
+          const port = 9251;
+          const chrome = spawn(chromeBin, [
+            '--headless=new', '--no-sandbox', '--disable-gpu', '--window-size=390,844',
+            `--remote-debugging-port=${port}`, '--user-data-dir=/tmp/ft12-alpha-chrome', 'about:blank',
+          ], {stdio: ['ignore', 'ignore', 'pipe']});
+          let diagnostics = '';
+          chrome.stderr.on('data', (chunk) => { diagnostics += String(chunk); });
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          async function connect() {
+            for (let attempt = 0; attempt < 80; attempt += 1) {
+              try {
+                const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((response) => response.json());
+                const target = targets.find((candidate) => candidate.type === 'page');
+                if (target?.webSocketDebuggerUrl) return new WebSocket(target.webSocketDebuggerUrl);
+              } catch {}
+              await sleep(250);
+            }
+            throw new Error(`Chrome DevTools did not start. ${diagnostics}`);
+          }
+
+          const socket = await connect();
+          try {
+            await new Promise((resolve, reject) => {
+              socket.addEventListener('open', resolve, {once: true});
+              socket.addEventListener('error', reject, {once: true});
+            });
+            let sequence = 0;
+            const pending = new Map();
+            socket.addEventListener('message', (event) => {
+              const message = JSON.parse(String(event.data));
+              if (!message.id || !pending.has(message.id)) return;
+              const handlers = pending.get(message.id);
+              pending.delete(message.id);
+              if (message.error) handlers.reject(new Error(message.error.message));
+              else handlers.resolve(message.result);
+            });
+            const command = (method, params = {}) => new Promise((resolve, reject) => {
+              const id = ++sequence;
+              pending.set(id, {resolve, reject});
+              socket.send(JSON.stringify({id, method, params}));
+            });
+            const evaluate = async (expression, awaitPromise = false) => {
+              const result = await command('Runtime.evaluate', {expression, awaitPromise, returnByValue: true});
+              if (result.exceptionDetails) throw new Error(result.exceptionDetails.text || 'Browser evaluation failed');
+              return result.result?.value;
+            };
+            const waitFor = async (expression, label) => {
+              const deadline = Date.now() + 120_000;
+              while (Date.now() < deadline) {
+                try { if (await evaluate(expression, true)) return; } catch {}
+                await sleep(250);
+              }
+              throw new Error(`Timed out waiting for ${label}. ${diagnostics}`);
+            };
+
+            await command('Page.enable');
+            await command('Runtime.enable');
+            await command('DOM.enable');
+            await command('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true});
+            await command('Emulation.setTouchEmulationEnabled', {enabled: true, maxTouchPoints: 5});
+            await command('Page.navigate', {url: 'http://127.0.0.1:4176/ft12-alpha-qa.html'});
+            await waitFor(`document.querySelector('[data-testid="page-image-converter-unpublished"] input[type="file"]') !== null`, 'image converter');
+
+            const root = await command('DOM.getDocument', {depth: -1, pierce: true});
+            const inputNode = await command('DOM.querySelector', {nodeId: root.root.nodeId, selector: '[data-testid="page-image-converter-unpublished"] input[type="file"]'});
+            if (!inputNode.nodeId) throw new Error('native input missing');
+            await command('DOM.setFileInputFiles', {nodeId: inputNode.nodeId, files: ['/tmp/FT12_ALPHA_SENTINEL.png']});
+            await waitFor(`document.body.innerText.includes('1 × 1px')`, 'transparent fixture decode');
+
+            async function convertAndInspect(format, expectedMime, alphaMax) {
+              await evaluate(`(() => {
+                const page = document.querySelector('.file-tool-page');
+                const select = page.querySelector('select');
+                select.value = ${JSON.stringify(format)};
+                select.dispatchEvent(new Event('change', {bubbles: true}));
+                return true;
+              })()`);
+              await sleep(50);
+              await evaluate(`(() => {
+                const button = [...document.querySelectorAll('.file-tool-page button')].find((item) => item.textContent.includes('Convert image'));
+                if (!button || button.disabled) throw new Error('convert unavailable for ${format}');
+                button.click();
+                return true;
+              })()`);
+              await waitFor(`document.querySelector('.file-tool-action-link')?.href.startsWith('blob:')`, `${format} output`);
+              return evaluate(`(async () => {
+                const download = document.querySelector('.file-tool-action-link');
+                const response = await fetch(download.href);
+                const blob = await response.blob();
+                if (blob.type !== ${JSON.stringify(expectedMime)}) throw new Error('unexpected MIME: ' + blob.type);
+                const bitmap = await createImageBitmap(blob);
+                const canvas = document.createElement('canvas');
+                canvas.width = 1; canvas.height = 1;
+                const context = canvas.getContext('2d');
+                context.clearRect(0, 0, 1, 1);
+                context.drawImage(bitmap, 0, 0);
+                const pixel = [...context.getImageData(0, 0, 1, 1).data];
+                bitmap.close();
+                if (pixel[3] > ${alphaMax}) throw new Error('${format} did not preserve transparent alpha: ' + pixel.join(','));
+                return {type: blob.type, bytes: blob.size, pixel, name: download.download};
+              })()`, true);
+            }
+
+            const png = await convertAndInspect('png', 'image/png', 15);
+            const webp = await convertAndInspect('webp', 'image/webp', 20);
+
+            await evaluate(`(() => {
+              const original = HTMLCanvasElement.prototype.toBlob;
+              globalThis.__ft12OriginalToBlob = original;
+              HTMLCanvasElement.prototype.toBlob = function(callback, type, quality) {
+                if (type === 'image/webp') return callback(new Blob(['fallback'], {type: 'image/png'}));
+                return original.call(this, callback, type, quality);
+              };
+              const select = document.querySelector('.file-tool-page select');
+              select.value = 'webp';
+              select.dispatchEvent(new Event('change', {bubbles: true}));
+              return true;
+            })()`);
+            await sleep(50);
+            await evaluate(`(() => {
+              const button = [...document.querySelectorAll('.file-tool-page button')].find((item) => item.textContent.includes('Convert image'));
+              button.click();
+              return true;
+            })()`);
+            await waitFor(`document.querySelector('.file-tool-error')?.textContent.includes('WEBP output is not supported reliably by this browser')`, 'unsupported WebP encoder error');
+            const fallback = await evaluate(`(() => ({
+              error: document.querySelector('.file-tool-error')?.textContent,
+              downloadDisabled: document.querySelector('.file-tool-action-link')?.getAttribute('aria-disabled'),
+              overflow: document.documentElement.scrollWidth > innerWidth,
+            }))()`);
+            if (fallback.downloadDisabled !== 'true') throw new Error('stale download remained enabled after encoder failure');
+            if (fallback.overflow) throw new Error('390x844 overflow during error state');
+
+            console.log('FT12_ALPHA_BROWSER_PASS', JSON.stringify({png, webp, fallback}));
+          } finally {
+            socket.close();
+            chrome.kill('SIGTERM');
+          }
+          JS
+
+      - name: Start unpublished Vite harness
+        run: |
+          pnpm exec vite --host 127.0.0.1 --port 4176 > /tmp/ft12-alpha-vite.log 2>&1 &
+          for i in {1..40}; do curl -fsS http://127.0.0.1:4176/ft12-alpha-qa.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/ft12-alpha-vite.log
+          exit 1
+
+      - name: Mobile PNG/WebP alpha and unsupported encoder gate
+        run: node /tmp/ft12-alpha-runner.mjs
