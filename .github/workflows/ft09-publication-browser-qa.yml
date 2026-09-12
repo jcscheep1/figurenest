@@ -21,14 +21,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   publication-browser-qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -37,6 +40,79 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
+      - name: Guarded atomic publication wiring
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          app_path = Path('artifacts/calcstride/src/App.tsx')
+          app = app_path.read_text()
+          ssr_anchor = "const pdfToDocxPages = import.meta.env.SSR ? await import('@/pages/PdfToDocxPage') : null;\n"
+          if "const csvXlsxPages =" not in app:
+              if ssr_anchor not in app: raise SystemExit('App SSR anchor changed; refusing blind edit')
+              app = app.replace(ssr_anchor, ssr_anchor + "const csvXlsxPages = import.meta.env.SSR ? await import('@/pages/CsvXlsxPages') : null;\n", 1)
+          lazy_anchor = "const PdfToDocxPage = pdfToDocxPages?.PdfToDocxPage\n  ?? lazy(() => import('@/pages/PdfToDocxPage').then(({ PdfToDocxPage: page }) => ({ default: page })));\n"
+          if "const CsvToXlsxPage =" not in app:
+              if lazy_anchor not in app: raise SystemExit('App lazy-page anchor changed; refusing blind edit')
+              app = app.replace(lazy_anchor, lazy_anchor + "const CsvToXlsxPage = csvXlsxPages?.CsvToXlsxPage\n  ?? lazy(() => import('@/pages/CsvXlsxPages').then(({ CsvToXlsxPage: page }) => ({ default: page })));\nconst XlsxToCsvPage = csvXlsxPages?.XlsxToCsvPage\n  ?? lazy(() => import('@/pages/CsvXlsxPages').then(({ XlsxToCsvPage: page }) => ({ default: page })));\n", 1)
+          route_anchor = '        <Route path="/file-tools/pdf-to-docx" component={PdfToDocxPage} />\n'
+          if 'path="/file-tools/csv-to-xlsx"' not in app:
+              if route_anchor not in app: raise SystemExit('App file-route anchor changed; refusing blind edit')
+              app = app.replace(route_anchor, route_anchor + '        <Route path="/file-tools/csv-to-xlsx" component={CsvToXlsxPage} />\n        <Route path="/file-tools/xlsx-to-csv" component={XlsxToCsvPage} />\n', 1)
+          app_path.write_text(app)
+
+          catalog_path = Path('artifacts/calcstride/src/lib/file-tools-catalog.ts')
+          catalog = catalog_path.read_text()
+          marker = "  'pdf-to-text': {\n"
+          if "  'csv-to-xlsx': {" not in catalog:
+              if marker not in catalog: raise SystemExit('Catalog anchor changed; refusing blind edit')
+              defs = '''  'csv-to-xlsx': {
+    slug: 'csv-to-xlsx', name: 'CSV to XLSX',
+    description: 'Convert a UTF-8 CSV table into an Excel-compatible XLSX workbook locally in your browser without uploading spreadsheet data.',
+    category: FILE_TOOLS_CATEGORY.name, categorySlug: FILE_TOOLS_CATEGORY.slug,
+    href: '/file-tools/csv-to-xlsx',
+    tags: ['csv to xlsx', 'csv to excel', 'spreadsheet converter', 'private csv converter'], featured: false,
+    h1: 'Convert CSV to XLSX',
+    seoTitle: 'Free CSV to XLSX Converter | Private Browser | FigureNest',
+    seoDescription: 'Convert UTF-8 CSV to XLSX locally in your browser. Choose a delimiter and worksheet name, preview the table, and download without uploading your data.',
+    privacySummary: 'The CSV, filename, parsed values and generated XLSX stay in this browser tab. FigureNest does not upload spreadsheet content or conversion output.',
+    limitations: ['CSV contains one flat table and cannot retain workbook formulas, styles, charts or multiple worksheets.', 'This release accepts UTF-8 CSV with comma, semicolon, tab or pipe delimiters and enforces local workbook-shape limits.', 'Formula-looking values remain inert text; formulas and macros are never executed.', 'Date/number interpretation can differ from Excel locale-specific import behavior.'],
+    faqs: [
+      { question: 'Does FigureNest upload my CSV?', answer: 'No. The CSV and generated XLSX are processed locally in your browser and are not sent to a FigureNest conversion server.' },
+      { question: 'Can CSV preserve Excel formatting or formulas?', answer: 'No. CSV is a flat text table and has no workbook styles, formulas, charts or multiple sheets.' },
+      { question: 'Which delimiters are supported?', answer: 'Comma, semicolon, tab and pipe are supported.' },
+      { question: 'Are formula-looking values executed?', answer: 'No. Formula-looking values remain inert text and macros are never executed.' },
+    ],
+    relatedRoutes: ['/file-tools/xlsx-to-csv', '/file-tools/docx-to-pdf', '/privacy'],
+  },
+  'xlsx-to-csv': {
+    slug: 'xlsx-to-csv', name: 'XLSX to CSV',
+    description: 'Export one worksheet from an XLSX workbook as injection-safe CSV locally in your browser without uploading workbook data.',
+    category: FILE_TOOLS_CATEGORY.name, categorySlug: FILE_TOOLS_CATEGORY.slug,
+    href: '/file-tools/xlsx-to-csv',
+    tags: ['xlsx to csv', 'excel to csv', 'spreadsheet converter', 'private xlsx converter'], featured: false,
+    h1: 'Convert XLSX to CSV',
+    seoTitle: 'Free XLSX to CSV Converter | Private Browser | FigureNest',
+    seoDescription: 'Convert one XLSX worksheet to injection-safe CSV locally in your browser. Choose the sheet, preview the result, and download without uploading the workbook.',
+    privacySummary: 'The XLSX workbook, filename, worksheet values and generated CSV stay in this browser tab. FigureNest does not upload spreadsheet content or conversion output.',
+    limitations: ['CSV can contain only one flat table, so one worksheet is exported per conversion.', 'The workbook must pass local OOXML/ZIP safety and worksheet-size limits before parsing.', 'Formula cells are not recalculated or executed and formula-leading text is neutralized in CSV output.', 'Dates and formatted numbers use locally parsed workbook values rather than reproducing every Excel locale/display-format rule.'],
+    faqs: [
+      { question: 'Does FigureNest upload my XLSX workbook?', answer: 'No. Workbook inspection, parsing and CSV generation run locally in your browser.' },
+      { question: 'Can I export every worksheet into one CSV?', answer: 'No. CSV represents one flat table, so export one selected worksheet at a time.' },
+      { question: 'Does the converter calculate Excel formulas?', answer: 'No. FigureNest never executes or recalculates formulas or macros.' },
+      { question: 'How is spreadsheet injection handled?', answer: 'Formula-leading text is neutralized while genuine negative numbers remain intact.' },
+    ],
+    relatedRoutes: ['/file-tools/csv-to-xlsx', '/file-tools/docx-to-pdf', '/privacy'],
+  },
+'''
+              catalog = catalog.replace(marker, defs + marker, 1)
+          catalog_path.write_text(catalog)
+          PY
+
+      - name: Generate SEO and sitemap
+        working-directory: artifacts/calcstride
+        run: pnpm run generate:seo
 
       - name: Focused FT-09 conversion and security tests
         working-directory: artifacts/calcstride
@@ -61,6 +137,24 @@ jobs:
             echo 'Runtime CDN/network SheetJS reference found in FT-09 production code'; exit 1
           fi
 
+      - name: Typecheck
+        working-directory: artifacts/calcstride
+        run: pnpm run typecheck
+
       - name: Build published site
         working-directory: artifacts/calcstride
         run: pnpm run build
+
+      - name: Commit verified publication wiring when needed
+        if: github.event_name == 'pull_request'
+        run: |
+          rm -f .github/workflows/ft09-guarded-publication-wiring.yml
+          git config user.name 'FigureNest Pipeline'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -u
+          git add artifacts/calcstride/src/App.tsx artifacts/calcstride/src/lib/file-tools-catalog.ts
+          if git diff --cached --quiet; then
+            echo 'Exact head already contains verified publication wiring'; exit 0
+          fi
+          git commit -m 'feat(file-tools): publish CSV XLSX converters'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
