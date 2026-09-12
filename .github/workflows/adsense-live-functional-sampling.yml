@@ -42,22 +42,64 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          node scripts/adsense-cross-cluster-functional-sampling.mjs desktop 1440 1200 9260 2>&1 | tee /tmp/adsense-cross-desktop.log
+          for attempt in 1 2; do
+            rm -rf /tmp/figurenest-adsense-cross-cluster-desktop
+            node scripts/adsense-cross-cluster-functional-sampling.mjs desktop 1440 1200 9260 2>&1 | tee /tmp/adsense-cross-desktop.log && exit 0
+            if grep -q 'Chrome DevTools did not start' /tmp/adsense-cross-desktop.log && [ "$attempt" -lt 2 ]; then
+              echo 'Chrome startup failed before QA; retrying desktop cross-cluster sampler once.'
+              sleep 2
+              continue
+            fi
+            exit 1
+          done
       - name: Mobile cross-cluster sampling
         id: cross_mobile
         if: always()
         shell: bash
         run: |
           set -o pipefail
-          node scripts/adsense-cross-cluster-functional-sampling.mjs mobile 390 844 9261 2>&1 | tee /tmp/adsense-cross-mobile.log
+          for attempt in 1 2; do
+            rm -rf /tmp/figurenest-adsense-cross-cluster-mobile
+            node scripts/adsense-cross-cluster-functional-sampling.mjs mobile 390 844 9261 2>&1 | tee /tmp/adsense-cross-mobile.log && exit 0
+            if grep -q 'Chrome DevTools did not start' /tmp/adsense-cross-mobile.log && [ "$attempt" -lt 2 ]; then
+              echo 'Chrome startup failed before QA; retrying mobile cross-cluster sampler once.'
+              sleep 2
+              continue
+            fi
+            exit 1
+          done
       - name: Desktop 1440x1200 sampling
         id: broad_desktop
         if: always()
-        run: node scripts/adsense-live-functional-sampling.mjs desktop 1440 1200 9250
+        shell: bash
+        run: |
+          set -o pipefail
+          for attempt in 1 2; do
+            rm -rf /tmp/figurenest-adsense-desktop
+            node scripts/adsense-live-functional-sampling.mjs desktop 1440 1200 9250 2>&1 | tee /tmp/adsense-broad-desktop.log && exit 0
+            if grep -q 'Chrome DevTools did not start' /tmp/adsense-broad-desktop.log && [ "$attempt" -lt 2 ]; then
+              echo 'Chrome startup failed before QA; retrying broad desktop sampler once.'
+              sleep 2
+              continue
+            fi
+            exit 1
+          done
       - name: Mobile 390x844 sampling
         id: broad_mobile
         if: always()
-        run: node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251
+        shell: bash
+        run: |
+          set -o pipefail
+          for attempt in 1 2; do
+            rm -rf /tmp/figurenest-adsense-mobile
+            node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251 2>&1 | tee /tmp/adsense-broad-mobile.log && exit 0
+            if grep -q 'Chrome DevTools did not start' /tmp/adsense-broad-mobile.log && [ "$attempt" -lt 2 ]; then
+              echo 'Chrome startup failed before QA; retrying broad mobile sampler once.'
+              sleep 2
+              continue
+            fi
+            exit 1
+          done
       - name: Preserve cross-cluster diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -66,6 +108,8 @@ jobs:
           path: |
             /tmp/adsense-cross-desktop.log
             /tmp/adsense-cross-mobile.log
+            /tmp/adsense-broad-desktop.log
+            /tmp/adsense-broad-mobile.log
             /tmp/adsense-live-server.log
           if-no-files-found: warn
           retention-days: 7
