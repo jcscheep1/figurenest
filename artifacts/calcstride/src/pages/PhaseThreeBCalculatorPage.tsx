@@ -94,7 +94,10 @@ export function PhaseThreeBCalculatorPage({ slug }: { slug: PhaseThreeBSlug }) {
       <div className="advanced-content-grid">
         <article className="advanced-content">
           <section><div className="eyebrow">METHOD</div><h2>Formula or algorithm and variables.</h2><div className="advanced-formula-list"><div><strong>Calculation notation</strong><code aria-label={`Formula: ${definition.formula}`}>{definition.formula}</code><p>{definition.variables}</p></div></div></section>
+          <section><div className="eyebrow">WORKED EXAMPLE</div><h2>See the method with real values.</h2><p>{definition.workedExample}</p></section>
+          <section><div className="eyebrow">INTERPRETATION</div><h2>What the result means.</h2><p>{definition.interpretation}</p></section>
           {definition.educationalSections.map((section) => <section key={section.heading}><div className="eyebrow">GUIDANCE</div><h2>{section.heading}</h2><p>{section.body}</p></section>)}
+          <section><div className="eyebrow">EDGE CASES</div><h2>Inputs that need extra care.</h2><p>{definition.edgeCases}</p></section>
           <section><div className="eyebrow">LIMITATIONS</div><h2>Check assumptions and sources.</h2><p>{definition.limitations}</p>{definition.sourceLinks.map((source) => <p key={source.href}><a href={source.href} target="_blank" rel="noreferrer">{source.label}</a></p>)}</section>
           <section className="advanced-faq"><div className="eyebrow">FAQ</div><h2>Common questions.</h2>{definition.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
         </article>
