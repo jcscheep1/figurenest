@@ -33,7 +33,7 @@ jobs:
         run: pnpm exec tsc -b lib/api-client-react
 
       - name: Run amortization regression fixtures
-        run: pnpm --filter @workspace/calcstride exec vitest run src/lib/amortization-schedule.test.ts
+        run: pnpm --filter @workspace/calcstride exec tsx --test src/lib/amortization-schedule.test.ts
 
       - name: Typecheck Calcstride
         run: pnpm --filter @workspace/calcstride typecheck
