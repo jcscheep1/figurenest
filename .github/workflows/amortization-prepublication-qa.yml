@@ -30,13 +30,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build workspace type dependencies
-        run: pnpm --filter @workspace/api-client-react build
+        run: pnpm exec tsc -b lib/api-client-react
 
       - name: Run amortization regression fixtures
-        run: pnpm --filter calcstride exec vitest run src/lib/amortization-schedule.test.ts
+        run: pnpm --filter @workspace/calcstride exec vitest run src/lib/amortization-schedule.test.ts
 
       - name: Typecheck Calcstride
-        run: pnpm --filter calcstride typecheck
+        run: pnpm --filter @workspace/calcstride typecheck
 
       - name: Verify calculator page contract
         shell: bash
@@ -67,4 +67,4 @@ jobs:
           fi
 
       - name: Build Calcstride
-        run: pnpm --filter calcstride build
+        run: pnpm --filter @workspace/calcstride build
