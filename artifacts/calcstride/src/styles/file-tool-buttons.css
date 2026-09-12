@@ -34,6 +34,35 @@
   box-shadow: 0 6px 16px hsl(var(--primary) / 20%);
 }
 
+/* Native file inputs are also used inside PDF Sign & Edit for signature/image uploads.
+   Style the browser-supplied Choose File control so it follows the same blue action system. */
+.file-tool-page input[type='file'] {
+  color: hsl(var(--foreground));
+  font: inherit;
+}
+
+.file-tool-page input[type='file']::file-selector-button,
+.file-tool-page input[type='file']::-webkit-file-upload-button {
+  min-height: 42px;
+  margin-right: 10px;
+  padding: 9px 14px;
+  border: 1px solid hsl(var(--primary));
+  border-radius: 10px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.file-tool-page input[type='file']:disabled::file-selector-button,
+.file-tool-page input[type='file']:disabled::-webkit-file-upload-button {
+  border-color: hsl(var(--border));
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  cursor: not-allowed;
+}
+
 .file-tool-page .file-tool-dropzone {
   gap: 10px;
 }
@@ -43,7 +72,9 @@
 }
 
 .file-tool-page button:not(.danger-action):not(:disabled):hover,
-.file-tool-page .image-pdf-file-button:hover {
+.file-tool-page .image-pdf-file-button:hover,
+.file-tool-page input[type='file']:not(:disabled)::file-selector-button:hover,
+.file-tool-page input[type='file']:not(:disabled)::-webkit-file-upload-button:hover {
   filter: brightness(.93);
 }
 
@@ -53,7 +84,8 @@
 }
 
 .file-tool-page button:not(.danger-action):focus-visible,
-.file-tool-page .image-pdf-file-button:focus-within {
+.file-tool-page .image-pdf-file-button:focus-within,
+.file-tool-page input[type='file']:focus-visible {
   outline: 3px solid hsl(var(--primary) / 28%);
   outline-offset: 2px;
   box-shadow: 0 0 0 1px hsl(var(--primary));
@@ -63,7 +95,7 @@
   border-color: hsl(var(--border)) !important;
   background: hsl(var(--muted)) !important;
   color: hsl(var(--muted-foreground)) !important;
-  opacity: 1;
+  opacity: 1 !important;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -78,8 +110,9 @@
 
 .file-tool-page button.danger-action:disabled {
   border-color: hsl(var(--border)) !important;
+  background: hsl(var(--muted)) !important;
   color: hsl(var(--muted-foreground)) !important;
-  opacity: .55;
+  opacity: 1 !important;
 }
 
 /* The image picker is a label styled as a button, so give its disabled state parity. */
@@ -107,5 +140,11 @@
     display: grid !important;
     align-content: center;
     justify-items: stretch;
+  }
+
+  .file-tool-page input[type='file']::file-selector-button,
+  .file-tool-page input[type='file']::-webkit-file-upload-button {
+    min-height: 46px;
+    padding: 10px 14px;
   }
 }
