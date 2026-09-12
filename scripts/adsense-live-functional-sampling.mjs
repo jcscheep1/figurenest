@@ -42,7 +42,7 @@ async function connect() {
 const routes = [
   ['home', '/'],
   ['directory', '/calculators/'],
-  ['finance-category', '/category/finance/'],
+  ['finance-category', '/category/money-finance/'],
   ['salary', '/calculators/salary-work/salary/'],
   ['brick', '/calculators/construction/brick/'],
   ['circle', '/calculators/math/circle/'],
