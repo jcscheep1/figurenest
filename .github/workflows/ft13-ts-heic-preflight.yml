@@ -1,0 +1,79 @@
+name: FT-13 ts-heic Candidate Preflight
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ft13-ts-heic-preflight.yml'
+      - 'reports/FT-13-HEIC-TO-JPG-GATE.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Keep FT-13 unpublished during research
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -R --line-number --fixed-strings '/file-tools/heic-to-jpg' artifacts/calcstride/src 2>/dev/null || {
+            echo 'FT-13 public route/catalog surface appeared during research.' >&2
+            exit 1
+          }
+
+      - name: Inspect exact @stacksjs/ts-heic 0.0.1 package without installing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ft13-ts-heic"
+          cd "$RUNNER_TEMP/ft13-ts-heic"
+          npm view @stacksjs/ts-heic@0.0.1 version license dependencies dist.integrity dist.tarball --json | tee npm-view.json
+          node <<'NODE'
+          const fs = require('fs')
+          const v = JSON.parse(fs.readFileSync('npm-view.json', 'utf8'))
+          if (v.version !== '0.0.1') throw new Error(`unexpected version: ${v.version}`)
+          if (v.license !== 'MIT') throw new Error(`unexpected license: ${v.license}`)
+          if (v.dependencies && Object.keys(v.dependencies).length) throw new Error(`runtime dependencies appeared: ${JSON.stringify(v.dependencies)}`)
+          if (!v['dist.integrity'] && !(v.dist && v.dist.integrity)) throw new Error('npm integrity missing')
+          NODE
+          npm pack @stacksjs/ts-heic@0.0.1 --ignore-scripts --json > pack.json
+          TARBALL=$(node -e "const p=require('./pack.json'); process.stdout.write(p[0].filename)")
+          tar -xzf "$TARBALL"
+          du -sh "$TARBALL" package | tee package-sizes.txt
+
+      - name: Assert candidate capability boundary is explicit
+        shell: bash
+        run: |
+          set -euo pipefail
+          README="$RUNNER_TEMP/ft13-ts-heic/package/README.md"
+          test -f "$README"
+          grep -qi '10-bit and 12-bit pixel decoding' "$README"
+          grep -qi 'Auxiliary alpha-plane decoding' "$README"
+          grep -qi 'Animated image sequences' "$README"
+          grep -qi 'fail.*error\|error.*instead' "$README"
+          echo 'Candidate is research-only: unsupported 10/12-bit, auxiliary alpha and animation must remain fail-closed and explicitly disclosed.'
+
+      - name: Scan distributed runtime for obvious remote loading surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIST="$RUNNER_TEMP/ft13-ts-heic/package/dist"
+          test -d "$DIST"
+          if grep -R -n -E 'https?://|fetch\(|XMLHttpRequest|sendBeacon|WebSocket|importScripts\(' "$DIST"; then
+            echo 'Review required: distributed runtime contains an obvious remote/network-loading surface.' >&2
+            exit 1
+          fi
+
+      - name: Record package footprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ft13-ts-heic/package"
+          printf 'Largest distributed files:\n'
+          find dist -type f -printf '%s %p\n' | sort -nr | head -20
