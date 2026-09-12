@@ -35,6 +35,25 @@ test('conversions distinguish US and imperial liquid and fuel-economy units', ()
   closeTo(convertUnitValue(1, 'tonne', 'usTon'), 1.102311310924388);
 });
 
+test('converter reference values cover zero, decimals, metric/imperial switches, and invalid conversions', () => {
+  assert.equal(convertUnitValue(0, 'm', 'ft'), 0);
+  closeTo(convertUnitValue(0.5, 'm', 'ft'), 1.6404199475065615);
+  closeTo(convertUnitValue(1, 'm', 'ft'), 3.280839895013123);
+  closeTo(convertUnitValue(1, 'ft', 'm'), 0.3048);
+  closeTo(convertUnitValue(1, 'm2', 'ft2'), 10.763910416709722);
+  closeTo(convertUnitValue(1, 'm3', 'ft3'), 35.31466672148859);
+  closeTo(convertUnitValue(1, 'l', 'usGal'), 0.2641720523581484);
+  closeTo(convertUnitValue(1, 'kg', 'lb'), 2.2046226218487757);
+  closeTo(convertUnitValue(32, 'fahrenheit', 'celsius'), 0);
+  closeTo(convertUnitValue(100, 'kph', 'mph'), 62.13711922373339);
+  closeTo(convertUnitValue(1, 'kwh', 'mj'), 3.6);
+  closeTo(convertUnitValue(1, 'kw', 'hp'), 1.3410220895950277);
+  closeTo(convertUnitValue(25, 'usMpg', 'l100km'), 9.40858332);
+  assert.ok(Number.isNaN(convertUnitValue(Number.NaN, 'm', 'ft')));
+  assert.ok(Number.isNaN(convertUnitValue(Number.POSITIVE_INFINITY, 'm', 'ft')));
+  assert.ok(Number.isNaN(convertUnitValue(1, 'm', 'kg')));
+});
+
 test('cross-unit conversions are bidirectional without material drift', () => {
   const pairs: [UnitKey, UnitKey][] = [
     ['mm', 'mi'], ['mm2', 'ft2'], ['cm3', 'yd3'], ['ml', 'impFloz'],
