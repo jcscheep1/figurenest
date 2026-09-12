@@ -203,5 +203,39 @@ export function CalculatorDirectoryPage() {
         : filters.sort === 'az' ? <div className="calculator-directory-grid">{visibleTools.map((tool) => <DirectoryCard key={tool.slug} tool={tool} />)}</div>
           : <div className="calculator-directory-groups">{groupedTools.map((group) => <section key={group.category.slug} className="calculator-directory-group" aria-labelledby={`directory-category-${group.category.slug}`}><div className="calculator-directory-group-heading"><h2 id={`directory-category-${group.category.slug}`}>{group.category.name}</h2><span>{group.tools.length}</span></div><div className="calculator-directory-grid">{group.tools.map((tool) => <DirectoryCard key={tool.slug} tool={tool} />)}</div></section>)}</div>}
     </section>
+
+    <section className="calculator-directory-guidance" aria-labelledby="calculator-directory-guidance-title">
+      <div className="calculator-directory-guidance-heading">
+        <p className="calculator-directory-kicker">USING FIGURENEST WELL</p>
+        <h2 id="calculator-directory-guidance-title">Choose the tool that matches the decision you are making.</h2>
+        <p>FigureNest calculators and converters are designed around specific questions. Picking the closest matching tool matters because different tools use different inputs, assumptions, units, and formulas.</p>
+      </div>
+      <div className="calculator-directory-guidance-grid">
+        <article>
+          <h3>Start with the purpose, not just the name</h3>
+          <p>Read the short description on each card and the guidance on the tool page before entering values. A loan payment estimate, an affordability estimate, and a payoff calculation may use similar inputs but answer different questions.</p>
+        </article>
+        <article>
+          <h3>Check units, currency, and assumptions</h3>
+          <p>Make sure every input uses the unit shown beside it. Currency selectors normally change how monetary values are displayed; they do not imply a live exchange-rate conversion unless the page explicitly says so.</p>
+        </article>
+        <article>
+          <h3>Treat results as estimates</h3>
+          <p>Most tools simplify real-world conditions. Taxes, fees, rates, local rules, material waste, timing, product specifications, and other factors can change an outcome. Review each tool's limitations before relying on a result.</p>
+        </article>
+        <article>
+          <h3>Verify high-stakes decisions</h3>
+          <p>For financial, legal, tax, medical, engineering, construction, automotive, or other important decisions, verify the result against current source documents, official rules, measurements, quotes, or an appropriate qualified professional.</p>
+        </article>
+      </div>
+      <div className="calculator-directory-guidance-links">
+        <p>Want to understand how FigureNest checks formulas and explains assumptions?</p>
+        <div>
+          <Link href="/methodology">Read our methodology</Link>
+          <Link href="/disclaimer">Review calculator limitations</Link>
+          <Link href="/about">About FigureNest</Link>
+        </div>
+      </div>
+    </section>
   </div></Shell>;
 }
