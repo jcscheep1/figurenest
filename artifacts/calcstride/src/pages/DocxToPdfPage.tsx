@@ -82,6 +82,9 @@ export function DocxToPdfPage() {
     downloadBlob(pdf);
   };
 
+  const uploadStatus: FileJobStatus = html && status !== 'processing' ? 'ready' : status;
+  const uploadError = html ? undefined : (error || undefined);
+
   return <Shell>
     <Seo title={definition.seoTitle} description={definition.seoDescription} path={definition.href} />
     <main className="tool-page file-tool-page">
@@ -98,7 +101,7 @@ export function DocxToPdfPage() {
       </header>
       <section className="file-upload-panel docx-workflow-step" aria-label="Step 1: Choose DOCX file">
         <p className="docx-step-label"><span>1</span> Upload your Word document</p>
-        <LocalFileDropzone accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" status={status} fileName={fileName || undefined} error={error || undefined} onSelect={select} onCancel={() => abortRef.current?.abort()} onReset={reset} />
+        <LocalFileDropzone accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" status={uploadStatus} fileName={fileName || undefined} error={uploadError} onSelect={select} onCancel={() => abortRef.current?.abort()} onReset={reset} />
       </section>
       <section ref={downloadStepRef} className="docx-preview-step docx-workflow-step" aria-labelledby="docx-preview-heading">
         <p className="docx-step-label"><span>2</span> Review and download</p>
@@ -106,6 +109,7 @@ export function DocxToPdfPage() {
           <div><h2 id="docx-preview-heading">{html ? 'Document preview' : 'Download your PDF'}</h2><p>{html ? 'Check the document below, then use the blue button to download your PDF.' : 'Upload a DOCX in Step 1. Your download button will activate here when the preview is ready.'}</p></div>
           <button ref={downloadButtonRef} className="docx-download-button" type="button" onClick={createAndDownloadPdf} disabled={!html || status === 'processing'}><Download size={19} aria-hidden="true" /> {status === 'processing' ? 'Creating PDF…' : html ? 'Convert and download PDF' : 'Upload DOCX to enable download'}</button>
         </div>
+        {html && error ? <p className="file-tool-error" role="alert">{error}</p> : null}
         {html ? <><p className="docx-layout-note">Complex Word pagination, fonts, fields, tracked changes, headers and footers may differ from Word.</p>
           <div className="docx-preview-frame"><article ref={previewRef} className="file-tool-preview" dangerouslySetInnerHTML={{ __html: html }} /></div>
           {messages.length ? <details className="docx-conversion-notes"><summary>Conversion notes</summary><ul>{messages.map((message, index) => <li key={index}>{message}</li>)}</ul></details> : null}</> : <div className="docx-preview-placeholder" aria-hidden="true"><Download size={32} /><span>PDF download becomes available after upload</span></div>}
