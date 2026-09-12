@@ -21,6 +21,17 @@ Any implementation spike must fail closed before presentation rendering when the
 - use no runtime CDN dependency for presentation parsing/rendering;
 - sanitize or ignore unsupported active/external relationships rather than following them.
 
+### Relationship hardening checkpoint
+
+OOXML relationship safety must not rely only on `TargetMode="External"`. A hostile or malformed package can carry a URL-like target while omitting or corrupting that marker. Before a renderer receives relationship data, the research spike must therefore parse each relationship attribute and fail closed when a target:
+
+- uses any URI scheme (`https:`, `http:`, `javascript:`, `data:`, `file:`, `vbscript:`, or another scheme) rather than a package-relative path;
+- is protocol-relative (`//host/...`), root-absolute, drive-letter absolute, contains NUL/backslash ambiguity, or escapes the package namespace after path normalization;
+- uses an active relationship type such as OLE/package/ActiveX;
+- requests external resolution through `TargetMode="External"`, regardless of target spelling.
+
+A valid package-relative relationship such as `../media/image1.png` may remain inert input only after normalization proves it stays within the PPTX package namespace. Tests must include external targets with a missing `TargetMode` so this cannot regress.
+
 ## Fidelity gate
 
 The release must not claim PowerPoint-identical output. Research must explicitly measure and document support/limitations for:
@@ -82,3 +93,11 @@ Do **not** add `/file-tools/pptx-to-pdf`, catalog/schema entries, sitemap exposu
 7. acceptable bundle isolation and production build impact.
 
 After that evidence passes, implementation and a dedicated fail-closed publication browser gate can proceed atomically.
+
+## Publication UI and SEO contract
+
+If FT-11 ever passes the research gate, publication must also inherit the current FigureNest File Tools contracts rather than introducing a one-off page:
+
+- the route must render inside `.file-tool-page` and use the shared `file-tool-buttons.css` action system: enabled upload/convert/download/reset actions visibly blue with contrasting text, disabled actions grey, destructive actions red; desktop and 390×844 QA must include the native file-picker button;
+- the public page must have a unique PPTX-to-PDF search-intent H1/title/meta description, useful visible guidance and limitations, meaningful tags/description and FAQs, canonical route, breadcrumb/WebApplication/FAQ schema where applicable, related internal links, and catalog/category/sitemap/tool-count parity;
+- no placeholder or thin route may be indexed while the converter remains research-only.
