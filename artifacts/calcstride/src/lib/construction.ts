@@ -779,6 +779,9 @@ export function calculateConstruction(slug: string, rawValues: Record<string, st
     if (hardened && !Number.isFinite(parsed)) return errorResult(`${item.label} must be a finite number.`);
     if (hardened && parsed < 0) return errorResult(`${item.label} cannot be negative.`);
     if (!Number.isFinite(parsed) || parsed < 0 || (!item.allowZero && parsed === 0)) return errorResult(`${item.label} must be greater than zero.`);
+    if (slug === 'paint' && item.key === 'coats' && !Number.isInteger(parsed)) {
+      return errorResult('Number of coats must be a whole number.');
+    }
     if (hardened) {
       const footingLength = slug === 'concrete-footing';
       const lengthLimit = footingLength
