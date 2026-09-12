@@ -73,7 +73,38 @@ try {
     const general = await evaluate(`(() => { const route=${JSON.stringify(route)};const h1=document.querySelector('main h1');const canonical=document.querySelector('link[rel="canonical"]')?.href||'';const description=document.querySelector('meta[name="description"]')?.content||'';const main=document.querySelector('main');const failures=[];const viewportWidth=document.documentElement.clientWidth||innerWidth;const scrollbarWidth=innerWidth-viewportWidth;if(innerWidth!==${width}||scrollbarWidth<0||scrollbarWidth>20)failures.push('viewport width mismatch');if(document.documentElement.scrollWidth>innerWidth+1)failures.push('horizontal overflow '+document.documentElement.scrollWidth);if(document.querySelectorAll('main').length!==1)failures.push('main landmark count');if(document.querySelectorAll('main h1').length!==1)failures.push('H1 count');if(!document.title||description.length<90)failures.push('metadata');const normalize=(path)=>path==='/'?path:path.replace(/\\/$/,'');if(!canonical.startsWith('https://figurenest.com')||normalize(new URL(canonical).pathname)!==normalize(route))failures.push('canonical '+canonical);if(!h1||h1.getBoundingClientRect().width<=0||h1.getBoundingClientRect().height<=0)failures.push('H1 not visible');if((main?.innerText.trim().split(/\\s+/).length||0)<250)failures.push('insufficient visible guidance');if(/\\b(coming soon|lorem ipsum|placeholder)\\b/i.test(main?.innerText||''))failures.push('placeholder language');if(!document.querySelector('script[type="application/ld+json"]'))failures.push('JSON-LD');if(failures.length)throw new Error(failures.join(', '));return{route,h1:h1.textContent.trim(),words:main.innerText.trim().split(/\\s+/).length,viewport:viewportWidth+'x'+innerHeight};})()`);
     let interaction;
     if (name === 'health-bmr') {
-      interaction = await evaluate(`(() => { const input=document.querySelector('[data-testid="input-bmr-weight"]');const result=document.querySelector('[data-testid="result-bmr"]');const reset=document.querySelector('[data-testid="button-reset-bmr"]');if(!input||!result||!reset)throw new Error('BMR input/result/reset contract missing');if(!input.value||!(result.textContent||'').trim())throw new Error('BMR default input/result empty');input.focus();if(document.activeElement!==input)throw new Error('BMR input not focusable');reset.focus();if(document.activeElement!==reset)throw new Error('BMR reset not focusable');reset.click();if(!input.value||!(result.textContent||'').trim())throw new Error('BMR reset removed valid state');return 'numeric input/result present; input and reset focusable; reset preserves valid defaults';})()`);
+      const before = await evaluate(`(() => {
+        const input = document.querySelector('[data-testid="input-bmr-weight"]');
+        const result = document.querySelector('[data-testid="result-bmr"]');
+        if (!input || !result) throw new Error('BMR input/result contract missing');
+        return { value: input.value, result: result.textContent || '' };
+      })()`);
+      const nextValue = String(Number(before.value) + 1);
+      const assignedValue = await evaluate(`(() => {
+        const input = document.querySelector('[data-testid="input-bmr-weight"]');
+        if (!(input instanceof HTMLInputElement)) throw new Error('BMR numeric input missing');
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+        if (!setter) throw new Error('native HTMLInputElement value setter unavailable');
+        input.focus();
+        setter.call(input, ${JSON.stringify(nextValue)});
+        input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: ${JSON.stringify(nextValue)} }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        return input.value;
+      })()`);
+      if (assignedValue !== nextValue) throw new Error(`BMR native input assignment failed: ${assignedValue}`);
+      await waitFor(`(() => {
+        const input = document.querySelector('[data-testid="input-bmr-weight"]');
+        const result = document.querySelector('[data-testid="result-bmr"]');
+        return input?.value === ${JSON.stringify(nextValue)} && (result?.textContent || '') !== ${JSON.stringify(before.result)};
+      })()`, 'health-bmr input/result reaction');
+      interaction = await evaluate(`(() => {
+        const reset = document.querySelector('[data-testid="button-reset-bmr"]');
+        const result = document.querySelector('[data-testid="result-bmr"]');
+        if (!reset || !(result?.textContent || '').trim()) throw new Error('BMR result/reset missing after interaction');
+        reset.focus();
+        if (document.activeElement !== reset) throw new Error('BMR reset not focusable');
+        return 'native input/change events changed result; reset focusable';
+      })()`);
     } else if (name === 'electrical-ohms-law') {
       const before = await evaluate(`(() => { const select=document.querySelector('[data-testid="input-ohms-law-solve"]');const result=document.querySelector('[data-testid="status-ohms-law"] .advanced-result-output');if(!select||!result)throw new Error('Ohm contract missing');select.focus();return{value:select.value,result:result.textContent||''};})()`);
       await dispatchKey('rawKeyDown', 'ArrowDown', { code: 'ArrowDown', windowsVirtualKeyCode: 40 }); await dispatchKey('keyUp', 'ArrowDown', { code: 'ArrowDown', windowsVirtualKeyCode: 40 });
