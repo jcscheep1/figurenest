@@ -361,7 +361,10 @@ export function calculateCore(slug: string, inputs: string[], mode = 'default', 
   if (slug === 'volume') return { primary: `${decimal.format(a * b * c)} m³` };
   if (slug === 'dpi-ppi') return b ? { primary: `${decimal.format(a / b)} PPI` } : invalid('Print width must be greater than zero');
   if (slug === 'pixels-to-cm') return b ? { primary: `${decimal.format(a / b * 2.54)} cm`, details: [{ label: 'Inches', value: `${decimal.format(a / b)} in` }] } : invalid('Resolution must be greater than zero');
-  if (slug === 'image-scaling') return a ? { primary: `${decimal.format(b / a * c)} px tall` } : invalid('Original width must be greater than zero');
+  if (slug === 'image-scaling') {
+    if (inputs.some((value) => !value.trim())) return invalid('Complete every field with a valid non-negative value');
+    return a ? { primary: `${decimal.format(b / a * c)} px tall` } : invalid('Original width must be greater than zero');
+  }
   return invalid('This calculator is not configured');
 }
 
