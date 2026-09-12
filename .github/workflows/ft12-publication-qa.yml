@@ -9,6 +9,7 @@ on:
       - 'artifacts/calcstride/src/pages/ImageConverterPage.tsx'
       - 'artifacts/calcstride/public/sitemap.xml'
       - 'artifacts/calcstride/src/styles/file-tool-buttons.css'
+      - '.github/workflows/ft12-publication-qa.yml'
 
 permissions:
   contents: read
@@ -58,6 +59,9 @@ jobs:
 
       - name: Focused image converter tests
         run: pnpm --filter @workspace/calcstride exec node --import tsx --test src/lib/image-converter-core.test.ts
+
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
 
       - name: Typecheck
         run: pnpm --filter @workspace/calcstride typecheck
