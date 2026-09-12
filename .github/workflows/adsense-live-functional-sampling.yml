@@ -39,22 +39,18 @@ jobs:
           exit 1
       - name: Desktop cross-cluster sampling
         id: cross_desktop
-        continue-on-error: true
         run: node scripts/adsense-cross-cluster-functional-sampling.mjs desktop 1440 1200 9260
       - name: Mobile cross-cluster sampling
         id: cross_mobile
         if: always()
-        continue-on-error: true
         run: node scripts/adsense-cross-cluster-functional-sampling.mjs mobile 390 844 9261
       - name: Desktop 1440x1200 sampling
         id: broad_desktop
         if: always()
-        continue-on-error: true
         run: node scripts/adsense-live-functional-sampling.mjs desktop 1440 1200 9250
       - name: Mobile 390x844 sampling
         id: broad_mobile
         if: always()
-        continue-on-error: true
         run: node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251
       - name: Report complete functional sampling gate
         if: always()
@@ -63,6 +59,4 @@ jobs:
           echo "cross-mobile=${{ steps.cross_mobile.outcome }}"
           echo "broad-desktop=${{ steps.broad_desktop.outcome }}"
           echo "broad-mobile=${{ steps.broad_mobile.outcome }}"
-      - name: Fail if any functional sampler failed
-        if: ${{ always() && (steps.cross_desktop.outcome != 'success' || steps.cross_mobile.outcome != 'success' || steps.broad_desktop.outcome != 'success' || steps.broad_mobile.outcome != 'success') }}
-        run: exit 1
+          echo "GitHub Actions will fail this job natively if any sampler step failed."
