@@ -116,6 +116,26 @@ test('FT-10 workbook bounds accept the exact column ceiling and reject wider she
   assert.throws(() => readBoundedRows(workbookBytes(tooWide)), /column limit exceeded/);
 });
 
+test('FT-10 workbook bounds enforce exact row and populated-range cell ceilings', () => {
+  const atRowLimit = Array.from({ length: FT10_RESEARCH_LIMITS.maxRows }, (_, index) => [`row-${index + 1}`]);
+  assert.equal(readBoundedRows(workbookBytes(atRowLimit)).length, FT10_RESEARCH_LIMITS.maxRows);
+
+  const tooManyRows = Array.from({ length: FT10_RESEARCH_LIMITS.maxRows + 1 }, (_, index) => [`row-${index + 1}`]);
+  assert.throws(() => readBoundedRows(workbookBytes(tooManyRows)), /row limit exceeded/);
+
+  const rowsAtCellLimit = FT10_RESEARCH_LIMITS.maxCells / FT10_RESEARCH_LIMITS.maxColumns;
+  assert.equal(Number.isInteger(rowsAtCellLimit), true);
+  const atCellLimit = Array.from({ length: rowsAtCellLimit }, (_, rowIndex) =>
+    Array.from({ length: FT10_RESEARCH_LIMITS.maxColumns }, (_, columnIndex) => `r${rowIndex + 1}c${columnIndex + 1}`),
+  );
+  assert.equal(readBoundedRows(workbookBytes(atCellLimit)).length, rowsAtCellLimit);
+
+  const overCellLimit = Array.from({ length: rowsAtCellLimit + 1 }, (_, rowIndex) =>
+    Array.from({ length: FT10_RESEARCH_LIMITS.maxColumns }, (_, columnIndex) => `r${rowIndex + 1}c${columnIndex + 1}`),
+  );
+  assert.throws(() => readBoundedRows(workbookBytes(overCellLimit)), /cell limit exceeded/);
+});
+
 test('FT-10 research renderer rejects malformed XLSX before parsing and fails closed on page ceilings', () => {
   assert.throws(() => readBoundedRows(new TextEncoder().encode('not an xlsx archive')), /local safety validation/);
 
