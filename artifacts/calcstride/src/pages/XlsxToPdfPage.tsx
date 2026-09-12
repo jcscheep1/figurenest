@@ -171,7 +171,7 @@ export function XlsxToPdfPage() {
     }
   };
 
-  return <main className="tool-page file-tool-page" data-testid="ft10-unrouted-xlsx-to-pdf">
+  return <main className="tool-page file-tool-page" data-testid="ft10-unrouted-converter">
     <header className="file-tool-hero">
       <p className="eyebrow">FT-10 unpublished implementation</p>
       <h1>XLSX to PDF</h1>
