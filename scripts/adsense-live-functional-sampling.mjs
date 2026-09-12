@@ -142,7 +142,8 @@ try {
       })()`, true);
     } else if (name === 'salary') {
       interaction = await evaluate(`(async () => {
-        const input = document.querySelector('input[aria-label^="Annual salary"]');
+        const input = [...document.querySelectorAll('main input')].find((candidate) => candidate.closest('label')?.innerText.includes('Annual salary'));
+        if (!input) throw new Error('annual salary input missing');
         const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
         setter.call(input, '72000'); input.dispatchEvent(new Event('input', {bubbles:true}));
         input.dispatchEvent(new Event('change', {bubbles:true})); await new Promise((resolve) => setTimeout(resolve, 100));
