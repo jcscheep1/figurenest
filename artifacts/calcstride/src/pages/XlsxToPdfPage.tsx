@@ -173,7 +173,7 @@ export function XlsxToPdfPage() {
 
   return <Shell>
     <Seo path="/file-tools/xlsx-to-pdf" />
-    <main className="tool-page file-tool-page" data-testid="page-xlsx-to-pdf">
+    <div className="tool-page file-tool-page" data-testid="page-xlsx-to-pdf">
       <nav className="calc-breadcrumb" aria-label="Breadcrumb">
         <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
         <Link href="/category/file-tools">PDF &amp; File Tools</Link>
@@ -218,6 +218,6 @@ export function XlsxToPdfPage() {
       <div><h2>Your searchable PDF is ready</h2><p>{previewRows.length.toLocaleString()} rows selected · {(output.byteLength / 1024).toFixed(1)} kB local output</p></div>
       <button type="button" onClick={() => downloadPdf(output, fileName)}><Download size={18} aria-hidden="true" /> Download PDF</button>
     </section> : null}
-    </main>
+    </div>
   </Shell>;
 }

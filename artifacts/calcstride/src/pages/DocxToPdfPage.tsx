@@ -87,7 +87,7 @@ export function DocxToPdfPage() {
 
   return <Shell>
     <Seo title={definition.seoTitle} description={definition.seoDescription} path={definition.href} />
-    <main className="tool-page file-tool-page">
+    <div className="tool-page file-tool-page">
       <nav className="calc-breadcrumb" aria-label="Breadcrumb">
         <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
         <Link href="/category/file-tools">PDF &amp; File Tools</Link>
@@ -119,6 +119,6 @@ export function DocxToPdfPage() {
         <section><h2>Important limitations</h2><ul>{definition.limitations.map((item) => <li key={item}>{item}</li>)}</ul></section>
         <section><h2>Frequently asked questions</h2>{definition.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
       </div>
-    </main>
+    </div>
   </Shell>;
 }

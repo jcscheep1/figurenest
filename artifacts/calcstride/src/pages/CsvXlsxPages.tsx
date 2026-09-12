@@ -159,7 +159,7 @@ export function CsvToXlsxPage() {
 
   return <Shell>
     <Seo path="/file-tools/csv-to-xlsx" />
-    <main className="tool-page file-tool-page" data-testid="page-csv-to-xlsx">
+    <div className="tool-page file-tool-page" data-testid="page-csv-to-xlsx">
       <nav className="calc-breadcrumb" aria-label="Breadcrumb">
         <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
         <Link href="/category/file-tools">PDF &amp; File Tools</Link>
@@ -191,7 +191,7 @@ export function CsvToXlsxPage() {
         <CheckCircle2 size={25} aria-hidden="true" /><div><h2>Your XLSX is ready</h2><Summary summary={summary} /></div>
         <button type="button" onClick={download}><Download size={18} aria-hidden="true" /> Download XLSX</button>
       </section> : null}
-    </main>
+    </div>
   </Shell>;
 }
 
@@ -282,7 +282,7 @@ export function XlsxToCsvPage() {
 
   return <Shell>
     <Seo path="/file-tools/xlsx-to-csv" />
-    <main className="tool-page file-tool-page" data-testid="page-xlsx-to-csv">
+    <div className="tool-page file-tool-page" data-testid="page-xlsx-to-csv">
       <nav className="calc-breadcrumb" aria-label="Breadcrumb">
         <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
         <Link href="/category/file-tools">PDF &amp; File Tools</Link>
@@ -312,6 +312,6 @@ export function XlsxToCsvPage() {
         <h3>Local preview</h3>
         <pre className="file-tool-preview" aria-label="Converted CSV preview">{csv.slice(0, 5000)}{csv.length > 5000 ? '\n… preview truncated …' : ''}</pre>
       </section> : null}
-    </main>
+    </div>
   </Shell>;
 }
