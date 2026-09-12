@@ -8,6 +8,7 @@ const appPath = path.join(src, 'App.tsx');
 const catalogPath = path.join(src, 'lib/catalog.ts');
 const categoryContentPath = path.join(src, 'lib/category-content.ts');
 const appPagesPath = path.join(pagesDir, 'AppPages.tsx');
+const phaseThreeAPagePath = path.join(pagesDir, 'PhaseThreeACalculatorPage.tsx');
 const phaseThreeBPagePath = path.join(pagesDir, 'PhaseThreeBCalculatorPage.tsx');
 
 const read = (file) => fs.readFileSync(file, 'utf8');
@@ -26,6 +27,7 @@ const app = read(appPath);
 const catalog = read(catalogPath);
 const categoryContent = read(categoryContentPath);
 const appPages = read(appPagesPath);
+const phaseThreeAPage = read(phaseThreeAPagePath);
 const phaseThreeBPage = read(phaseThreeBPagePath);
 const pageFiles = walk(pagesDir).filter((file) => /\.(tsx|ts)$/.test(file));
 const pageText = pageFiles.map((file) => ({ file, text: read(file) }));
@@ -84,7 +86,7 @@ const missingCategoryRenderMarkers = categoryRenderMarkers.filter((marker) => !a
 if (missingCategoryRenderMarkers.length) fail(`CategoryPage does not render the complete category-quality corpus: ${missingCategoryRenderMarkers.join(', ')}`);
 else pass('CategoryPage renders questions, choosing guidance, unit/currency guidance, tool guidance, related guides, FAQs and trust links');
 
-const phaseThreeBQualityMarkers = [
+const familyQualityMarkers = [
   'definition.workedExample',
   'definition.interpretation',
   'definition.edgeCases',
@@ -92,9 +94,14 @@ const phaseThreeBQualityMarkers = [
   'definition.faqs.map',
   'definition.relatedRoutes',
 ];
-const missingPhaseThreeBQualityMarkers = phaseThreeBQualityMarkers.filter((marker) => !phaseThreeBPage.includes(marker));
-if (missingPhaseThreeBQualityMarkers.length) fail(`Phase Three B calculator pages no longer render the full quality corpus: ${missingPhaseThreeBQualityMarkers.join(', ')}`);
-else pass('Phase Three B calculator family renders worked examples, interpretation, edge cases, limitations, FAQs and related-tool links');
+for (const [label, source] of [
+  ['Phase Three A', phaseThreeAPage],
+  ['Phase Three B', phaseThreeBPage],
+]) {
+  const missing = familyQualityMarkers.filter((marker) => !source.includes(marker));
+  if (missing.length) fail(`${label} calculator pages no longer render the full quality corpus: ${missing.join(', ')}`);
+  else pass(`${label} calculator family renders worked examples, interpretation, edge cases, limitations, FAQs and related-tool links`);
+}
 
 const qualitySignals = [
   ['FAQ content', /\bFAQ|Common .* questions/i],
