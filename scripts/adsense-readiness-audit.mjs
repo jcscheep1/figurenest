@@ -8,6 +8,7 @@ const appPath = path.join(src, 'App.tsx');
 const catalogPath = path.join(src, 'lib/catalog.ts');
 const categoryContentPath = path.join(src, 'lib/category-content.ts');
 const appPagesPath = path.join(pagesDir, 'AppPages.tsx');
+const phaseThreeBPagePath = path.join(pagesDir, 'PhaseThreeBCalculatorPage.tsx');
 
 const read = (file) => fs.readFileSync(file, 'utf8');
 const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -25,6 +26,7 @@ const app = read(appPath);
 const catalog = read(catalogPath);
 const categoryContent = read(categoryContentPath);
 const appPages = read(appPagesPath);
+const phaseThreeBPage = read(phaseThreeBPagePath);
 const pageFiles = walk(pagesDir).filter((file) => /\.(tsx|ts)$/.test(file));
 const pageText = pageFiles.map((file) => ({ file, text: read(file) }));
 
@@ -81,6 +83,18 @@ const categoryRenderMarkers = [
 const missingCategoryRenderMarkers = categoryRenderMarkers.filter((marker) => !appPages.includes(marker));
 if (missingCategoryRenderMarkers.length) fail(`CategoryPage does not render the complete category-quality corpus: ${missingCategoryRenderMarkers.join(', ')}`);
 else pass('CategoryPage renders questions, choosing guidance, unit/currency guidance, tool guidance, related guides, FAQs and trust links');
+
+const phaseThreeBQualityMarkers = [
+  'definition.workedExample',
+  'definition.interpretation',
+  'definition.edgeCases',
+  'definition.limitations',
+  'definition.faqs.map',
+  'definition.relatedRoutes',
+];
+const missingPhaseThreeBQualityMarkers = phaseThreeBQualityMarkers.filter((marker) => !phaseThreeBPage.includes(marker));
+if (missingPhaseThreeBQualityMarkers.length) fail(`Phase Three B calculator pages no longer render the full quality corpus: ${missingPhaseThreeBQualityMarkers.join(', ')}`);
+else pass('Phase Three B calculator family renders worked examples, interpretation, edge cases, limitations, FAQs and related-tool links');
 
 const qualitySignals = [
   ['FAQ content', /\bFAQ|Common .* questions/i],
