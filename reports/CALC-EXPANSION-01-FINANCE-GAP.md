@@ -1,6 +1,6 @@
 # Calculator Expansion 01 — Finance Gap Research
 
-Status: **RESEARCH / SAFE NEXT LANE**
+Status: **BUILD / AMORTIZATION ACTIVE**
 
 Base production main: `cf5221ab3f61daac3a6b63e855b0290a0327f4fc`
 
@@ -8,21 +8,17 @@ Base production main: `cf5221ab3f61daac3a6b63e855b0290a0327f4fc`
 
 FT-13 HEIC→JPG closed NOT PUBLISHABLE without exposing a route. FigureNest can therefore return to calculator/content expansion without waiting on a decoder ecosystem change.
 
-The live FigureNest directory currently has 180 published tools across 15 categories. Money & Finance already covers mortgages, loans, savings, interest, tax, VAT and related planning tools, but there is no dedicated **loan amortization schedule** or **multi-debt payoff** tool in the published directory.
+The live FigureNest directory currently has 180 published tools across 15 categories. Money & Finance already covers mortgages, loans, savings, interest, tax, VAT and related planning tools. It also already covers debt-payoff intent through the published **Credit Card Payoff Calculator** and **Debt Consolidation Calculator**, whose catalog tags explicitly include debt payoff. A second generic debt-payoff route would therefore duplicate an existing canonical intent and is not an approved follow-on lane.
 
-Current search-result evidence shows both intents remain established calculator categories in 2026:
+A dedicated **general loan amortization schedule** remains a genuine gap. FigureNest has a mortgage-specific amortization tool, but not a loan-agnostic schedule that accepts principal, annual interest rate, term and optional recurring extra principal and returns a full repayment schedule.
 
-- Calculator.net publishes a dedicated Amortization Calculator with monthly schedule, total interest and optional extra payments.
-- Calculator.net publishes a dedicated Debt Payoff Calculator focused on multiple debts and avalanche ordering.
-- Newer competitors such as Loans.net, DebtBloom and Tweakee also expose amortization/debt-payoff schedules, payoff dates and extra-payment modelling.
+Current search-result evidence shows amortization remains an established calculator intent in 2026. Competing calculators expose monthly schedules, total interest, payoff timing and extra-payment modelling. This is a better next expansion direction than another thin percentage/unit variant because it adds distinct user intent and materially deeper output.
 
-This is a better next expansion direction than another thin percentage/unit variant because it adds distinct user intent and materially deeper output.
-
-## Candidate A — Loan Amortization Calculator
+## Active candidate — Loan Amortization Calculator
 
 Proposed canonical: `/calculators/amortization-calculator`
 
-Primary intent: generate a fixed-rate amortization schedule from principal, APR and term.
+Primary intent: generate a fixed-rate amortization schedule from principal, annual interest rate and term for a general loan, distinct from the existing mortgage-specific amortization route.
 
 Minimum useful v1:
 
@@ -34,8 +30,8 @@ Minimum useful v1:
 - monthly payment;
 - total interest and total repayment;
 - payoff date;
-- month-by-month or year-by-year principal/interest/balance schedule;
-- CSV export using the existing spreadsheet-safety contract.
+- month-by-month and/or year-by-year principal/interest/balance schedule;
+- CSV export only if it reuses FigureNest's existing spreadsheet-safety contract rather than introducing a local export variant.
 
 Correctness gates:
 
@@ -53,52 +49,42 @@ SEO/content contract before publication:
 - useful visible explanation of principal vs interest and why the mix changes over time;
 - FAQs covering extra payments, 0% loans, APR vs interest rate, early payoff and rounding;
 - WebApplication + FAQ + breadcrumb schema;
-- related links to Loan, Mortgage, Auto Loan, Student Loan and Compound Interest tools where applicable;
+- related links to Loan, Mortgage, Auto Loan, Mortgage Amortization and Compound Interest tools where applicable;
 - non-thin visible schedule guidance and no financial-advice claims.
 
-## Candidate B — Debt Payoff Calculator
+## Duplicate-intent guard — do not add a generic Debt Payoff Calculator
 
-Proposed canonical: `/calculators/debt-payoff-calculator`
+The repository's existing intent-consolidation note and published catalog make the current boundary explicit:
 
-Primary intent: model payoff of multiple debts and compare avalanche vs snowball ordering.
+- `/calculators/finance/debt-consolidation` already carries the `debt payoff` intent and compares a current constant-payment payoff with a consolidation loan;
+- `/calculators/finance/credit-card` already provides an explicit credit-card payoff experience;
+- creating `/calculators/debt-payoff-calculator` now would fragment search intent and internal linking rather than add a distinct capability.
 
-Minimum useful v1:
-
-- multiple debts with label, balance, APR and minimum payment;
-- extra monthly payment;
-- avalanche and snowball modes;
-- deterministic rollover of freed minimum payments;
-- payoff order, debt-free month/date, total interest and total paid;
-- warning when a minimum payment does not cover monthly interest;
-- optional comparison summary showing interest/time difference between strategies.
-
-Correctness gates:
-
-- no infinite loop when payment <= interest accrual;
-- stable ordering for equal APR/balance cases;
-- exact rollover once a debt reaches zero;
-- no overpayment leakage into a cleared balance;
-- explicit assumptions around fixed APR and fixed minimum payment inputs;
-- bounded simulation horizon and finite-number checks.
+If future evidence supports a materially different multi-debt avalanche/snowball planner, it must first demonstrate a non-overlapping user intent and canonical strategy. Until then, strengthen the existing debt-consolidation/payoff surface instead of publishing a duplicate route.
 
 ## Priority decision
 
-**Build Candidate A first: Loan Amortization Calculator.**
+**Build the Loan Amortization Calculator first and treat it as the only approved public route in this lane.**
 
 Reasons:
 
-1. It has a simpler correctness surface than multi-debt payoff while still adding substantial distinct value.
-2. The amortization engine and schedule can later be reused by debt payoff, mortgage-extra-payment and loan-payoff experiences.
+1. It adds a genuine general-loan schedule capability that is distinct from the mortgage-specific amortization tool.
+2. The amortization engine is reusable for future fixed-rate loan experiences without adding third-party runtime dependencies.
 3. It naturally strengthens internal linking across the existing Money & Finance cluster.
-4. It can ship without new third-party runtime dependencies.
+4. The calculation surface is deterministic and can be regression-locked before publication.
 
-Candidate B should follow only after Candidate A's schedule engine and rounding behavior are production-green.
+After amortization is production-green, perform a fresh catalog/search-gap review for the next genuinely distinct calculator/content lane. Do **not** automatically advance to a generic debt-payoff calculator.
 
-## Preflight before implementation
+## Implementation state
 
-- Reconcile current main and open finance PRs again before writing code.
-- Confirm no existing hidden/alias amortization route or engine would create duplicate intent.
+The branch now contains a reusable fixed-rate amortization schedule engine plus focused regression fixtures covering a representative 100,000 / 6% / 360-month schedule, zero-interest behavior, recurring extra principal, invalid/non-finite values and zero residual balance at payoff. That exact implementation head passed Validate FigureNest and both authoritative Vercel preview statuses before public-route work began.
+
+## Preflight before publication wiring
+
+- Reconcile current main and branch head again immediately before each write; never overwrite a newer concurrent head.
+- Keep the canonical public intent distinct from the existing mortgage-amortization route.
 - Reuse current currency preferences and spreadsheet-safe export helpers rather than inventing local variants.
-- Add focused reference fixtures before production wiring.
-- Keep the first PR isolated to one canonical tool and shared schedule logic only where demonstrably reusable.
-- Run full Validate FigureNest and authoritative Vercel preview checks on the exact head before merge.
+- Keep schedule logic covered by focused reference fixtures.
+- Publish route, catalog, SEO, sitemap/category parity and internal links as one coherent release surface.
+- Run full Validate FigureNest and authoritative Vercel preview checks on the exact publication head before merge.
+- After merge verify production H1/title/meta/canonical/schema, sitemap/catalog/category presence, related links, calculations and responsive schedule rendering.
