@@ -1,6 +1,5 @@
-const CACHE_VERSION = 'figurenest-shell-v3';
+const CACHE_VERSION = 'figurenest-shell-v4';
 const OFFLINE_ASSETS = [
-  './',
   './offline.html',
   './manifest.webmanifest',
   './favicon.svg',
@@ -56,6 +55,12 @@ const responseCanBeCached = (response) => {
     && !/(?:^|,)\s*(?:private|no-store)\b/i.test(cacheControl);
 };
 
+const cacheSuccessfulResponse = async (request, response) => {
+  if (!responseCanBeCached(response)) return;
+  const cache = await caches.open(CACHE_VERSION);
+  await cache.put(request, response.clone());
+};
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION)
@@ -64,13 +69,8 @@ self.addEventListener('install', (event) => {
         await cache.addAll(assetUrls);
 
         const rootUrl = new URL('./', self.registration.scope);
-        const rootResponse = await fetch(rootUrl);
-        if (!rootResponse.ok) return;
-        await cache.put(rootUrl, rootResponse.clone());
-        const html = await rootResponse.text();
-        const shellAssets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)]
-          .map((match) => new URL(match[1], rootUrl).href);
-        await cache.addAll([...new Set(shellAssets)]);
+        const rootResponse = await fetch(rootUrl, { cache: 'no-store' });
+        if (rootResponse.ok) await cache.put(rootUrl, rootResponse.clone());
       })
       .then(() => self.skipWaiting()),
   );
@@ -96,10 +96,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (responseCanBeCached(response)) {
-            const copy = response.clone();
-            void caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-          }
+          void cacheSuccessfulResponse(request, response);
           return response;
         })
         .catch(async () => (
@@ -111,17 +108,34 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (isPublicStaticAsset(url) && ['style', 'script', 'font', 'image'].includes(request.destination)) {
+  if (!isPublicStaticAsset(url)) return;
+
+  if (request.destination === 'script' || request.destination === 'style') {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then(async (response) => {
+          if (response.ok) {
+            void cacheSuccessfulResponse(request, response);
+            return response;
+          }
+          return (await caches.match(request)) || response;
+        })
+        .catch(async () => (
+          await caches.match(request)
+          || new Response('', { status: 503, statusText: 'Offline' })
+        )),
+    );
+    return;
+  }
+
+  if (request.destination === 'font' || request.destination === 'image') {
     event.respondWith(
       caches.match(request).then((cached) => {
-        const network = fetch(request).then((response) => {
-          if (responseCanBeCached(response)) {
-            const copy = response.clone();
-            void caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-          }
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          void cacheSuccessfulResponse(request, response);
           return response;
         });
-        return cached || network;
       }),
     );
   }
