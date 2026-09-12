@@ -156,4 +156,27 @@ describe('FT-11 relationship inspection', () => {
       '<Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="object.bin" />',
     ]), { ok: false, reason: 'active-relationship-type-unsupported' });
   });
+
+  it('rejects disguised URI schemes, absolute targets and ambiguous path syntax', () => {
+    for (const target of [
+      'https&#58;//example.test/track',
+      '//example.test/track',
+      '/ppt/media/image1.png',
+      '..\\media\\image1.png',
+      'file&#58;/etc/passwd',
+      'data&#58;text/plain,FT11',
+    ]) {
+      assert.deepEqual(inspectPptxRelationshipXml([
+        `<Relationship Type="image" Target="${target}" />`,
+      ]), { ok: false, reason: 'active-relationship-target-unsupported' });
+    }
+  });
+
+  it('fails closed on malformed or unresolved XML entities in relationship targets', () => {
+    for (const target of ['java&bogus;script:alert(1)', 'https&#x110000;//example.test']) {
+      assert.deepEqual(inspectPptxRelationshipXml([
+        `<Relationship Target="${target}" />`,
+      ]), { ok: false, reason: 'active-relationship-target-unsupported' });
+    }
+  });
 });
