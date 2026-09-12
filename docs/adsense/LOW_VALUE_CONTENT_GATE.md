@@ -25,6 +25,11 @@ This is a site-wide quality programme, not a metadata-only SEO patch. The purpos
 5. Run a full production audit only after remediation has been merged and deployed.
 6. Remove this hold only when that live audit passes. AdSense resubmission is outside the release gate until then.
 
+## Completed remediation slices
+
+- Calculator directory: added substantive original guidance on choosing tools, checking units/currency/assumptions, interpreting estimates, limitations and trust links without changing catalog/search behaviour.
+- Category destinations: render the existing category-content corpus instead of only the first introduction paragraph. Public category pages now surface questions answered, choosing guidance, unit/currency guidance, tool-specific explanations, related guides, FAQs and methodology/disclaimer/About trust links in responsive layouts. The AdSense readiness audit now fails if those rendering markers regress.
+
 ## Expansion hold
 
 Traffic Expansion work may remain in draft branches, but no new Traffic Expansion publication should leapfrog this gate unless it is a necessary quality/security repair. The green but unpublished Loan Amortization work in PR #139 is therefore paused behind this programme.
