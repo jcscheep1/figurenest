@@ -26,6 +26,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build workspace type dependency
+        run: pnpm exec tsc -b lib/api-client-react
       - name: Apply FT-10 publication wiring
         run: |
           python3 - <<'PY'
