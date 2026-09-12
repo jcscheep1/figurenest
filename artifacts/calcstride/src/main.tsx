@@ -56,10 +56,40 @@ if (import.meta.env.PROD && monetizationConfig.verificationMetaName && monetizat
   document.head.appendChild(meta);
 }
 
-hydrateRoot(document.getElementById('root')!,
+const app = (
   <ErrorBoundary>
     <App />
-  </ErrorBoundary>,
+  </ErrorBoundary>
+);
+
+// PdfSignEditPage derives a device class from pointer media during render. SSR cannot
+// know that browser-only signal, so make the first client render match the desktop
+// SSR result, then restore the real media query and rerender before interaction.
+// This prevents mobile hydration mismatch while retaining the editor's stricter
+// mobile file/resource limits immediately after hydration.
+const isPdfSignEditRoute = window.location.pathname.replace(/\/+$/, '') === '/file-tools/pdf-sign-edit';
+const browserMatchMedia = window.matchMedia.bind(window);
+
+if (isPdfSignEditRoute) {
+  window.matchMedia = ((query: string) => {
+    const result = browserMatchMedia(query);
+    if (query !== '(pointer: coarse)') return result;
+
+    return {
+      media: result.media,
+      matches: false,
+      onchange: result.onchange,
+      addListener: result.addListener.bind(result),
+      removeListener: result.removeListener.bind(result),
+      addEventListener: result.addEventListener.bind(result),
+      removeEventListener: result.removeEventListener.bind(result),
+      dispatchEvent: result.dispatchEvent.bind(result),
+    } as MediaQueryList;
+  }) as typeof window.matchMedia;
+}
+
+const root = hydrateRoot(document.getElementById('root')!,
+  app,
   {
   // Keeps caught errors off reportError(), which would raise the dev overlay.
   onCaughtError: (error, errorInfo) => {
@@ -67,3 +97,10 @@ hydrateRoot(document.getElementById('root')!,
   },
   },
 );
+
+if (isPdfSignEditRoute) {
+  requestAnimationFrame(() => {
+    window.matchMedia = browserMatchMedia;
+    root.render(app);
+  });
+}
