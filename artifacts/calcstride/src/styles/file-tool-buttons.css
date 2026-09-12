@@ -4,10 +4,10 @@
 .file-tool-page button:not(.danger-action),
 .file-tool-page .image-pdf-file-button {
   min-height: 42px;
-  border: 1px solid var(--primary, #175cd3) !important;
+  border: 1px solid hsl(var(--primary)) !important;
   border-radius: 10px;
-  background: var(--primary, #175cd3) !important;
-  color: #fff !important;
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
   font-weight: 800;
   cursor: pointer;
   transition: filter 140ms ease, transform 140ms ease, box-shadow 140ms ease;
@@ -22,16 +22,16 @@
   width: auto;
   min-width: 180px;
   padding: 11px 20px !important;
-  border: 1px solid var(--primary, #175cd3) !important;
+  border: 1px solid hsl(var(--primary)) !important;
   border-radius: 12px !important;
-  background: var(--primary, #175cd3) !important;
-  color: #fff !important;
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
   font-size: 1rem;
   font-weight: 800;
   line-height: 1.2;
   opacity: 1 !important;
   visibility: visible !important;
-  box-shadow: 0 6px 16px rgb(23 92 211 / 20%);
+  box-shadow: 0 6px 16px hsl(var(--primary) / 20%);
 }
 
 .file-tool-page .file-tool-dropzone {
@@ -39,7 +39,7 @@
 }
 
 .file-tool-page .file-tool-drag-copy {
-  color: var(--muted-foreground);
+  color: hsl(var(--muted-foreground));
 }
 
 .file-tool-page button:not(.danger-action):not(:disabled):hover,
@@ -54,15 +54,15 @@
 
 .file-tool-page button:not(.danger-action):focus-visible,
 .file-tool-page .image-pdf-file-button:focus-within {
-  outline: 3px solid color-mix(in srgb, var(--primary, #175cd3) 28%, transparent);
+  outline: 3px solid hsl(var(--primary) / 28%);
   outline-offset: 2px;
-  box-shadow: 0 0 0 1px var(--primary, #175cd3);
+  box-shadow: 0 0 0 1px hsl(var(--primary));
 }
 
 .file-tool-page button:not(.danger-action):disabled {
-  border-color: var(--border) !important;
-  background: var(--muted) !important;
-  color: var(--muted-foreground) !important;
+  border-color: hsl(var(--border)) !important;
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
   opacity: 1;
   cursor: not-allowed;
   transform: none;
@@ -77,16 +77,16 @@
 }
 
 .file-tool-page button.danger-action:disabled {
-  border-color: var(--border) !important;
-  color: var(--muted-foreground) !important;
+  border-color: hsl(var(--border)) !important;
+  color: hsl(var(--muted-foreground)) !important;
   opacity: .55;
 }
 
 /* The image picker is a label styled as a button, so give its disabled state parity. */
 .file-tool-page .image-pdf-file-button:has(input:disabled) {
-  border-color: var(--border) !important;
-  background: var(--muted) !important;
-  color: var(--muted-foreground) !important;
+  border-color: hsl(var(--border)) !important;
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
   cursor: not-allowed;
 }
 
