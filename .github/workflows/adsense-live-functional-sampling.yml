@@ -39,11 +39,17 @@ jobs:
           exit 1
       - name: Desktop cross-cluster sampling
         id: cross_desktop
-        run: node scripts/adsense-cross-cluster-functional-sampling.mjs desktop 1440 1200 9260
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/adsense-cross-cluster-functional-sampling.mjs desktop 1440 1200 9260 2>&1 | tee /tmp/adsense-cross-desktop.log
       - name: Mobile cross-cluster sampling
         id: cross_mobile
         if: always()
-        run: node scripts/adsense-cross-cluster-functional-sampling.mjs mobile 390 844 9261
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/adsense-cross-cluster-functional-sampling.mjs mobile 390 844 9261 2>&1 | tee /tmp/adsense-cross-mobile.log
       - name: Desktop 1440x1200 sampling
         id: broad_desktop
         if: always()
@@ -52,6 +58,17 @@ jobs:
         id: broad_mobile
         if: always()
         run: node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251
+      - name: Preserve cross-cluster diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adsense-cross-cluster-diagnostics-${{ github.run_id }}
+          path: |
+            /tmp/adsense-cross-desktop.log
+            /tmp/adsense-cross-mobile.log
+            /tmp/adsense-live-server.log
+          if-no-files-found: warn
+          retention-days: 7
       - name: Report complete functional sampling gate
         if: always()
         run: |
