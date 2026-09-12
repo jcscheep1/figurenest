@@ -117,7 +117,8 @@ try {
       const rect = h1.getBoundingClientRect();
       const failures = [];
       const viewportWidth = document.documentElement.clientWidth || innerWidth;
-      if (viewportWidth !== ${width} || innerWidth !== ${width}) failures.push('viewport width mismatch ' + viewportWidth + '/' + innerWidth);
+      const scrollbarWidth = innerWidth - viewportWidth;
+      if (innerWidth !== ${width} || scrollbarWidth < 0 || scrollbarWidth > 20) failures.push('viewport width mismatch ' + viewportWidth + '/' + innerWidth);
       if (innerHeight <= 0) failures.push('invalid viewport height ' + innerHeight);
       if (document.querySelectorAll('main').length !== 1) failures.push('main landmark count');
       if (document.querySelectorAll('main h1').length !== 1) failures.push('H1 count');
