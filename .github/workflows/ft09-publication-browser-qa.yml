@@ -6,10 +6,12 @@ on:
     paths:
       - 'artifacts/calcstride/src/lib/ft09-converter.ts'
       - 'artifacts/calcstride/src/lib/ft09-converter.test.ts'
+      - 'artifacts/calcstride/src/lib/csv-spreadsheet-safety.ts'
+      - 'artifacts/calcstride/src/lib/csv-spreadsheet-safety.test.ts'
       - 'artifacts/calcstride/src/lib/ft09-sheetjs-loader.ts'
       - 'artifacts/calcstride/src/lib/xlsx-zip-preflight.ts'
-      - 'artifacts/calcstride/src/pages/CsvToXlsxPage.tsx'
-      - 'artifacts/calcstride/src/pages/XlsxToCsvPage.tsx'
+      - 'artifacts/calcstride/src/lib/xlsx-zip-preflight.test.ts'
+      - 'artifacts/calcstride/src/pages/CsvXlsxPages.tsx'
       - 'artifacts/calcstride/src/App.tsx'
       - 'artifacts/calcstride/src/lib/file-tools-catalog.ts'
       - 'artifacts/calcstride/public/sitemap.xml'
@@ -38,15 +40,14 @@ jobs:
 
       - name: Focused FT-09 conversion and security tests
         working-directory: artifacts/calcstride
-        run: pnpm exec vitest run src/lib/ft09-converter.test.ts src/lib/csv-spreadsheet-safety.test.ts src/lib/xlsx-zip-preflight.test.ts
+        run: pnpm exec tsx --test src/lib/ft09-converter.test.ts src/lib/csv-spreadsheet-safety.test.ts src/lib/xlsx-zip-preflight.test.ts
 
       - name: Require atomic publication wiring
         working-directory: artifacts/calcstride
         run: |
           grep -F 'path="/file-tools/csv-to-xlsx"' src/App.tsx
           grep -F 'path="/file-tools/xlsx-to-csv"' src/App.tsx
-          grep -F "lazy(() => import('@/pages/CsvToXlsxPage')" src/App.tsx
-          grep -F "lazy(() => import('@/pages/XlsxToCsvPage')" src/App.tsx
+          grep -F "import('@/pages/CsvXlsxPages')" src/App.tsx
           grep -F "'csv-to-xlsx'" src/lib/file-tools-catalog.ts
           grep -F "'xlsx-to-csv'" src/lib/file-tools-catalog.ts
           grep -F '<loc>https://figurenest.com/file-tools/csv-to-xlsx</loc>' public/sitemap.xml
@@ -56,7 +57,7 @@ jobs:
         working-directory: artifacts/calcstride
         run: |
           grep -F "import('xlsx')" src/lib/ft09-sheetjs-loader.ts
-          if grep -R -E 'https?://.*xlsx|cdn\.sheetjs' src/lib/ft09-*.ts src/pages/CsvToXlsxPage.tsx src/pages/XlsxToCsvPage.tsx; then
+          if grep -R -E 'https?://.*xlsx|cdn\.sheetjs' src/lib/ft09-*.ts src/pages/CsvXlsxPages.tsx; then
             echo 'Runtime CDN/network SheetJS reference found in FT-09 production code'; exit 1
           fi
 
