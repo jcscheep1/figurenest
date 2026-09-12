@@ -41,7 +41,7 @@ test('makes JPEG transparency loss explicit', () => {
 test('builds deterministic safe download names', () => {
   assert.equal(buildConvertedImageName('photo.PNG', 'jpeg'), 'photo-converted.jpg');
   assert.equal(buildConvertedImageName('scan', 'webp'), 'scan-converted.webp');
-  assert.equal(buildConvertedImageName(' .png ', 'png'), ' -converted.png');
+  assert.equal(buildConvertedImageName(' .png ', 'png'), 'image-converted.png');
 });
 
 test('enforces decoded pixel safety independently from compressed file size', () => {
