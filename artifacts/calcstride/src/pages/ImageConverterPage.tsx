@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Check, Download, Image as ImageIcon, RotateCcw } from 'lucide-react';
 import { Shell } from '@/components/FigureNestShell';
 import { Link } from '@/components/PublicLink';
+import { Seo } from '@/pages/AppPages';
 import {
   FileToolError,
   ObjectUrlRegistry,
@@ -203,6 +204,7 @@ export function ImageConverterPage() {
   };
 
   return <Shell>
+    <Seo path="/file-tools/image-converter" />
     <div className="file-tool-page" data-testid="page-image-converter-unpublished">
       <nav className="calc-breadcrumb" aria-label="Breadcrumb">
         <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
@@ -268,6 +270,35 @@ export function ImageConverterPage() {
             <RotateCcw size={17} aria-hidden="true" /> Reset
           </button>
         </div>
+      </section>
+
+      <section className="file-tool-guide" aria-labelledby="image-converter-guide-heading">
+        <h2 id="image-converter-guide-heading">How to convert PNG, JPG and WebP safely in your browser</h2>
+        <p>Select one supported image, choose JPG, PNG or WebP as the output, adjust quality when the selected format supports it, and convert. The browser decodes the source image and creates the new file locally, so the image itself does not need to be uploaded to FigureNest.</p>
+        <h3>Which format should I choose?</h3>
+        <p><strong>JPG/JPEG</strong> is usually useful for photographs and smaller lossy files, but it cannot preserve transparency; transparent pixels are placed on white. <strong>PNG</strong> is lossless and preserves transparency, which suits screenshots, logos and graphics. <strong>WebP</strong> can preserve transparency and often produces compact web-ready files when the browser provides a reliable WebP encoder.</p>
+        <h3>Privacy, metadata and fidelity limits</h3>
+        <p>The converter accepts still PNG, JPG/JPEG and WebP images and applies local file-signature and decoded-pixel safety checks. Animated WebP is rejected because browser Canvas export would otherwise keep only a still frame. Re-encoding can remove EXIF, GPS, ICC/color-profile and other metadata, so keep the original when archival metadata or exact colour management matters.</p>
+        <p>Decoded images are limited to 40 megapixels to reduce browser memory pressure, especially on phones. If the browser cannot reliably encode the requested JPG or WebP MIME type, conversion fails closed instead of offering a mislabeled file.</p>
+      </section>
+
+      <section className="file-tool-guide" aria-labelledby="image-converter-faq-heading">
+        <h2 id="image-converter-faq-heading">Image converter FAQ</h2>
+        <h3>Is the FigureNest image converter free?</h3>
+        <p>Yes. The PNG, JPG and WebP converter is free to use in your browser and does not require an account.</p>
+        <h3>Does FigureNest upload my image?</h3>
+        <p>No. Supported image bytes are validated, decoded and re-encoded in this browser tab. Normal website assets may load, but the selected image, filename and converted output are not sent to a FigureNest conversion server.</p>
+        <h3>Can I convert a transparent PNG to JPG?</h3>
+        <p>Yes. Because JPG does not support transparency, transparent areas are flattened onto a white background before the JPG is created.</p>
+        <h3>Can I convert animated WebP?</h3>
+        <p>No. Animated WebP is rejected deliberately because Canvas-based conversion would otherwise discard the animation and create only a still frame.</p>
+        <h3>Does conversion preserve image metadata?</h3>
+        <p>Not necessarily. Browser re-encoding can remove EXIF, GPS, ICC colour-profile and other metadata. Keep the original file if those fields matter.</p>
+      </section>
+
+      <section className="file-tool-guide" aria-labelledby="image-converter-related-heading">
+        <h2 id="image-converter-related-heading">Related browser file tools</h2>
+        <p>Need a PDF instead? Try <Link href="/file-tools/image-to-pdf">JPG/PNG to PDF</Link>. To turn PDF pages into images, use <Link href="/file-tools/pdf-to-image">PDF to JPG/PNG</Link>. You can also browse all <Link href="/category/file-tools">PDF &amp; File Tools</Link>.</p>
       </section>
     </div>
   </Shell>;
