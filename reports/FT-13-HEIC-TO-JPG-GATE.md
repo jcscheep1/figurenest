@@ -26,39 +26,33 @@ Select no dependency until the licence chain and browser-only architecture are e
 
 ## 2026-09-12 decoder preflight checkpoint
 
-This checkpoint narrows the first executable spike without approving a publication dependency.
+### `heic-to@1.5.2` — REJECTED for publication/security spike
 
-### `heic-to@1.5.2` — primary spike candidate, not yet approved
+The initial preflight identified `heic-to@1.5.2` as a useful browser-oriented candidate because it is exact-pinnable, has zero npm runtime dependencies, is LGPL-3.0, and bundles libheif 1.22.2. Subsequent current-security reconciliation invalidates that candidate for any FigureNest publication spike.
 
-- Current package evidence reports `heic-to` 1.5.2, released roughly three months before this checkpoint, with zero npm dependencies and libheif 1.22.2 bundled under the hood.
-- Package licence is LGPL-3.0 and the compressed/unpacked distribution is large enough that it must remain route-lazy and must not enter the initial FigureNest bundle.
-- It is maintained specifically as a browser HEIC/HEIF decoder/converter following libheif releases, which makes it the strongest current candidate for representative HEIC/HEIF fidelity testing.
-- LGPL obligations are a release gate, not paperwork to defer: before publication FigureNest must record the exact distributed decoder artefacts, licence texts, corresponding source/relinking availability required by the selected distribution model, and ensure the decoder remains separable from proprietary application code.
-- Runtime CDN examples in upstream documentation are forbidden for FigureNest. Any accepted spike must bundle/pin the decoder locally and prove zero file-bearing network access.
+Upstream libheif security releases published after 1.22.2 include vulnerabilities affecting the bundled generation, including:
 
-### `libheif-js@1.19.8` — lower-level fallback/reference candidate
+- GHSA-g89c-p67h-r497 — critical heap buffer overflow; affected `<= 1.23.1`, patched in 1.23.2: https://github.com/strukturag/libheif/security/advisories/GHSA-g89c-p67h-r497
+- GHSA-8fmq-r4pf-7m57 — high-severity permanent decoder deadlock; affected `>= 1.22.0, <= 1.23.2`, patched in 1.23.3: https://github.com/strukturag/libheif/security/advisories/GHSA-8fmq-r4pf-7m57
+- libheif 1.23.4 is the current security-maintenance release and upstream advises users to upgrade because additional high-severity issues were fixed: https://github.com/strukturag/libheif/releases/tag/v1.23.4
 
-- Current package evidence reports version 1.19.8, LGPL-3.0, zero npm dependencies, and browser-capable pure-JS plus WASM variants.
-- The package exposes a lower-level `HeifDecoder` and returns all decoded images from a container, which is useful for explicitly detecting/rejecting ambiguous multi-image inputs rather than silently choosing an arbitrary frame.
-- The browser bundles are materially large (published package listings show multi-megabyte libheif JS/WASM directories), so it also requires route-level lazy loading and explicit mobile memory/bundle measurements.
-- Upstream documentation includes CDN loading examples; FigureNest must not use those. If this candidate is spiked, use a pinned local package artefact only.
+Therefore **`heic-to@1.5.2` must not be installed, fixture-spiked, routed, catalogued or published in FigureNest**. Its npm `latest` tag is still 1.5.2 at this checkpoint, so there is no patched `heic-to` release to advance to yet.
 
-### `@stacksjs/ts-heic` — watchlist only until maturity/coverage is proven
+The previous authorization to begin an executable `heic-to@1.5.2` fixture spike is revoked. Security takes precedence over fidelity/bundle experimentation.
 
-- A newer pure-TypeScript decoder exists with no WASM/runtime dependencies and claims irot/imir orientation plus tiled-image support.
-- Its architecture is attractive for CSP and LGPL avoidance, but the current gate has not yet established release maturity, security history, 10-bit/HDR/auxiliary-image fidelity or representative iPhone/browser coverage. It must not displace the libheif-based candidates until fixture evidence is stronger.
+### `libheif-js@1.19.8` — REJECTED
 
-### Preflight decision
+This lower-level package is also too old for the current libheif security floor and remains LGPL-3.0. It must not be used as a fallback merely to keep FT-13 moving.
 
-The next unpublished executable spike should start with **exact-pinned `heic-to@1.5.2`**, while retaining `libheif-js@1.19.8` as the lower-level comparison/fallback candidate. This is a research authorization only. **No dependency may be wired into a public route, catalog, sitemap or initial bundle.**
+### `@stacksjs/ts-heic` — research watchlist only
 
-The spike must fail closed if any of these remain unresolved:
+A pure-TypeScript decoder remains architecturally interesting because it avoids the vulnerable libheif/WASM lineage and LGPL distribution concerns. It is **not approved**: release maturity, hostile-input hardening, representative iPhone/HEIF coverage, 10-bit/HDR behavior, auxiliary/multi-image behavior, memory limits and browser fidelity still require independent evidence.
 
-1. LGPL distribution/source/relinking obligations cannot be met cleanly for the shipped browser artefact.
-2. The decoder performs runtime third-party/CDN access or cannot be served entirely same-origin.
-3. Representative portrait/orientation, HEIF-brand, 10-bit/HDR, auxiliary-image or multi-image fixtures produce ambiguous or misleading output.
-4. Decoder + canvas peak memory cannot stay within a conservative mobile ceiling at 390×844.
-5. Route-lazy JS/WASM cost is excessive relative to a single-purpose converter and cannot be isolated from initial-site JS.
+### Current security floor and next candidate rule
+
+Any future libheif-derived browser candidate must prove that its distributed decoder is based on **libheif >= 1.23.4** (or a newer upstream security release current at the time of evaluation), with no known unpatched high/critical advisory applicable to the shipped decode path. Package-wrapper version numbers are insufficient; the embedded decoder revision must be evidenced directly from the distributed artefact/source.
+
+Do not resume libheif-derived fixture testing until a browser package satisfying that floor exists. In parallel, non-libheif candidates may be researched without exposing a public route.
 
 ## Hostile-input and resource contract
 
@@ -90,4 +84,6 @@ Before publication add unique HEIC-to-JPG search intent, H1/title/meta, meaningf
 
 ## Publish / stop rule
 
-Publish only after exact-head focused tests, full validation/build, route-lazy bundle measurements, hostile fixtures, desktop/mobile browser QA, privacy interception, output reopening and both authoritative Vercel previews pass. If no candidate meets licence, security, fidelity or mobile-resource limits, record **NOT PUBLISHABLE** with evidence and advance the roadmap without exposing a route.
+FT-13 remains **NOT PUBLISHABLE** while no decoder clears the security floor. Publish only after an exact-pinned candidate passes current advisory review, licence/source obligations, exact-head focused tests, full validation/build, route-lazy bundle measurements, hostile fixtures, desktop/mobile browser QA, privacy interception, output reopening and both authoritative Vercel previews.
+
+If no candidate meets licence, security, fidelity or mobile-resource limits, keep the route absent and advance the roadmap without forcing a bad HEIC tool.
