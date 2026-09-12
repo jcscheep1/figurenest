@@ -10,6 +10,8 @@ export type ProbabilityFieldContract = {
   hidden?: boolean;
 };
 
+const MAX_OUTCOME_COUNT = 1e12;
+
 const bad = (message: string): PhaseThreeBResult => ({
   primary: message,
   summary: message,
@@ -22,8 +24,8 @@ export function probabilityFieldContract(mode: ProbabilityMode, index: number): 
 
   if (mode === 'simple') {
     return index === 1
-      ? { label: 'Favorable outcomes', min: 0, max: 1e12, step: '1' }
-      : { label: 'Total outcomes', min: 1, max: 1e12, step: '1' };
+      ? { label: 'Favorable outcomes', min: 0, max: MAX_OUTCOME_COUNT, step: '1' }
+      : { label: 'Total outcomes', min: 1, max: MAX_OUTCOME_COUNT, step: '1' };
   }
 
   if (mode === 'complement') {
@@ -43,6 +45,9 @@ export function calculateProbability(values: readonly string[]): PhaseThreeBResu
     const total = Number(values[2]);
     if (!Number.isInteger(favorable) || !Number.isInteger(total)) {
       return bad('Simple probability uses whole-number outcome counts.');
+    }
+    if (favorable > MAX_OUTCOME_COUNT || total > MAX_OUTCOME_COUNT) {
+      return bad('Simple probability outcome counts cannot exceed 1,000,000,000,000.');
     }
   }
 
