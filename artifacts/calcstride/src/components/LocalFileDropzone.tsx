@@ -53,6 +53,7 @@ export function LocalFileDropzone({
       </p>
 
       <div
+        className="file-tool-dropzone"
         onDragEnter={(event) => {
           event.preventDefault();
           if (!disabled) setDragActive(true);
@@ -81,13 +82,14 @@ export function LocalFileDropzone({
         />
         <button
           ref={chooseButtonRef}
+          className="file-tool-choose-button"
           type="button"
           disabled={disabled || busy}
           onClick={() => inputRef.current?.click()}
         >
           Choose file
         </button>
-        <span aria-hidden="true"> or drag and drop</span>
+        <span className="file-tool-drag-copy" aria-hidden="true">or drag and drop</span>
       </div>
 
       {fileName ? <p>Selected: {fileName}</p> : null}
