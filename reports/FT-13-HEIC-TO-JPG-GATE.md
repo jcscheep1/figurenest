@@ -24,6 +24,42 @@ Compare viable browser decoders and record for each candidate:
 
 Select no dependency until the licence chain and browser-only architecture are explicit.
 
+## 2026-09-12 decoder preflight checkpoint
+
+This checkpoint narrows the first executable spike without approving a publication dependency.
+
+### `heic-to@1.5.2` — primary spike candidate, not yet approved
+
+- Current package evidence reports `heic-to` 1.5.2, released roughly three months before this checkpoint, with zero npm dependencies and libheif 1.22.2 bundled under the hood.
+- Package licence is LGPL-3.0 and the compressed/unpacked distribution is large enough that it must remain route-lazy and must not enter the initial FigureNest bundle.
+- It is maintained specifically as a browser HEIC/HEIF decoder/converter following libheif releases, which makes it the strongest current candidate for representative HEIC/HEIF fidelity testing.
+- LGPL obligations are a release gate, not paperwork to defer: before publication FigureNest must record the exact distributed decoder artefacts, licence texts, corresponding source/relinking availability required by the selected distribution model, and ensure the decoder remains separable from proprietary application code.
+- Runtime CDN examples in upstream documentation are forbidden for FigureNest. Any accepted spike must bundle/pin the decoder locally and prove zero file-bearing network access.
+
+### `libheif-js@1.19.8` — lower-level fallback/reference candidate
+
+- Current package evidence reports version 1.19.8, LGPL-3.0, zero npm dependencies, and browser-capable pure-JS plus WASM variants.
+- The package exposes a lower-level `HeifDecoder` and returns all decoded images from a container, which is useful for explicitly detecting/rejecting ambiguous multi-image inputs rather than silently choosing an arbitrary frame.
+- The browser bundles are materially large (published package listings show multi-megabyte libheif JS/WASM directories), so it also requires route-level lazy loading and explicit mobile memory/bundle measurements.
+- Upstream documentation includes CDN loading examples; FigureNest must not use those. If this candidate is spiked, use a pinned local package artefact only.
+
+### `@stacksjs/ts-heic` — watchlist only until maturity/coverage is proven
+
+- A newer pure-TypeScript decoder exists with no WASM/runtime dependencies and claims irot/imir orientation plus tiled-image support.
+- Its architecture is attractive for CSP and LGPL avoidance, but the current gate has not yet established release maturity, security history, 10-bit/HDR/auxiliary-image fidelity or representative iPhone/browser coverage. It must not displace the libheif-based candidates until fixture evidence is stronger.
+
+### Preflight decision
+
+The next unpublished executable spike should start with **exact-pinned `heic-to@1.5.2`**, while retaining `libheif-js@1.19.8` as the lower-level comparison/fallback candidate. This is a research authorization only. **No dependency may be wired into a public route, catalog, sitemap or initial bundle.**
+
+The spike must fail closed if any of these remain unresolved:
+
+1. LGPL distribution/source/relinking obligations cannot be met cleanly for the shipped browser artefact.
+2. The decoder performs runtime third-party/CDN access or cannot be served entirely same-origin.
+3. Representative portrait/orientation, HEIF-brand, 10-bit/HDR, auxiliary-image or multi-image fixtures produce ambiguous or misleading output.
+4. Decoder + canvas peak memory cannot stay within a conservative mobile ceiling at 390×844.
+5. Route-lazy JS/WASM cost is excessive relative to a single-purpose converter and cannot be isolated from initial-site JS.
+
 ## Hostile-input and resource contract
 
 - Validate extension, MIME, ISO-BMFF `ftyp` structure and accepted HEIC/HEIF brands before decoder import.
