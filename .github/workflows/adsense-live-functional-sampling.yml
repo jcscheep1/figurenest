@@ -1,0 +1,42 @@
+name: AdSense Live Functional Sampling
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/**'
+      - 'scripts/adsense-live-functional-sampling.mjs'
+      - '.github/workflows/adsense-live-functional-sampling.yml'
+      - 'docs/adsense/LIVE_FUNCTIONAL_SAMPLING.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-mobile-sampling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc -b lib/api-client-react
+      - run: pnpm --filter @workspace/calcstride build
+      - name: Start production server
+        working-directory: artifacts/calcstride
+        run: |
+          PORT=4177 pnpm run serve:production > /tmp/adsense-live-server.log 2>&1 &
+          for i in {1..60}; do curl -fsS http://127.0.0.1:4177/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/adsense-live-server.log
+          exit 1
+      - name: Desktop 1440x1200 sampling
+        run: node scripts/adsense-live-functional-sampling.mjs desktop 1440 1200 9250
+      - name: Mobile 390x844 sampling
+        run: node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251
