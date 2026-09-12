@@ -19,11 +19,13 @@ for (const candidate of chromeCandidates) {
 if (!chromeBin) throw new Error('Chrome/Chromium is unavailable');
 
 const requireFromApp = createRequire(new URL('../artifacts/calcstride/package.json', import.meta.url));
-const { PDFDocument } = requireFromApp('pdf-lib');
+const { PDFDocument, StandardFonts } = requireFromApp('pdf-lib');
 const fixturePath = join(tmpdir(), `figurenest-adsense-${mode}-${process.pid}.pdf`);
 const fixture = await PDFDocument.create();
-fixture.addPage([612, 792]);
-writeFileSync(fixturePath, await fixture.save());
+const fixturePage = fixture.addPage([612, 792]);
+const fixtureFont = await fixture.embedFont(StandardFonts.Helvetica);
+fixturePage.drawText('FigureNest PDF editor QA fixture', { x: 72, y: 720, size: 18, font: fixtureFont });
+writeFileSync(fixturePath, await fixture.save({ useObjectStreams: false }));
 
 const chrome = spawn(chromeBin, [
   '--headless=new', '--no-sandbox', '--disable-gpu',
