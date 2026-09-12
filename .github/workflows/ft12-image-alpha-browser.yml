@@ -124,10 +124,10 @@ jobs:
             await command('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true});
             await command('Emulation.setTouchEmulationEnabled', {enabled: true, maxTouchPoints: 5});
             await command('Page.navigate', {url: 'http://127.0.0.1:4176/ft12-alpha-qa.html'});
-            await waitFor(`document.querySelector('[data-testid="page-image-converter-unpublished"] input[type="file"]') !== null`, 'image converter');
+            await waitFor(`document.querySelector('[data-testid="page-image-converter"] input[type="file"]') !== null`, 'image converter');
 
             const root = await command('DOM.getDocument', {depth: -1, pierce: true});
-            const inputNode = await command('DOM.querySelector', {nodeId: root.root.nodeId, selector: '[data-testid="page-image-converter-unpublished"] input[type="file"]'});
+            const inputNode = await command('DOM.querySelector', {nodeId: root.root.nodeId, selector: '[data-testid="page-image-converter"] input[type="file"]'});
             if (!inputNode.nodeId) throw new Error('native input missing');
             await command('DOM.setFileInputFiles', {nodeId: inputNode.nodeId, files: ['/tmp/FT12_ALPHA_SENTINEL.png']});
             await waitFor(`document.body.innerText.includes('1 × 1px')`, 'transparent fixture decode');

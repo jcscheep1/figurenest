@@ -189,7 +189,7 @@ jobs:
             `});
 
             await command('Page.navigate', {url: `http://127.0.0.1:4175/ft12-browser-qa.html?mode=${mode}`});
-            await waitFor(`document.querySelector('[data-testid="page-image-converter-unpublished"] input[type="file"]') !== null`, 'image converter component');
+            await waitFor(`document.querySelector('[data-testid="page-image-converter"] input[type="file"]') !== null`, 'image converter component');
 
             const initial = await evaluate(`(() => {
               const page = document.querySelector('.file-tool-page');
@@ -209,7 +209,7 @@ jobs:
 
             await evaluate(`globalThis.__ft12Privacy.active = true; true`);
             const root = await command('DOM.getDocument', {depth: -1, pierce: true});
-            const inputNode = await command('DOM.querySelector', {nodeId: root.root.nodeId, selector: '[data-testid="page-image-converter-unpublished"] input[type="file"]'});
+            const inputNode = await command('DOM.querySelector', {nodeId: root.root.nodeId, selector: '[data-testid="page-image-converter"] input[type="file"]'});
             if (!inputNode.nodeId) throw new Error('native file input not found');
             await command('DOM.setFileInputFiles', {nodeId: inputNode.nodeId, files: ['/tmp/FT12_PRIVATE_SENTINEL_8427.png']});
             await waitFor(`document.body.innerText.includes('1 × 1px')`, 'fixture decode');

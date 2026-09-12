@@ -89,13 +89,13 @@ jobs:
             const command=(method,params={})=>new Promise((resolve,reject)=>{const id=++sequence;pending.set(id,{resolve,reject});socket.send(JSON.stringify({id,method,params}));});
             const evaluate=async(expression,awaitPromise=false)=>{const r=await command('Runtime.evaluate',{expression,awaitPromise,returnByValue:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.text||'browser evaluation failed');return r.result?.value;};
             const waitFor=async(expression,label)=>{const deadline=Date.now()+60000;while(Date.now()<deadline){try{if(await evaluate(expression,true))return;}catch{}await sleep(200);}throw new Error(`Timed out waiting for ${label}. ${diagnostics}`);};
-            const inputNode=async()=>{const root=await command('DOM.getDocument',{depth:-1,pierce:true});const q=await command('DOM.querySelector',{nodeId:root.root.nodeId,selector:'[data-testid="page-image-converter-unpublished"] input[type="file"]'});if(!q.nodeId)throw new Error('native file input missing');return q.nodeId;};
+            const inputNode=async()=>{const root=await command('DOM.getDocument',{depth:-1,pierce:true});const q=await command('DOM.querySelector',{nodeId:root.root.nodeId,selector:'[data-testid="page-image-converter"] input[type="file"]'});if(!q.nodeId)throw new Error('native file input missing');return q.nodeId;};
             const setFile=async path=>command('DOM.setFileInputFiles',{nodeId:await inputNode(),files:[path]});
             const reset=async()=>{await evaluate(`(()=>{const b=[...document.querySelectorAll('.file-tool-page button')].find(x=>x.textContent.includes('Reset'));if(b&&!b.disabled)b.click();return true})()`);await sleep(100);};
 
             await command('Page.enable'); await command('Runtime.enable'); await command('DOM.enable');
             await command('Page.navigate',{url:'http://127.0.0.1:4177/ft12-hostile-qa.html'});
-            await waitFor(`document.querySelector('[data-testid="page-image-converter-unpublished"] input[type="file"]') !== null`,'image converter');
+            await waitFor(`document.querySelector('[data-testid="page-image-converter"] input[type="file"]') !== null`,'image converter');
 
             // Corrupt image: valid PNG signature but undecodable payload must fail closed.
             await setFile('/tmp/FT12_CORRUPT.png');
