@@ -90,7 +90,7 @@ try {
       try { if (await evaluate(expression, true)) return; } catch {}
       await sleep(150);
     }
-    const state = await evaluate(`({ href: location.href, title: document.title, h1: document.querySelector('main h1')?.textContent || '' })`).catch(() => ({}));
+    const state = await evaluate(`({ href: location.href, title: document.title, h1: document.querySelector('main h1')?.textContent || '', fileStatus: document.querySelector('[data-file-job-status]')?.getAttribute('data-file-job-status') || '', alert: document.querySelector('[role="alert"]')?.textContent || '' })`).catch(() => ({}));
     throw new Error(`Timed out waiting for ${label}: ${JSON.stringify(state)}`);
   };
 
@@ -155,20 +155,22 @@ try {
     } else {
       const idlePicker = await evaluate(`(() => {
         const page = document.querySelector('.file-tool-page');
-        const input = page?.querySelector('input[type="file"]');
-        if (!page || !input) throw new Error('File Tool wrapper/native file input missing');
+        const input = page?.querySelector('.file-tool-dropzone input[type="file"]');
+        const choose = page?.querySelector('.file-tool-choose-button');
+        if (!page || !input || !choose) throw new Error('File Tool wrapper/native input/visible picker missing');
         const parse = (value) => { const match = String(value || '').match(/rgba?\\((\\d+)[, ]+(\\d+)[, ]+(\\d+)/i); return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null; };
-        const rgb = parse(getComputedStyle(input, '::file-selector-button').backgroundColor);
-        if (!rgb || !(rgb[2] >= rgb[0] + 25 && rgb[2] >= rgb[1] + 10)) throw new Error('native file-picker button is not visibly blue');
-        if (${mode === 'mobile'} && input.getBoundingClientRect().height < 44) throw new Error('mobile native file picker below 44px');
+        const rgb = parse(getComputedStyle(choose).backgroundColor);
+        if (!rgb || !(rgb[2] >= rgb[0] + 25 && rgb[2] >= rgb[1] + 10)) throw new Error('visible file-picker button is not blue');
+        if (${mode === 'mobile'} && choose.getBoundingClientRect().height < 44) throw new Error('mobile visible file picker below 44px');
         return true;
       })()`);
       if (!idlePicker) throw new Error('idle file-picker check failed');
 
       const documentNode = await command('DOM.getDocument', { depth: -1, pierce: true });
-      const fileInput = await command('DOM.querySelector', { nodeId: documentNode.root.nodeId, selector: '.file-tool-page input[type="file"]' });
+      const fileInput = await command('DOM.querySelector', { nodeId: documentNode.root.nodeId, selector: '.file-tool-page .file-tool-dropzone input[type="file"]' });
       if (!fileInput.nodeId) throw new Error('PDF input node unavailable to browser QA');
       await command('DOM.setFileInputFiles', { nodeId: fileInput.nodeId, files: [fixturePath] });
+      await evaluate(`(() => { const input = document.querySelector('.file-tool-page .file-tool-dropzone input[type="file"]'); if (!input?.files?.length) throw new Error('fixture was not assigned to native input'); input.dispatchEvent(new Event('change', { bubbles: true })); return input.files[0].name; })()`);
       await waitFor(`document.querySelector('.pdf-editor-shell') && document.querySelector('.pdf-export-bar')`, 'PDF Sign & Edit ready state');
 
       interaction = await evaluate(`(() => {
