@@ -5,6 +5,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { monetizationConfig } from '@/lib/monetization-config';
 
 import './index.css';
+import '@/styles/file-tool-buttons.css';
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
