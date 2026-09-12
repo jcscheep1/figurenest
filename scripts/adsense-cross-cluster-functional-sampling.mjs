@@ -64,18 +64,6 @@ try {
     throw new Error(`Timed out waiting for ${label}: ${JSON.stringify({ ...state, browserSignals: browserSignals.slice(-20) })}`);
   };
   const dispatchKey = (type, key, extras = {}) => command('Input.dispatchKeyEvent', { type, key, ...extras });
-  const replaceFocusedTextWithKeys = async (text) => {
-    await dispatchKey('rawKeyDown', 'a', { code: 'KeyA', windowsVirtualKeyCode: 65, modifiers: 2 });
-    await dispatchKey('keyUp', 'a', { code: 'KeyA', windowsVirtualKeyCode: 65, modifiers: 2 });
-    await dispatchKey('rawKeyDown', 'Backspace', { code: 'Backspace', windowsVirtualKeyCode: 8 });
-    await dispatchKey('keyUp', 'Backspace', { code: 'Backspace', windowsVirtualKeyCode: 8 });
-    for (const character of text) {
-      const code = /\d/.test(character) ? `Digit${character}` : character === '.' ? 'Period' : 'Minus';
-      const vk = character === '.' ? 190 : character === '-' ? 189 : character.charCodeAt(0);
-      await dispatchKey('keyDown', character, { code, windowsVirtualKeyCode: vk, text: character, unmodifiedText: character });
-      await dispatchKey('keyUp', character, { code, windowsVirtualKeyCode: vk });
-    }
-  };
   await command('Page.enable'); await command('Runtime.enable'); await command('DOM.enable'); await command('Log.enable'); await command('Network.enable');
   await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: mode === 'mobile' });
   await command('Emulation.setTouchEmulationEnabled', { enabled: mode === 'mobile', maxTouchPoints: mode === 'mobile' ? 5 : 1 });
@@ -89,10 +77,10 @@ try {
     let interaction;
     if (name === 'health-bmr') {
       const before = await evaluate(`(() => { const input=document.querySelector('[data-testid="input-bmr-weight"]');const result=document.querySelector('[data-testid="result-bmr"]');if(!input||!result)throw new Error('BMR input/result contract missing');input.focus();return{value:input.value,result:result.textContent||''};})()`);
-      const nextValue = String(Number(before.value) + 1);
-      await replaceFocusedTextWithKeys(nextValue);
-      await waitFor(`(() => {const input=document.querySelector('[data-testid="input-bmr-weight"]');const result=document.querySelector('[data-testid="result-bmr"]');return input?.value===${JSON.stringify(nextValue)}&&(result?.textContent||'')!==${JSON.stringify(before.result)};})()`, 'health-bmr input/result reaction');
-      interaction = await evaluate(`(() => {const reset=document.querySelector('[data-testid="button-reset-bmr"]');const result=document.querySelector('[data-testid="result-bmr"]');if(!reset||!(result?.textContent||'').trim())throw new Error('BMR result/reset missing after interaction');reset.focus();if(document.activeElement!==reset)throw new Error('BMR reset not focusable');return'browser key events changed result; reset focusable';})()`);
+      await dispatchKey('rawKeyDown', 'ArrowUp', { code: 'ArrowUp', windowsVirtualKeyCode: 38 });
+      await dispatchKey('keyUp', 'ArrowUp', { code: 'ArrowUp', windowsVirtualKeyCode: 38 });
+      await waitFor(`(() => {const input=document.querySelector('[data-testid="input-bmr-weight"]');const result=document.querySelector('[data-testid="result-bmr"]');return input?.value!==${JSON.stringify(before.value)}&&(result?.textContent||'')!==${JSON.stringify(before.result)};})()`, 'health-bmr input/result reaction');
+      interaction = await evaluate(`(() => {const reset=document.querySelector('[data-testid="button-reset-bmr"]');const result=document.querySelector('[data-testid="result-bmr"]');if(!reset||!(result?.textContent||'').trim())throw new Error('BMR result/reset missing after interaction');reset.focus();if(document.activeElement!==reset)throw new Error('BMR reset not focusable');return'native ArrowUp changed BMR value/result; reset focusable';})()`);
     } else if (name === 'electrical-ohms-law') {
       const before = await evaluate(`(() => { const select=document.querySelector('[data-testid="input-ohms-law-solve"]');const result=document.querySelector('[data-testid="status-ohms-law"] .advanced-result-output');if(!select||!result)throw new Error('Ohm contract missing');select.focus();return{value:select.value,result:result.textContent||''};})()`);
       await dispatchKey('rawKeyDown', 'ArrowDown', { code: 'ArrowDown', windowsVirtualKeyCode: 40 }); await dispatchKey('keyUp', 'ArrowDown', { code: 'ArrowDown', windowsVirtualKeyCode: 40 });
