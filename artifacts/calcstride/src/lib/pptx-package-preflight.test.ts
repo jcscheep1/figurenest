@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import {
   DEFAULT_PPTX_PACKAGE_LIMITS,
   inspectPptxRelationshipXml,
@@ -29,41 +30,15 @@ function makeStoredZip(entries: ZipEntry[]): Uint8Array {
     const flags = entry.flags ?? 0;
 
     const local = [
-      ...u32(0x04034b50),
-      ...u16(20),
-      ...u16(flags),
-      ...u16(0),
-      ...u16(0),
-      ...u16(0),
-      ...u32(0),
-      ...u32(data.length),
-      ...u32(data.length),
-      ...u16(name.length),
-      ...u16(0),
-      ...name,
-      ...data,
+      ...u32(0x04034b50), ...u16(20), ...u16(flags), ...u16(0), ...u16(0), ...u16(0),
+      ...u32(0), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...name, ...data,
     ];
     locals.push(...local);
 
     centrals.push(
-      ...u32(0x02014b50),
-      ...u16(20),
-      ...u16(20),
-      ...u16(flags),
-      ...u16(0),
-      ...u16(0),
-      ...u16(0),
-      ...u32(0),
-      ...u32(data.length),
-      ...u32(data.length),
-      ...u16(name.length),
-      ...u16(0),
-      ...u16(0),
-      ...u16(0),
-      ...u16(0),
-      ...u32(0),
-      ...u32(localOffset),
-      ...name,
+      ...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(flags), ...u16(0), ...u16(0), ...u16(0),
+      ...u32(0), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...u16(0),
+      ...u16(0), ...u16(0), ...u32(0), ...u32(localOffset), ...name,
     );
     localOffset += local.length;
   }
@@ -71,14 +46,8 @@ function makeStoredZip(entries: ZipEntry[]): Uint8Array {
   const centralOffset = locals.length;
   const centralSize = centrals.length;
   const eocd = [
-    ...u32(0x06054b50),
-    ...u16(0),
-    ...u16(0),
-    ...u16(entries.length),
-    ...u16(entries.length),
-    ...u32(centralSize),
-    ...u32(centralOffset),
-    ...u16(0),
+    ...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(entries.length), ...u16(entries.length),
+    ...u32(centralSize), ...u32(centralOffset), ...u16(0),
   ];
   return Uint8Array.from([...locals, ...centrals, ...eocd]);
 }
@@ -103,101 +72,88 @@ describe('FT-11 hostile PPTX package preflight', () => {
       { name: 'ppt/slides/slide2.xml', data: '<p:sld />' },
       { name: 'ppt/media/image1.png', data: 'safe-placeholder' },
     ]));
-
-    expect(result.ok).toBe(true);
+    assert.equal(result.ok, true);
     if (result.ok) {
-      expect(result.inventory.slides).toBe(2);
-      expect(result.inventory.mediaParts).toBe(1);
-      expect(result.inventory.relationshipParts).toBe(1);
+      assert.equal(result.inventory.slides, 2);
+      assert.equal(result.inventory.mediaParts, 1);
+      assert.equal(result.inventory.relationshipParts, 1);
     }
   });
 
   it('requires genuine PPTX package markers and at least one slide', () => {
-    expect(preflightPptxPackage(makeStoredZip([{ name: 'word/document.xml' }]))).toEqual({
-      ok: false,
-      reason: 'not-pptx-package',
+    assert.deepEqual(preflightPptxPackage(makeStoredZip([{ name: 'word/document.xml' }])), {
+      ok: false, reason: 'not-pptx-package',
     });
-    expect(preflightPptxPackage(makeStoredZip([
-      { name: '[Content_Types].xml' },
-      { name: 'ppt/presentation.xml' },
-    ]))).toEqual({ ok: false, reason: 'presentation-has-no-slides' });
+    assert.deepEqual(preflightPptxPackage(makeStoredZip([
+      { name: '[Content_Types].xml' }, { name: 'ppt/presentation.xml' },
+    ])), { ok: false, reason: 'presentation-has-no-slides' });
   });
 
   it('fails closed on macro, OLE/embedded and ActiveX package parts', () => {
     for (const name of ['ppt/vbaProject.bin', 'ppt/embeddings/oleObject1.bin', 'ppt/activeX/activeX1.bin']) {
-      expect(preflightPptxPackage(minimalPptx([{ name }]))).toEqual({
-        ok: false,
-        reason: 'active-or-embedded-content-unsupported',
+      assert.deepEqual(preflightPptxPackage(minimalPptx([{ name }])), {
+        ok: false, reason: 'active-or-embedded-content-unsupported',
       });
     }
   });
 
   it('rejects unsafe paths, duplicate case-folded entries and encrypted entries', () => {
-    expect(preflightPptxPackage(minimalPptx([{ name: '../escape.xml' }]))).toEqual({
-      ok: false,
-      reason: 'unsafe-entry-path',
+    assert.deepEqual(preflightPptxPackage(minimalPptx([{ name: '../escape.xml' }])), {
+      ok: false, reason: 'unsafe-entry-path',
     });
-    expect(preflightPptxPackage(minimalPptx([{ name: 'PPT/SLIDES/SLIDE1.XML' }]))).toEqual({
-      ok: false,
-      reason: 'duplicate-entry-name',
+    assert.deepEqual(preflightPptxPackage(minimalPptx([{ name: 'PPT/SLIDES/SLIDE1.XML' }])), {
+      ok: false, reason: 'duplicate-entry-name',
     });
-    expect(preflightPptxPackage(minimalPptx([{ name: 'ppt/theme/theme1.xml', flags: 1 }]))).toEqual({
-      ok: false,
-      reason: 'encrypted-entry-unsupported',
+    assert.deepEqual(preflightPptxPackage(minimalPptx([{ name: 'ppt/theme/theme1.xml', flags: 1 }])), {
+      ok: false, reason: 'encrypted-entry-unsupported',
     });
   });
 
   it('locks the provisional slide and media boundaries', () => {
     const exactFifty = minimalPptx(Array.from({ length: 49 }, (_, index) => ({
-      name: `ppt/slides/slide${index + 2}.xml`,
-      data: '<p:sld />',
+      name: `ppt/slides/slide${index + 2}.xml`, data: '<p:sld />',
     })));
     const fiftyOne = minimalPptx(Array.from({ length: 50 }, (_, index) => ({
-      name: `ppt/slides/slide${index + 2}.xml`,
-      data: '<p:sld />',
+      name: `ppt/slides/slide${index + 2}.xml`, data: '<p:sld />',
     })));
-    expect(preflightPptxPackage(exactFifty).ok).toBe(true);
-    expect(preflightPptxPackage(fiftyOne)).toEqual({ ok: false, reason: 'slide-count-limit' });
+    assert.equal(preflightPptxPackage(exactFifty).ok, true);
+    assert.deepEqual(preflightPptxPackage(fiftyOne), { ok: false, reason: 'slide-count-limit' });
 
     const threeMedia = minimalPptx([
-      { name: 'ppt/media/a.png' },
-      { name: 'ppt/media/b.jpg' },
-      { name: 'ppt/media/c.webp' },
+      { name: 'ppt/media/a.png' }, { name: 'ppt/media/b.jpg' }, { name: 'ppt/media/c.webp' },
     ]);
-    expect(preflightPptxPackage(threeMedia, limits({ maxMediaParts: 2 }))).toEqual({
-      ok: false,
-      reason: 'media-count-limit',
+    assert.deepEqual(preflightPptxPackage(threeMedia, limits({ maxMediaParts: 2 })), {
+      ok: false, reason: 'media-count-limit',
     });
   });
 
   it('bounds XML parts independently before a parser receives them', () => {
     const oversized = minimalPptx([{ name: 'ppt/theme/theme1.xml', data: '12345' }]);
-    expect(preflightPptxPackage(oversized, limits({ maxXmlPartBytes: 4 }))).toEqual({
-      ok: false,
-      reason: 'xml-part-size-limit',
+    assert.deepEqual(preflightPptxPackage(oversized, limits({ maxXmlPartBytes: 4 })), {
+      ok: false, reason: 'xml-part-size-limit',
     });
   });
 });
 
 describe('FT-11 relationship inspection', () => {
   it('allows internal relationships as inert XML data', () => {
-    expect(inspectPptxRelationshipXml([
+    assert.deepEqual(inspectPptxRelationshipXml([
       '<Relationship Type="image" Target="../media/image1.png" />',
-    ])).toEqual({ ok: true });
+    ]), { ok: true });
   });
 
   it('rejects every explicit external relationship before rendering', () => {
-    expect(inspectPptxRelationshipXml([
+    assert.deepEqual(inspectPptxRelationshipXml([
       '<Relationship TargetMode="External" Target="https://example.test/track" />',
-    ])).toEqual({ ok: false, reason: 'external-relationship-unsupported' });
+    ]), { ok: false, reason: 'external-relationship-unsupported' });
   });
 
   it('rejects active target schemes and active relationship types', () => {
-    expect(inspectPptxRelationshipXml([
+    assert.deepEqual(inspectPptxRelationshipXml([
       '<Relationship Target="javascript:alert(1)" />',
-    ])).toEqual({ ok: false, reason: 'active-relationship-target-unsupported' });
-    expect(inspectPptxRelationshipXml([
+    ]), { ok: false, reason: 'active-relationship-target-unsupported' });
+    assert.deepEqual(inspectPptxRelationshipXml([
       '<Relationship Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="object.bin" />',
-    ])).toEqual({ ok: false, reason: 'active-relationship-type-unsupported' });
+    ]), { ok: false, reason: 'active-relationship-type-unsupported' });
   });
 });
