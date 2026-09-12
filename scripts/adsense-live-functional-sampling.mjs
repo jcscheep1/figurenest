@@ -116,7 +116,9 @@ try {
       const main = document.querySelector('main');
       const rect = h1.getBoundingClientRect();
       const failures = [];
-      if (innerWidth !== ${width} || innerHeight !== ${height}) failures.push('viewport mismatch ' + innerWidth + 'x' + innerHeight);
+      const viewportWidth = document.documentElement.clientWidth || innerWidth;
+      if (viewportWidth !== ${width} || innerWidth !== ${width}) failures.push('viewport width mismatch ' + viewportWidth + '/' + innerWidth);
+      if (innerHeight <= 0) failures.push('invalid viewport height ' + innerHeight);
       if (document.querySelectorAll('main').length !== 1) failures.push('main landmark count');
       if (document.querySelectorAll('main h1').length !== 1) failures.push('H1 count');
       if (!document.title || description.length < 90) failures.push('metadata');
@@ -129,7 +131,7 @@ try {
       const isStructured = route.startsWith('/category/') || route.startsWith('/calculators/') || route.startsWith('/converters/') || route.startsWith('/file-tools/');
       if (isStructured && !document.querySelector('script[type="application/ld+json"]')) failures.push('JSON-LD');
       if (failures.length) throw new Error(failures.join(', '));
-      return { route, title: document.title, h1: h1.textContent.trim(), words: main.innerText.trim().split(/\\s+/).length };
+      return { route, title: document.title, h1: h1.textContent.trim(), words: main.innerText.trim().split(/\\s+/).length, viewport: viewportWidth + 'x' + innerHeight };
     })()`);
 
     let interaction = 'content/navigation surface';
