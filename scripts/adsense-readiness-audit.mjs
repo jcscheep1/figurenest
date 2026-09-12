@@ -10,6 +10,9 @@ const categoryContentPath = path.join(src, 'lib/category-content.ts');
 const appPagesPath = path.join(pagesDir, 'AppPages.tsx');
 const phaseThreeAPagePath = path.join(pagesDir, 'PhaseThreeACalculatorPage.tsx');
 const phaseThreeBPagePath = path.join(pagesDir, 'PhaseThreeBCalculatorPage.tsx');
+const phaseThreeCPagePath = path.join(pagesDir, 'PhaseThreeCCalculatorPage.tsx');
+const phaseFourPagePath = path.join(pagesDir, 'PhaseFourCalculatorPage.tsx');
+const legacyPhaseTwoPagePath = path.join(pagesDir, 'LegacyPhaseTwoCalculatorPage.tsx');
 
 const read = (file) => fs.readFileSync(file, 'utf8');
 const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -29,6 +32,9 @@ const categoryContent = read(categoryContentPath);
 const appPages = read(appPagesPath);
 const phaseThreeAPage = read(phaseThreeAPagePath);
 const phaseThreeBPage = read(phaseThreeBPagePath);
+const phaseThreeCPage = read(phaseThreeCPagePath);
+const phaseFourPage = read(phaseFourPagePath);
+const legacyPhaseTwoPage = read(legacyPhaseTwoPagePath);
 const pageFiles = walk(pagesDir).filter((file) => /\.(tsx|ts)$/.test(file));
 const pageText = pageFiles.map((file) => ({ file, text: read(file) }));
 
@@ -101,6 +107,24 @@ for (const [label, source] of [
   const missing = familyQualityMarkers.filter((marker) => !source.includes(marker));
   if (missing.length) fail(`${label} calculator pages no longer render the full quality corpus: ${missing.join(', ')}`);
   else pass(`${label} calculator family renders worked examples, interpretation, edge cases, limitations, FAQs and related-tool links`);
+}
+
+const educationalFamilyMarkers = [
+  'definition.formula',
+  'definition.variables',
+  'definition.educationalSections.map',
+  'definition.limitations',
+  'definition.faqs.map',
+  'definition.relatedRoutes',
+];
+for (const [label, source] of [
+  ['Phase Three C', phaseThreeCPage],
+  ['Phase Four', phaseFourPage],
+  ['Legacy Phase Two', legacyPhaseTwoPage],
+]) {
+  const missing = educationalFamilyMarkers.filter((marker) => !source.includes(marker));
+  if (missing.length) fail(`${label} calculator pages no longer render methodology/guidance/limitations/FAQ/internal-link coverage: ${missing.join(', ')}`);
+  else pass(`${label} calculator family renders methodology, substantial guidance, limitations, FAQs and related-tool links`);
 }
 
 const qualitySignals = [
