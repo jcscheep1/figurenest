@@ -146,16 +146,16 @@ try {
         return 'search/filter reset';
       })()`, true);
     } else if (name === 'salary') {
-      interaction = await evaluate(`(async () => {
+      const salaryInputReady = await evaluate(`(() => {
         const input = [...document.querySelectorAll('main input')].find((candidate) => candidate.closest('label')?.innerText.includes('Annual salary'));
-        if (!input) throw new Error('annual salary input missing');
-        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-        setter.call(input, '72000'); input.dispatchEvent(new Event('input', {bubbles:true}));
-        input.dispatchEvent(new Event('change', {bubbles:true})); await new Promise((resolve) => setTimeout(resolve, 100));
-        if (!document.body.innerText.includes('$6,000.00')) throw new Error('salary result did not update');
-        document.querySelector('button[aria-label*="Reset"], button')?.focus();
-        return 'valid input and live result';
-      })()`, true);
+        if (!input) return false;
+        input.focus(); input.select();
+        return document.activeElement === input;
+      })()`);
+      if (!salaryInputReady) throw new Error('annual salary input missing or not focusable');
+      await command('Input.insertText', { text: '72000' });
+      await waitFor(`document.body.innerText.includes('$6,000.00')`, 'salary monthly result update');
+      interaction = 'trusted valid input and live result';
     } else if (['brick', 'circle', 'temperature'].includes(name)) {
       interaction = await evaluate(`(async () => {
         const input = document.querySelector('main input[type="number"]');
