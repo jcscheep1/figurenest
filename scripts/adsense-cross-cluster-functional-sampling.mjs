@@ -6,7 +6,7 @@ const height = Number(heightText);
 const port = Number(portText);
 if (!['desktop', 'mobile'].includes(mode) || !width || !height || !port) throw new Error('Usage: node scripts/adsense-cross-cluster-functional-sampling.mjs <desktop|mobile> <width> <height> <debug-port> [base-url]');
 
-const pdfFixtureBase64 = 'JVBERi0xLjcKJYGBgYEKCjEgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFsgNCAwIFIgXQovQ291bnQgMQo+PgplbmRvYmoKCjIgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL1BhZ2VzIDEgMCBSCj4+CmVuZG9iagoKMyAwIG9iago8PAovUHJvZHVjZXIgPEZFRkYwMDcwMDA2NDAwNjYwMDJEMDA2QzAwNjkwMDYyMDAyMDAwMjgwMDY4MDA3NDAwNzQwMDcwMDA3MzAwM0EwMDJGMDAyRjAwMkYwMDY3MDA2OTAwNzQwMDY4MDA3NTAwNjIwMDJFMDA2MzAwNkYwMDZEMDAyRjAwNDgwMDZGMDA3MDAwNjQwMDY5MDA2RTAwNjcwMDJGMDA3MDAwNjQwMDY2MDAyRTAwNkMwMDY5MDA2MjAwMjk+Ci9Nb2REYXRlIChEOjIwMjYwOTEyMjAzODU3WikKL0NyZWF0b3IgPEZFRkYwMDcwMDA2NDAwNjYwMDJEMDA2QzAwNjkwMDYyMDAyMDAwMjgwMDY4MDA3NDAwNzQwMDcwMDA3MzAwM0EwMDJGMDAyRjAwMkYwMDY3MDA2OTAwNzQwMDY4MDA3NTAwNjIwMDJFMDA2MzAwNkYwMDZEMDAyRjAwNDgwMDZGMDA3MDAwNjQwMDY5MDA2RTAwNjcwMDJGMDA3MDAwNjQwMDY2MDAyRTAwNkMwMDY5MDA2MjAwMjk+Ci9DcmVhdGlvbkRhdGUgKEQ6MjAyNjA5MTIyMDM4NTdaKQo+PgplbmRvYmoKCjQgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAxIDAgUgovUmVzb3VyY2VzIDw8Cj4+Ci9NZWRpYUJveCBbIDAgMCAzMDAgNDAwIF0KPj4KZW5kb2JqCgp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTYgMDAwMDAgbiAKMDAwMDAwMDA3NiAwMDAwMCBuIAowMDAwMDAwMTI2IDAwMDAwIG4gCjAwMDAwMDA1OTYgMDAwMDAgbiAKCnRyYWlsZXIKPDwKL1NpemUgNQovUm9vdCAyIDAgUgovSW5mbyAzIDAgUgo+PgoKc3RhcnR4cmVmCjY4NwolJUVPRg==';
+const pdfFixtureBase64 = 'JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAzMDAgNDAwXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNDQgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiAzMjAgVGQgKEZpZ3VyZU5lc3QgUUEpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAowMDAwMDAwMjQxIDAwMDAwIG4gCjAwMDAwMDAzMTEgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgo0MDUKJSVFT0YK';
 
 const chromeCandidates = [process.env.CHROME_BIN, 'google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser'].filter(Boolean);
 let chromeBin = '';
@@ -61,6 +61,18 @@ try {
     throw new Error(`Timed out waiting for ${label}: ${JSON.stringify({ ...state, browserSignals: browserSignals.slice(-20) })}`);
   };
   const dispatchKey = (type, key, extras = {}) => command('Input.dispatchKeyEvent', { type, key, ...extras });
+  const replaceFocusedTextWithKeys = async (text) => {
+    await dispatchKey('rawKeyDown', 'a', { code: 'KeyA', windowsVirtualKeyCode: 65, modifiers: 2 });
+    await dispatchKey('keyUp', 'a', { code: 'KeyA', windowsVirtualKeyCode: 65, modifiers: 2 });
+    await dispatchKey('rawKeyDown', 'Backspace', { code: 'Backspace', windowsVirtualKeyCode: 8 });
+    await dispatchKey('keyUp', 'Backspace', { code: 'Backspace', windowsVirtualKeyCode: 8 });
+    for (const character of text) {
+      const code = /\d/.test(character) ? `Digit${character}` : character === '.' ? 'Period' : 'Minus';
+      const vk = character === '.' ? 190 : character === '-' ? 189 : character.charCodeAt(0);
+      await dispatchKey('keyDown', character, { code, windowsVirtualKeyCode: vk, text: character, unmodifiedText: character });
+      await dispatchKey('keyUp', character, { code, windowsVirtualKeyCode: vk });
+    }
+  };
   await command('Page.enable'); await command('Runtime.enable'); await command('DOM.enable'); await command('Log.enable'); await command('Network.enable');
   await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: mode === 'mobile' });
   await command('Emulation.setTouchEmulationEnabled', { enabled: mode === 'mobile', maxTouchPoints: mode === 'mobile' ? 5 : 1 });
@@ -77,21 +89,11 @@ try {
         const input = document.querySelector('[data-testid="input-bmr-weight"]');
         const result = document.querySelector('[data-testid="result-bmr"]');
         if (!input || !result) throw new Error('BMR input/result contract missing');
+        input.focus();
         return { value: input.value, result: result.textContent || '' };
       })()`);
       const nextValue = String(Number(before.value) + 1);
-      const assignedValue = await evaluate(`(() => {
-        const input = document.querySelector('[data-testid="input-bmr-weight"]');
-        if (!(input instanceof HTMLInputElement)) throw new Error('BMR numeric input missing');
-        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-        if (!setter) throw new Error('native HTMLInputElement value setter unavailable');
-        input.focus();
-        setter.call(input, ${JSON.stringify(nextValue)});
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        return input.value;
-      })()`);
-      if (assignedValue !== nextValue) throw new Error(`BMR native input assignment failed: ${assignedValue}`);
+      await replaceFocusedTextWithKeys(nextValue);
       await waitFor(`(() => {
         const input = document.querySelector('[data-testid="input-bmr-weight"]');
         const result = document.querySelector('[data-testid="result-bmr"]');
@@ -103,7 +105,7 @@ try {
         if (!reset || !(result?.textContent || '').trim()) throw new Error('BMR result/reset missing after interaction');
         reset.focus();
         if (document.activeElement !== reset) throw new Error('BMR reset not focusable');
-        return 'native input/change events changed result; reset focusable';
+        return 'browser key events changed result; reset focusable';
       })()`);
     } else if (name === 'electrical-ohms-law') {
       const before = await evaluate(`(() => { const select=document.querySelector('[data-testid="input-ohms-law-solve"]');const result=document.querySelector('[data-testid="status-ohms-law"] .advanced-result-output');if(!select||!result)throw new Error('Ohm contract missing');select.focus();return{value:select.value,result:result.textContent||''};})()`);
