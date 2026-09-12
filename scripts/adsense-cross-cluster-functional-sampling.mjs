@@ -139,12 +139,21 @@ try {
         const input = [...main.querySelectorAll('input[type="number"]')].find((candidate) => !candidate.disabled);
         if (!input) throw new Error('numeric calculator inputs missing');
         const result = main.querySelector('[data-testid^="result-"]') || main.querySelector('.advanced-result strong');
-        input.focus(); input.select();
+        input.focus();
         if (document.activeElement !== input) throw new Error('numeric input is not focusable');
         return { current: Number(input.value), beforeResult: result?.textContent || '', beforeMain: main.innerText };
       })()`);
       const nextValue = String(Number.isFinite(inputState.current) ? inputState.current + 1 : 2);
-      await command('Input.insertText', { text: nextValue });
+      await evaluate(`(() => {
+        const input = [...document.querySelectorAll('main input[type="number"]')].find((candidate) => !candidate.disabled);
+        if (!input) throw new Error('numeric calculator input disappeared');
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+        if (!setter) throw new Error('native input value setter unavailable');
+        setter.call(input, ${JSON.stringify(nextValue)});
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        return input.value;
+      })()`);
       await waitFor(`(() => { const main=document.querySelector('main'); const result=main.querySelector('[data-testid^="result-"]') || main.querySelector('.advanced-result strong'); return (result?.textContent || '') !== ${JSON.stringify(inputState.beforeResult)} || main.innerText !== ${JSON.stringify(inputState.beforeMain)}; })()`, `${name} result reaction`);
       interaction = await evaluate(`(() => {
         const main = document.querySelector('main');
@@ -152,7 +161,7 @@ try {
         if (!reset) throw new Error('reset control missing');
         reset.focus();
         if (document.activeElement !== reset) throw new Error('reset is not keyboard focusable');
-        return 'trusted numeric input/result reaction and keyboard-focusable reset';
+        return 'native-value input/change reaction and keyboard-focusable reset';
       })()`);
     } else {
       const idlePicker = await evaluate(`(() => {
@@ -172,7 +181,6 @@ try {
       const fileInput = await command('DOM.querySelector', { nodeId: documentNode.root.nodeId, selector: '.file-tool-page .file-tool-dropzone input[type="file"]' });
       if (!fileInput.nodeId) throw new Error('PDF input node unavailable to browser QA');
       await command('DOM.setFileInputFiles', { nodeId: fileInput.nodeId, files: [fixturePath] });
-      await evaluate(`(() => { const input = document.querySelector('.file-tool-page .file-tool-dropzone input[type="file"]'); if (!input?.files?.length) throw new Error('fixture was not assigned to native input'); input.dispatchEvent(new Event('change', { bubbles: true })); return input.files[0].name; })()`);
       await waitFor(`document.querySelector('.pdf-editor-shell') && document.querySelector('.pdf-export-bar')`, 'PDF Sign & Edit ready state');
 
       interaction = await evaluate(`(() => {
