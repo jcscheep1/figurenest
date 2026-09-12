@@ -38,10 +38,35 @@ jobs:
           cat /tmp/adsense-live-server.log
           exit 1
       - name: Desktop cross-cluster sampling
+        id: cross_desktop
+        continue-on-error: true
         run: node scripts/adsense-cross-cluster-functional-sampling.mjs desktop 1440 1200 9260
       - name: Mobile cross-cluster sampling
+        id: cross_mobile
+        if: always()
+        continue-on-error: true
         run: node scripts/adsense-cross-cluster-functional-sampling.mjs mobile 390 844 9261
       - name: Desktop 1440x1200 sampling
+        id: broad_desktop
+        if: always()
+        continue-on-error: true
         run: node scripts/adsense-live-functional-sampling.mjs desktop 1440 1200 9250
       - name: Mobile 390x844 sampling
+        id: broad_mobile
+        if: always()
+        continue-on-error: true
         run: node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251
+      - name: Enforce complete functional sampling gate
+        if: always()
+        env:
+          CROSS_DESKTOP: ${{ steps.cross_desktop.outcome }}
+          CROSS_MOBILE: ${{ steps.cross_mobile.outcome }}
+          BROAD_DESKTOP: ${{ steps.broad_desktop.outcome }}
+          BROAD_MOBILE: ${{ steps.broad_mobile.outcome }}
+        run: |
+          printf 'cross-desktop=%s\ncross-mobile=%s\nbroad-desktop=%s\nbroad-mobile=%s\n' \
+            "$CROSS_DESKTOP" "$CROSS_MOBILE" "$BROAD_DESKTOP" "$BROAD_MOBILE"
+          test "$CROSS_DESKTOP" = success
+          test "$CROSS_MOBILE" = success
+          test "$BROAD_DESKTOP" = success
+          test "$BROAD_MOBILE" = success
