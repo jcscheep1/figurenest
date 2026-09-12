@@ -56,6 +56,7 @@ const imageToPdfPages = import.meta.env.SSR ? await import('@/pages/ImageToPdfPa
 const docxToPdfPages = import.meta.env.SSR ? await import('@/pages/DocxToPdfPage') : null;
 const pdfToDocxPages = import.meta.env.SSR ? await import('@/pages/PdfToDocxPage') : null;
 const csvXlsxPages = import.meta.env.SSR ? await import('@/pages/CsvXlsxPages') : null;
+const xlsxToPdfPages = import.meta.env.SSR ? await import('@/pages/XlsxToPdfPage') : null;
 const notFoundPage = import.meta.env.SSR ? await import('@/pages/not-found') : null;
 
 const HomePage = homePages?.HomePage
@@ -122,6 +123,8 @@ const CsvToXlsxPage = csvXlsxPages?.CsvToXlsxPage
   ?? lazy(() => import('@/pages/CsvXlsxPages').then(({ CsvToXlsxPage: page }) => ({ default: page })));
 const XlsxToCsvPage = csvXlsxPages?.XlsxToCsvPage
   ?? lazy(() => import('@/pages/CsvXlsxPages').then(({ XlsxToCsvPage: page }) => ({ default: page })));
+const XlsxToPdfPage = xlsxToPdfPages?.XlsxToPdfPage
+  ?? lazy(() => import('@/pages/XlsxToPdfPage').then(({ XlsxToPdfPage: page }) => ({ default: page })));
 const NotFound = notFoundPage?.default ?? lazy(() => import('@/pages/not-found'));
 const PrivateApp = lazy(() => import('./PrivateApp'));
 
@@ -308,6 +311,7 @@ function Router() {
         <Route path="/file-tools/pdf-to-docx" component={PdfToDocxPage} />
         <Route path="/file-tools/csv-to-xlsx" component={CsvToXlsxPage} />
         <Route path="/file-tools/xlsx-to-csv" component={XlsxToCsvPage} />
+        <Route path="/file-tools/xlsx-to-pdf" component={XlsxToPdfPage} />
         <Route path="/articles" component={ArticleIndexPage} />
         <Route path="/articles/:slug"><ArticlePage /></Route>
         <Route path="/calculators/:category/:slug"><ToolDetailPage /></Route>

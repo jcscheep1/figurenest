@@ -50,8 +50,8 @@ jobs:
           grep -F "import('@/pages/CsvXlsxPages')" src/App.tsx
           grep -F "'csv-to-xlsx'" src/lib/file-tools-catalog.ts
           grep -F "'xlsx-to-csv'" src/lib/file-tools-catalog.ts
-          grep -F '<loc>https://figurenest.com/file-tools/csv-to-xlsx</loc>' public/sitemap.xml
-          grep -F '<loc>https://figurenest.com/file-tools/xlsx-to-csv</loc>' public/sitemap.xml
+          grep -F '<loc>https://figurenest.com/file-tools/csv-to-xlsx/</loc>' public/sitemap.xml
+          grep -F '<loc>https://figurenest.com/file-tools/xlsx-to-csv/</loc>' public/sitemap.xml
 
       - name: Require lazy local dependency boundary
         working-directory: artifacts/calcstride
