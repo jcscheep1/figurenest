@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { writeFileSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -26,6 +26,7 @@ const fixturePage = fixture.addPage([612, 792]);
 const fixtureFont = await fixture.embedFont(StandardFonts.Helvetica);
 fixturePage.drawText('FigureNest PDF editor QA fixture', { x: 72, y: 720, size: 18, font: fixtureFont });
 writeFileSync(fixturePath, await fixture.save({ useObjectStreams: false }));
+const fixtureBase64 = readFileSync(fixturePath).toString('base64');
 
 const chrome = spawn(chromeBin, [
   '--headless=new', '--no-sandbox', '--disable-gpu',
@@ -144,24 +145,33 @@ try {
         return { current: Number(input.value), beforeResult: result?.textContent || '', beforeMain: main.innerText };
       })()`);
       const nextValue = String(Number.isFinite(inputState.current) ? inputState.current + 1 : 2);
-      await evaluate(`(() => {
+      const changedValue = await evaluate(`(() => {
         const input = [...document.querySelectorAll('main input[type="number"]')].find((candidate) => !candidate.disabled);
         if (!input) throw new Error('numeric calculator input disappeared');
+        const previous = input.value;
         const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
         if (!setter) throw new Error('native input value setter unavailable');
         setter.call(input, ${JSON.stringify(nextValue)});
-        input.dispatchEvent(new Event('input', { bubbles: true }));
+        const reactPropsKey = Object.keys(input).find((key) => key.startsWith('__reactProps$'));
+        const reactProps = reactPropsKey ? input[reactPropsKey] : null;
+        if (typeof reactProps?.onChange === 'function') {
+          reactProps.onChange({ target: input, currentTarget: input, type: 'change' });
+        }
+        input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: ${JSON.stringify(nextValue)} }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
-        return input.value;
+        return { previous, current: input.value, hasReactOnChange: typeof reactProps?.onChange === 'function' };
       })()`);
+      if (changedValue.current !== nextValue) throw new Error(`${name} input did not accept QA value: ${JSON.stringify(changedValue)}`);
       await waitFor(`(() => { const main=document.querySelector('main'); const result=main.querySelector('[data-testid^="result-"]') || main.querySelector('.advanced-result strong'); return (result?.textContent || '') !== ${JSON.stringify(inputState.beforeResult)} || main.innerText !== ${JSON.stringify(inputState.beforeMain)}; })()`, `${name} result reaction`);
       interaction = await evaluate(`(() => {
         const main = document.querySelector('main');
+        const result = main.querySelector('[data-testid^="result-"]') || main.querySelector('.advanced-result strong');
+        if (!result || !(result.textContent || '').trim()) throw new Error('calculator result missing after input reaction');
         const reset = [...main.querySelectorAll('button')].find((button) => /reset/i.test(button.textContent || ''));
         if (!reset) throw new Error('reset control missing');
         reset.focus();
         if (document.activeElement !== reset) throw new Error('reset is not keyboard focusable');
-        return 'native-value input/change reaction and keyboard-focusable reset';
+        return 'React-controlled input reaction, non-empty result and keyboard-focusable reset';
       })()`);
     } else {
       const idlePicker = await evaluate(`(() => {
@@ -177,10 +187,20 @@ try {
       })()`);
       if (!idlePicker) throw new Error('idle file-picker check failed');
 
-      const documentNode = await command('DOM.getDocument', { depth: -1, pierce: true });
-      const fileInput = await command('DOM.querySelector', { nodeId: documentNode.root.nodeId, selector: '.file-tool-page .file-tool-dropzone input[type="file"]' });
-      if (!fileInput.nodeId) throw new Error('PDF input node unavailable to browser QA');
-      await command('DOM.setFileInputFiles', { nodeId: fileInput.nodeId, files: [fixturePath] });
+      const assignedFile = await evaluate(`(() => {
+        const input = document.querySelector('.file-tool-page .file-tool-dropzone input[type="file"]');
+        if (!input) throw new Error('PDF input node unavailable to browser QA');
+        const binary = atob(${JSON.stringify(fixtureBase64)});
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+        const file = new File([bytes], 'figurenest-adsense-fixture.pdf', { type: 'application/pdf', lastModified: 0 });
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        return { name: input.files?.[0]?.name || '', type: input.files?.[0]?.type || '', size: input.files?.[0]?.size || 0 };
+      })()`);
+      if (assignedFile.type !== 'application/pdf' || assignedFile.size < 100) throw new Error(`PDF browser fixture assignment failed: ${JSON.stringify(assignedFile)}`);
       await waitFor(`document.querySelector('.pdf-editor-shell') && document.querySelector('.pdf-export-bar')`, 'PDF Sign & Edit ready state');
 
       interaction = await evaluate(`(() => {
@@ -218,7 +238,7 @@ try {
         }
         if (!enabledNormal || !disabled) throw new Error('ready-state action coverage incomplete');
         if (document.documentElement.scrollWidth > innerWidth + 1) throw new Error('ready-state horizontal overflow ' + document.documentElement.scrollWidth);
-        return 'loaded local PDF; blue enabled/reset/download, grey disabled, red destructive semantics (' + enabledNormal + '/' + disabled + '/' + destructive + ')';
+        return 'loaded explicit-MIME local PDF; blue enabled/reset/download, grey disabled, red destructive semantics (' + enabledNormal + '/' + disabled + '/' + destructive + ')';
       })()`);
     }
 
