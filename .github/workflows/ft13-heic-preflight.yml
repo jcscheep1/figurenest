@@ -1,0 +1,84 @@
+name: FT-13 HEIC Decoder Preflight
+
+on:
+  pull_request:
+    paths:
+      - 'reports/FT-13-HEIC-TO-JPG-GATE.md'
+      - '.github/workflows/ft13-heic-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  heic-to-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Verify exact package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(npm view heic-to@1.5.2 version)" = "1.5.2"
+          test "$(npm view heic-to@1.5.2 license)" = "LGPL-3.0"
+          deps="$(npm view heic-to@1.5.2 dependencies --json)"
+          if [ -n "$deps" ] && [ "$deps" != "{}" ] && [ "$deps" != "null" ]; then
+            echo "Unexpected runtime dependencies: $deps" >&2
+            exit 1
+          fi
+          npm view heic-to@1.5.2 dist.integrity
+          npm view heic-to@1.5.2 dist.tarball
+          npm view heic-to@1.5.2 dist.unpackedSize
+
+      - name: Inspect exact npm tarball without installing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ft13-heic
+          cd /tmp/ft13-heic
+          npm pack heic-to@1.5.2 --ignore-scripts --json > pack.json
+          tarball="$(node -e "const p=require('./pack.json'); process.stdout.write(p[0].filename)")"
+          sha512="$(node -e "const p=require('./pack.json'); process.stdout.write(p[0].integrity || '')")"
+          size="$(node -e "const p=require('./pack.json'); process.stdout.write(String(p[0].size || 0))")"
+          unpacked="$(node -e "const p=require('./pack.json'); process.stdout.write(String(p[0].unpackedSize || 0))")"
+          echo "tarball=$tarball"
+          echo "integrity=$sha512"
+          echo "compressed_bytes=$size"
+          echo "unpacked_bytes=$unpacked"
+          test -n "$sha512"
+          tar -xzf "$tarball"
+
+          test -f package/package.json
+          test -f package/LICENSE || test -f package/LICENSE.md || test -f package/COPYING || test -f package/COPYING.LESSER
+
+          # Inventory large decoder artefacts so future publication can prove route-lazy isolation.
+          find package -type f -printf '%s %p\n' | sort -nr | head -40
+
+          # Runtime CDN/remote decoder references are forbidden in FigureNest implementation.
+          # Documentation examples may exist upstream, so report rather than fail here; the later
+          # executable spike must prove same-origin loading with browser network interception.
+          grep -RInE 'https?://|cdn\.jsdelivr|unpkg\.com' package --exclude='README*' --exclude='*.md' || true
+
+      - name: Enforce unpublished FT-13 boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -nE "(/file-tools/heic-to-jpg|heic-to-jpg)" -- \
+            'artifacts/calcstride/src' \
+            'artifacts/calcstride/public' \
+            ':!reports/FT-13-HEIC-TO-JPG-GATE.md' 2>/dev/null; then
+            echo 'FT-13 must remain unpublished during decoder research.' >&2
+            exit 1
+          fi
+
+          if git grep -nE '"heic-to"[[:space:]]*:' -- '**/package.json' '**/pnpm-lock.yaml' '**/package-lock.json' '**/yarn.lock' 2>/dev/null; then
+            echo 'heic-to must not be added to application dependencies before the research gate passes.' >&2
+            exit 1
+          fi
