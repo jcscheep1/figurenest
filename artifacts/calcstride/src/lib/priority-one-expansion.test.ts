@@ -92,3 +92,23 @@ test('Investment Calculator keeps normal growth and rejects non-finite projectio
   assert.match(overflow.error ?? '', /too large to calculate reliably/i);
   assert.equal(overflow.details.length, 0);
 });
+
+test('Student Loan keeps reference amortization, zero-rate behavior, and currency switching', () => {
+  const usd = calculatePriorityOneExpansion('student-loan', ['25000', '6.5', '5'], 'USD');
+  assert.equal(usd.error, undefined);
+  assert.equal(usd.primary, '$489.15');
+  assert.equal(usd.details.find(detail => detail.label === 'Total payments')?.value, '$29,349.22');
+  assert.equal(usd.details.find(detail => detail.label === 'Total interest')?.value, '$4,349.22');
+
+  const zeroRate = calculatePriorityOneExpansion('student-loan', ['25000', '0', '5'], 'USD');
+  assert.equal(zeroRate.error, undefined);
+  assert.equal(zeroRate.primary, '$416.67');
+  assert.equal(zeroRate.details.find(detail => detail.label === 'Total interest')?.value, '$0.00');
+
+  const eur = calculatePriorityOneExpansion('student-loan', ['25000', '6.5', '5'], 'EUR');
+  const gbp = calculatePriorityOneExpansion('student-loan', ['25000', '6.5', '5'], 'GBP');
+  const zar = calculatePriorityOneExpansion('student-loan', ['25000', '6.5', '5'], 'ZAR');
+  assert.equal(eur.primary, '€489.15');
+  assert.equal(gbp.primary, '£489.15');
+  assert.match(zar.primary, /^ZAR\s489\.15$/);
+});
