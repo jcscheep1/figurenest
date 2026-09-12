@@ -3,6 +3,7 @@
 Status: **RESEARCH / NOT PUBLISHABLE**
 
 Base production SHA: `70528afcea57c7bc34fdd72a215fcfea866190e7` (FT-09 released).
+Validated research baseline: `406325825b81accaa93e6d26dc99b38bec75b734` — full FigureNest validation green before this decision update.
 
 ## Goal
 
@@ -21,6 +22,39 @@ Current production already carries the reviewed FT-09 stack and existing PDF/ren
 - `pdfjs-dist` `6.3.289`.
 
 FT-10 must begin with **zero new runtime dependencies**. Any later dependency request requires a separate exact-version license/security/bundle decision and cannot be smuggled into the publication build.
+
+## Validated baseline decision
+
+The initial FT-10 research-only head `406325825b81accaa93e6d26dc99b38bec75b734` cleared the repository validation gate without introducing a public surface or a new runtime dependency. That result closes the baseline-integrity question: FT-10 may proceed to an unpublished fixture/rendering spike on top of the released FT-09 security boundary.
+
+This does **not** approve XLSX → PDF for publication. The next exact-head gate must contain executable evidence, not only design prose.
+
+### Next executable spike — required before route work
+
+Build one deterministic repository-local XLSX fixture and a focused test/harness that proves all of the following before any route/catalog/sitemap work is permitted:
+
+1. XLSX bytes pass through the existing dependency-independent ZIP/resource preflight before SheetJS parsing; a malformed/hostile variant fails before parse/render.
+2. A selected worksheet is converted using **direct paginated PDF text/table drawing as the first candidate**. A whole-worksheet canvas is not allowed.
+3. Formula cells are never recalculated or executed. Tests must include formula-bearing cells and assert that only inert cached/display data or an explicit safe placeholder can reach the renderer.
+4. Pagination is deterministic for a deliberately wide and long fixture, with a hard page-count ceiling that fails closed instead of producing unbounded output.
+5. Generated PDF bytes reopen through a repository-local PDF inspection path and prove expected page count plus extractable sentinel text. If extractable text cannot be proved, direct rendering has not yet passed the release-quality gate.
+6. Repeated conversion of the same deterministic fixture yields the same structural pagination result. Byte-for-byte identity is desirable but is not required if the PDF library embeds nondeterministic metadata; any such nondeterminism must be documented rather than hidden.
+7. No fixture value, filename or workbook-controlled URL is sent over the network or persisted. Browser-level network/storage instrumentation remains a later mandatory publication gate, but unit-level code must not introduce an upload/storage path.
+
+### Limits policy for the spike
+
+Do not copy FT-09 parse maxima into the PDF renderer. The spike must collect the evidence needed to set separate print ceilings. Until measurements exist, any provisional constants must be test-only/conservative and must not be represented as public supported limits.
+
+At minimum the implementation must have explicit fail-closed guards for:
+
+- printable rows;
+- printable columns;
+- populated cells considered for rendering;
+- generated pages;
+- generated output bytes;
+- per-page/tile pixels if a raster comparison is later attempted.
+
+The first usable limit set must be justified by both desktop and 390×844 measurements before publication.
 
 ## Security boundary
 
