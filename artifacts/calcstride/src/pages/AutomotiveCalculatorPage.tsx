@@ -10,6 +10,7 @@ import { calculateCore, convertCore, converterUnits } from '@/lib/core-calculato
 import { automotiveCalculatorContent, type AutomotiveCalculatorSlug } from '@/lib/automotive-calculators';
 import { getAutomotiveResetUnits } from '@/lib/automotive-reset-state';
 import { fuelCostPerDisplayedDistance } from '@/lib/fuel-cost-distance';
+import { formatEvChargingTimeDisplay } from '@/lib/ev-charging-time-display';
 import { localTools } from '@/lib/catalog';
 import { CurrencySelector, MeasurementSystemSelector } from '@/components/UnitsPreferencesSelectors';
 import { formatConvertedInput, formatCurrency, useUnitsPreferences, type CurrencyCode, type MeasurementSystem } from '@/lib/units-preferences';
@@ -99,9 +100,9 @@ export function AutomotiveCalculatorPage({ slug }: { slug: AutomotiveCalculatorS
     }
     if (slug === 'ev-charging-time') {
       const hours = a / b;
-      const minutes = Math.round(hours * 60);
-      return { primary: `${decimal.format(hours)} hours`, details: [
-        { label: 'Approximate duration', value: `${Math.floor(minutes / 60)} hr ${minutes % 60} min` },
+      const display = formatEvChargingTimeDisplay(hours);
+      return { primary: display.primary, details: [
+        { label: 'Approximate duration', value: display.duration },
         { label: 'Charger power used', value: `${decimal.format(b / powerUnits[powerUnit].kw)} ${powerUnits[powerUnit].short}` },
       ] };
     }
