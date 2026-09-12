@@ -1,0 +1,65 @@
+name: FT-09 Publication Browser QA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'artifacts/calcstride/src/lib/ft09-converter.ts'
+      - 'artifacts/calcstride/src/lib/ft09-converter.test.ts'
+      - 'artifacts/calcstride/src/lib/ft09-sheetjs-loader.ts'
+      - 'artifacts/calcstride/src/lib/xlsx-zip-preflight.ts'
+      - 'artifacts/calcstride/src/pages/CsvToXlsxPage.tsx'
+      - 'artifacts/calcstride/src/pages/XlsxToCsvPage.tsx'
+      - 'artifacts/calcstride/src/App.tsx'
+      - 'artifacts/calcstride/src/lib/file-tools-catalog.ts'
+      - 'artifacts/calcstride/public/sitemap.xml'
+      - 'artifacts/calcstride/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/ft09-publication-browser-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publication-browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Focused FT-09 conversion and security tests
+        working-directory: artifacts/calcstride
+        run: pnpm exec vitest run src/lib/ft09-converter.test.ts src/lib/csv-spreadsheet-safety.test.ts src/lib/xlsx-zip-preflight.test.ts
+
+      - name: Require atomic publication wiring
+        working-directory: artifacts/calcstride
+        run: |
+          grep -F 'path="/file-tools/csv-to-xlsx"' src/App.tsx
+          grep -F 'path="/file-tools/xlsx-to-csv"' src/App.tsx
+          grep -F "lazy(() => import('@/pages/CsvToXlsxPage')" src/App.tsx
+          grep -F "lazy(() => import('@/pages/XlsxToCsvPage')" src/App.tsx
+          grep -F "'csv-to-xlsx'" src/lib/file-tools-catalog.ts
+          grep -F "'xlsx-to-csv'" src/lib/file-tools-catalog.ts
+          grep -F '<loc>https://figurenest.com/file-tools/csv-to-xlsx</loc>' public/sitemap.xml
+          grep -F '<loc>https://figurenest.com/file-tools/xlsx-to-csv</loc>' public/sitemap.xml
+
+      - name: Require lazy local dependency boundary
+        working-directory: artifacts/calcstride
+        run: |
+          grep -F "import('xlsx')" src/lib/ft09-sheetjs-loader.ts
+          if grep -R -E 'https?://.*xlsx|cdn\.sheetjs' src/lib/ft09-*.ts src/pages/CsvToXlsxPage.tsx src/pages/XlsxToCsvPage.tsx; then
+            echo 'Runtime CDN/network SheetJS reference found in FT-09 production code'; exit 1
+          fi
+
+      - name: Build published site
+        working-directory: artifacts/calcstride
+        run: pnpm run build
