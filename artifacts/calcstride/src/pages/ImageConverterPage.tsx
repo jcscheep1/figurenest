@@ -261,7 +261,7 @@ export function ImageConverterPage() {
           <button type="button" disabled={!source || status === 'processing' || status === 'validating'} onClick={() => void convert()}>
             Convert image
           </button>
-          <a href={resultUrl || undefined} download={resultName || undefined} aria-disabled={!resultUrl} onClick={(event) => { if (!resultUrl) event.preventDefault(); }}>
+          <a className="file-tool-action-link" href={resultUrl || undefined} download={resultName || undefined} aria-disabled={!resultUrl} tabIndex={resultUrl ? undefined : -1} onClick={(event) => { if (!resultUrl) event.preventDefault(); }}>
             <Download size={17} aria-hidden="true" /> Download result
           </a>
           <button type="button" disabled={!source && !resultUrl} onClick={reset}>
