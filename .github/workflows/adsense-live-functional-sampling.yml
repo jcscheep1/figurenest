@@ -56,17 +56,13 @@ jobs:
         if: always()
         continue-on-error: true
         run: node scripts/adsense-live-functional-sampling.mjs mobile 390 844 9251
-      - name: Enforce complete functional sampling gate
+      - name: Report complete functional sampling gate
         if: always()
-        env:
-          CROSS_DESKTOP: ${{ steps.cross_desktop.outcome }}
-          CROSS_MOBILE: ${{ steps.cross_mobile.outcome }}
-          BROAD_DESKTOP: ${{ steps.broad_desktop.outcome }}
-          BROAD_MOBILE: ${{ steps.broad_mobile.outcome }}
         run: |
-          printf 'cross-desktop=%s\ncross-mobile=%s\nbroad-desktop=%s\nbroad-mobile=%s\n' \
-            "$CROSS_DESKTOP" "$CROSS_MOBILE" "$BROAD_DESKTOP" "$BROAD_MOBILE"
-          test "$CROSS_DESKTOP" = success
-          test "$CROSS_MOBILE" = success
-          test "$BROAD_DESKTOP" = success
-          test "$BROAD_MOBILE" = success
+          echo "cross-desktop=${{ steps.cross_desktop.outcome }}"
+          echo "cross-mobile=${{ steps.cross_mobile.outcome }}"
+          echo "broad-desktop=${{ steps.broad_desktop.outcome }}"
+          echo "broad-mobile=${{ steps.broad_mobile.outcome }}"
+      - name: Fail if any functional sampler failed
+        if: ${{ always() && (steps.cross_desktop.outcome != 'success' || steps.cross_mobile.outcome != 'success' || steps.broad_desktop.outcome != 'success' || steps.broad_mobile.outcome != 'success') }}
+        run: exit 1
