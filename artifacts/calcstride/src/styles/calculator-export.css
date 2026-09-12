@@ -8,3 +8,24 @@
 body.calculator-export-open{overflow:hidden}
 @media(max-width:680px){.calculator-export-floating{right:12px;bottom:12px;left:12px;justify-items:stretch}.calculator-export-panel{position:fixed;left:12px;right:12px;bottom:12px;width:auto;max-height:calc(100dvh - 104px);overflow:auto;padding:16px;border-radius:16px}.calculator-export-actions{grid-template-columns:1fr}.calculator-export-actions button{width:100%;min-height:50px}.calculator-export-trigger{justify-self:end;min-height:48px;padding:12px 17px}.calculator-export-copy strong{font-size:16px}.calculator-export-copy span{font-size:12px}}
 @media print{.calculator-export-floating{display:none!important}}
+
+/* File tools are not calculators: do not show the calculator export FAB on these pages. */
+body:has(.file-tool-page) .calculator-export-floating{display:none!important}
+
+/* FigureNest theme tokens are stored as HSL channels. The legacy file-tool stylesheet
+   used the raw channel variables as colors, which browsers reject. These scoped rules
+   restore valid, high-contrast DOCX controls without changing calculator styling. */
+.file-tool-page .file-upload-panel{border-color:hsl(var(--border));background:hsl(var(--card))}
+.file-tool-page .docx-step-label{color:hsl(var(--foreground))}
+.file-tool-page .docx-step-label span{background:hsl(var(--primary));color:hsl(var(--primary-foreground))}
+.file-tool-page .docx-preview-step{border-color:color-mix(in srgb,hsl(var(--primary)) 55%,hsl(var(--border)));background:hsl(var(--card))}
+.file-tool-page .docx-preview-heading-row p,.file-tool-page .docx-download-ready p{color:hsl(var(--muted-foreground))}
+.file-tool-page .docx-download-button,.file-tool-page .docx-download-ready button{border:1px solid hsl(var(--primary));background:hsl(var(--primary));color:hsl(var(--primary-foreground))}
+.file-tool-page .docx-download-button:disabled{border-color:hsl(var(--border));background:hsl(var(--muted));color:hsl(var(--muted-foreground));opacity:1}
+.file-tool-page .docx-preview-placeholder{border-color:hsl(var(--border));background:color-mix(in srgb,hsl(var(--muted)) 45%,hsl(var(--background)));color:hsl(var(--muted-foreground))}
+.file-tool-page .docx-layout-note{background:color-mix(in srgb,#f59e0b 10%,hsl(var(--background)));color:hsl(var(--muted-foreground))}
+.file-tool-page .docx-preview-frame{border-color:hsl(var(--border));background:color-mix(in srgb,hsl(var(--muted)) 75%,#d7dde6)}
+.file-tool-page .docx-download-ready{background:color-mix(in srgb,#10b981 9%,hsl(var(--background)))}
+.file-tool-page .docx-information-sections{border-color:hsl(var(--border))}
+.file-tool-page .docx-information-sections>section{border-color:hsl(var(--border));background:color-mix(in srgb,hsl(var(--muted)) 35%,hsl(var(--background)))}
+@media(max-width:560px){.file-tool-page .docx-preview-step{scroll-margin-top:96px}.file-tool-page .docx-download-button,.file-tool-page .docx-download-ready button{min-height:54px;font-size:1rem}}
