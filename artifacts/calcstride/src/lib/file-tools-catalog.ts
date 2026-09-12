@@ -247,6 +247,34 @@ export const fileToolDefinitions = {
     ],
     relatedRoutes: ['/file-tools/pdf-sign-edit', '/file-tools/pdf-to-image', '/privacy'],
   },
+  'xlsx-to-pdf': {
+    slug: 'xlsx-to-pdf',
+    name: 'XLSX to PDF',
+    description: 'Convert a selected XLSX worksheet or bounded cell range into a searchable PDF locally in your browser.',
+    category: FILE_TOOLS_CATEGORY.name,
+    categorySlug: FILE_TOOLS_CATEGORY.slug,
+    href: '/file-tools/xlsx-to-pdf',
+    tags: ['xlsx to pdf', 'excel to pdf', 'spreadsheet to pdf', 'private spreadsheet converter', 'browser excel converter'],
+    featured: false,
+    h1: 'Convert XLSX to PDF',
+    seoTitle: 'Free XLSX to PDF Converter | Private Browser | FigureNest',
+    seoDescription: 'Convert one XLSX worksheet or cell range to a searchable PDF locally in your browser. Choose page size and orientation without uploading the spreadsheet.',
+    privacySummary: 'The XLSX workbook, filename, selected cell content and generated PDF stay in this browser tab and are not uploaded to a FigureNest conversion server.',
+    limitations: [
+      'Conversion is best-effort table rendering, not a pixel-perfect Excel print export. Workbook styles, charts, pivots, conditional formatting and exact print settings are not preserved.',
+      'Formulas and macros are never recalculated or executed. Existing displayed cell values are treated as inert spreadsheet content.',
+      'Publication limits are intentionally conservative: up to 500 rows, 25 columns, 5,000 populated cells, 40 PDF pages and 2 MiB generated PDF output for the selected range.',
+      'Only XLSX packages that pass local OOXML/ZIP resource checks are processed. Malformed, suspicious or oversized workbooks fail closed locally.'
+    ],
+    faqs: [
+      { question: 'Does FigureNest upload my spreadsheet?', answer: 'No. XLSX inspection, worksheet selection, preview and PDF creation run locally in your browser. Workbook bytes, filenames, cell contents and generated PDFs are not sent to a FigureNest conversion server.' },
+      { question: 'Will the PDF look exactly like Excel?', answer: 'No. This tool creates a clean searchable table PDF from a selected worksheet or range. It does not reproduce Excel charts, pivots, conditional formatting, formulas, macros or exact print-layout settings.' },
+      { question: 'Can I choose a worksheet or cell range?', answer: 'Yes. Select a worksheet and optionally enter an A1-style range such as A1:F40 before creating the PDF.' },
+      { question: 'Are formulas recalculated?', answer: 'No. FigureNest never executes or recalculates workbook formulas or macros. Formula-looking text remains inert.' },
+      { question: 'Can I choose portrait or landscape output?', answer: 'Yes. Choose portrait or landscape orientation and A4 or Letter page size before generating the searchable PDF.' }
+    ],
+    relatedRoutes: ['/file-tools/xlsx-to-csv', '/file-tools/csv-to-xlsx', '/file-tools/docx-to-pdf'],
+  },
 } as const satisfies Record<string, FileToolDefinition>;
 
 export type FileToolSlug = keyof typeof fileToolDefinitions;

@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Download } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download } from 'lucide-react';
+import { Shell } from '@/components/FigureNestShell';
+import { Link } from '@/components/PublicLink';
+import { Seo } from '@/pages/AppPages';
 import { LocalFileDropzone } from '@/components/LocalFileDropzone';
 import {
   FILE_INPUT_LIMITS,
@@ -52,10 +55,7 @@ function downloadPdf(bytes: Uint8Array, fileName: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-/**
- * FT-10 implementation surface. Deliberately unrouted until publication QA exists.
- * Do not add SEO/catalog/sitemap exposure merely because this component compiles.
- */
+/** Published FT-10 XLSX → PDF browser-local conversion surface. */
 export function XlsxToPdfPage() {
   const deviceClass = currentDeviceClass();
   const [status, setStatus] = useState<FileJobStatus>('idle');
@@ -171,9 +171,16 @@ export function XlsxToPdfPage() {
     }
   };
 
-  return <main className="tool-page file-tool-page" data-testid="ft10-unrouted-converter">
+  return <Shell>
+    <Seo path="/file-tools/xlsx-to-pdf" />
+    <main className="tool-page file-tool-page" data-testid="page-xlsx-to-pdf">
+      <nav className="calc-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
+        <Link href="/category/file-tools">PDF &amp; File Tools</Link>
+        <span aria-current="page">/ XLSX TO PDF</span>
+      </nav>
     <header className="file-tool-hero">
-      <p className="eyebrow">FT-10 unpublished implementation</p>
+      <p className="eyebrow">Private browser file tool</p>
       <h1>XLSX to PDF</h1>
       <p>Convert one bounded worksheet range into a searchable PDF locally in your browser.</p>
       <p><strong>Your spreadsheet stays on this device.</strong> This implementation does not upload workbook bytes or converted PDF content.</p>
@@ -211,5 +218,6 @@ export function XlsxToPdfPage() {
       <div><h2>Your searchable PDF is ready</h2><p>{previewRows.length.toLocaleString()} rows selected · {(output.byteLength / 1024).toFixed(1)} kB local output</p></div>
       <button type="button" onClick={() => downloadPdf(output, fileName)}><Download size={18} aria-hidden="true" /> Download PDF</button>
     </section> : null}
-  </main>;
+    </main>
+  </Shell>;
 }
