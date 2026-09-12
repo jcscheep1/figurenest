@@ -45,7 +45,7 @@ jobs:
           grep -F 'className="file-tool-action-link"' src/pages/ImageConverterPage.tsx
           grep -F 'type="file"' src/pages/ImageConverterPage.tsx
           grep -F '.file-tool-action-link' src/styles/file-tool-buttons.css
-          grep -F 'input[type="file"]::file-selector-button' src/styles/file-tool-buttons.css
+          grep -F "input[type='file']::file-selector-button" src/styles/file-tool-buttons.css
 
       - name: Require safe conversion disclosures and guards
         working-directory: artifacts/calcstride
