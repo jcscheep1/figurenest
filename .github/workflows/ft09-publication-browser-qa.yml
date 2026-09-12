@@ -57,7 +57,12 @@ jobs:
         working-directory: artifacts/calcstride
         run: |
           grep -F "import('xlsx')" src/lib/ft09-sheetjs-loader.ts
-          if grep -R -E 'https?://.*xlsx|cdn\.sheetjs' src/lib/ft09-*.ts src/pages/CsvXlsxPages.tsx; then
+          if grep -E 'https?://.*xlsx|cdn\.sheetjs' \
+            src/lib/ft09-converter.ts \
+            src/lib/ft09-sheetjs-loader.ts \
+            src/lib/xlsx-zip-preflight.ts \
+            src/lib/csv-spreadsheet-safety.ts \
+            src/pages/CsvXlsxPages.tsx; then
             echo 'Runtime CDN/network SheetJS reference found in FT-09 production code'; exit 1
           fi
 
