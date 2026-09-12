@@ -284,6 +284,34 @@ export const fileToolDefinitions = {
     ],
     relatedRoutes: ['/file-tools/xlsx-to-csv', '/file-tools/csv-to-xlsx', '/file-tools/docx-to-pdf'],
   },
+  'image-converter': {
+    slug: 'image-converter',
+    name: 'PNG, JPG & WebP Image Converter',
+    description: 'Convert PNG, JPG/JPEG and still WebP images online for free in your browser. Choose the output format and quality, then download without uploading the image.',
+    category: FILE_TOOLS_CATEGORY.name,
+    categorySlug: FILE_TOOLS_CATEGORY.slug,
+    href: '/file-tools/image-converter',
+    tags: ['image converter', 'png to jpg', 'jpg to png', 'webp converter', 'png to webp', 'webp to jpg', 'jpeg converter', 'private image converter', 'no upload image converter'],
+    featured: false,
+    h1: 'Image Converter — Convert PNG, JPG & WebP Online',
+    seoTitle: 'PNG, JPG & WebP Image Converter | FigureNest',
+    seoDescription: 'Convert PNG, JPG/JPEG and WebP images privately in your browser. Choose the output format and quality, then download without uploading your image.',
+    privacySummary: 'The selected image, filename, decoded pixels and converted output stay in this browser tab. FigureNest does not upload them to a conversion server.',
+    limitations: [
+      'This release converts one still PNG, JPG/JPEG or WebP image at a time. Animated WebP is rejected rather than silently reduced to one frame.',
+      'Decoded images are limited to 40 megapixels, in addition to the local device input-size limit, to reduce browser memory pressure.',
+      'JPG does not support transparency, so transparent pixels are flattened onto white. PNG and WebP preserve alpha only when the browser supports the requested encoder reliably.',
+      'Canvas re-encoding can remove EXIF, GPS, ICC/color-profile and other metadata. Keep the original when archival metadata or exact colour management matters.',
+    ],
+    faqs: [
+      { question: 'Is the FigureNest image converter free?', answer: 'Yes. The PNG, JPG and WebP converter is free to use in your browser and does not require an account.' },
+      { question: 'Does FigureNest upload my image?', answer: 'No. Supported image bytes are validated, decoded and re-encoded in this browser tab. Normal website assets may load, but the selected image, filename and converted output are not sent to a FigureNest conversion server.' },
+      { question: 'Can I convert a transparent PNG to JPG?', answer: 'Yes. Because JPG does not support transparency, transparent areas are flattened onto a white background before the JPG is created.' },
+      { question: 'Can I convert animated WebP?', answer: 'No. Animated WebP is rejected deliberately because Canvas-based conversion would otherwise discard the animation and create only a still frame.' },
+      { question: 'Does conversion preserve image metadata?', answer: 'Not necessarily. Browser re-encoding can remove EXIF, GPS, ICC colour-profile and other metadata. Keep the original file if those fields matter.' },
+    ],
+    relatedRoutes: ['/file-tools/image-to-pdf', '/file-tools/pdf-to-image', '/privacy'],
+  },
 } as const satisfies Record<string, FileToolDefinition>;
 
 export type FileToolSlug = keyof typeof fileToolDefinitions;

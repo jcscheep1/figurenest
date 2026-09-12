@@ -1,6 +1,6 @@
 # FT-12 — PNG/JPG/WebP Image Converter Gate
 
-Status: **IMPLEMENTATION IN PROGRESS / NOT YET PUBLISHABLE**
+Status: **PUBLICATION CANDIDATE / EXACT-HEAD RELEASE QA REQUIRED**
 
 Target route: `/file-tools/image-converter`
 

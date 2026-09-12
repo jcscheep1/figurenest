@@ -4,7 +4,7 @@ import type { CategoryContent } from './category-content';
 export const fileToolsCategoryContent: CategoryContent = {
   introduction: [
     'PDF and file tasks often involve contracts, forms, invoices, IDs, reports, photos, spreadsheets, or other files that should not need to leave your device just to make a small edit or conversion. FigureNest File Tools are designed around local browser processing wherever the format can be handled reliably without uploading the file to a conversion server.',
-    'The current file tools cover fill-and-sign editing with annotations and page operations, PDF pages to JPG/PNG, ordered JPG/PNG images to PDF, text-layer extraction to TXT, best-effort DOCX to PDF conversion with a sanitized preview, selectable PDF text to editable DOCX reconstruction, bounded CSV/XLSX spreadsheet conversion, and bounded XLSX worksheet to searchable PDF conversion. Each tool uses explicit file, page, pixel, workbook-shape, and memory limits because browser-local processing trades cloud uploads for the resources available on your own device. Keep the original files, especially when metadata, print dimensions, color profiles, spreadsheet formatting, or legal document fidelity matter.',
+    'The current file tools cover fill-and-sign editing with annotations and page operations, PDF pages to JPG/PNG, ordered JPG/PNG images to PDF, text-layer extraction to TXT, best-effort DOCX to PDF conversion with a sanitized preview, selectable PDF text to editable DOCX reconstruction, bounded CSV/XLSX spreadsheet conversion, bounded XLSX worksheet to searchable PDF conversion, and private PNG/JPG/WebP image conversion. Each tool uses explicit file, page, pixel, workbook-shape, and memory limits because browser-local processing trades cloud uploads for the resources available on your own device. Keep the original files, especially when metadata, print dimensions, color profiles, spreadsheet formatting, or legal document fidelity matter.',
   ],
   questionsAnswered: [
     'Can I sign, annotate, rotate, reorder or delete pages in a PDF without uploading the document?',
@@ -13,6 +13,7 @@ export const fileToolsCategoryContent: CategoryContent = {
     'Can I convert a DOCX file to a best-effort PDF locally without uploading the document?',
     'Can I convert CSV and XLSX spreadsheets locally while keeping formula-looking text inert and workbook resources bounded?',
     'Can I turn a bounded XLSX worksheet or selected range into a searchable PDF locally without evaluating workbook formulas?',
+    'Can I convert a still PNG, JPG or WebP image locally while controlling output format and quality?',
     'What file, page, pixel, workbook-shape, and memory limits apply to private browser-based file processing?',
   ],
   toolDescriptions: [
@@ -25,6 +26,7 @@ export const fileToolsCategoryContent: CategoryContent = {
     { slug: 'csv-to-xlsx', description: 'Convert UTF-8 CSV values into a single-sheet XLSX workbook locally, with delimiter controls, inert formula-looking text, bounded workbook shape, and local package validation before download.' },
     { slug: 'xlsx-to-csv', description: 'Inspect an XLSX package locally, choose one worksheet, and export injection-safe CSV without executing workbook formulas or uploading spreadsheet contents.' },
     { slug: 'xlsx-to-pdf', description: 'Inspect a bounded XLSX package locally, choose a worksheet and optional range, set page size and orientation, then create a searchable PDF without evaluating formulas or uploading spreadsheet contents.' },
+    { slug: 'image-converter', description: 'Convert one still PNG, JPG/JPEG or WebP image locally, choose PNG, JPG or WebP output and quality where supported, and download without uploading the image.' },
   ],
   choosingTools: [
     'Use PDF Sign & Edit when the goal is to fill, sign, annotate or manage pages in an existing PDF while keeping the document content in the browser. Page operations have their own undo and redo history, while annotations stay attached to their original source page.',
@@ -36,6 +38,7 @@ export const fileToolsCategoryContent: CategoryContent = {
     'Use CSV to XLSX when plain tabular CSV data needs an Excel-compatible workbook. The converter creates one worksheet and treats formula-looking values as text; CSV cannot supply workbook formatting, charts, macros, or formulas that were never present in the source format.',
     'Use XLSX to CSV when one worksheet needs a plain-text export. The workbook package is checked before parsing, formulas are not evaluated, and the CSV serializer neutralizes formula-leading text while preserving genuine negative numbers.',
     'Use XLSX to PDF when a bounded worksheet or selected range needs a portable searchable document rather than an editable spreadsheet. Choose the worksheet, optional range, A4 or Letter page size, and portrait or landscape orientation deliberately; charts, macros, pivots, advanced print layout, exact Excel pagination, and other workbook fidelity features are outside this browser-local release.',
+    'Use the PNG, JPG & WebP Image Converter when you need to change a still image format without uploading it. Choose JPG for photographs and smaller lossy output, PNG for lossless output and transparency, or WebP for compact web-ready output when the browser encoder supports it. Transparent pixels become white in JPG, animated WebP is rejected, and re-encoding can remove metadata.',
   ],
   unitCurrencyGuidance: [
     'File tools do not use measurement or currency preferences. Security and privacy matter instead: verify the selected file type, stay within the stated device limits, keep original files, and do not rely on a browser export as a substitute for a legally required signing platform or identity-verification process.',
@@ -51,6 +54,7 @@ export const fileToolsCategoryContent: CategoryContent = {
     { question: 'Does PDF to Text use OCR?', answer: 'No. It extracts text already present in the PDF. Image-only scans may return little or no text and need a separate OCR tool.' },
     { question: 'Can spreadsheet formulas execute during CSV/XLSX conversion?', answer: 'FigureNest does not evaluate workbook formulas, and formula-looking CSV input is written as inert text. CSV export also neutralizes formula-leading text that could otherwise execute when opened in spreadsheet software.' },
     { question: 'What XLSX features are preserved in XLSX to PDF?', answer: 'The tool renders bounded worksheet cell text into a searchable PDF with worksheet, range, page-size, and orientation controls. It does not promise Excel-identical charts, macros, pivots, advanced print layouts, fonts, or pagination.' },
+    { question: 'Can I convert PNG, JPG and WebP images without uploading them?', answer: 'Yes. The Image Converter validates and re-encodes one supported still image in the browser. It supports PNG, JPG/JPEG and WebP output where the browser provides a reliable encoder.' },
     { question: 'Why are there local conversion limits?', answer: 'Rendering PDF pages, decoding images, parsing workbook packages, and creating output files can use much more memory than the source file. Page, pixel, file-size, workbook-shape, and output-size limits reduce browser crashes, particularly on phones and tablets.' },
   ],
 };

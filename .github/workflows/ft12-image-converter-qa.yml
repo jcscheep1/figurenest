@@ -10,6 +10,8 @@ on:
       - 'artifacts/calcstride/src/styles/file-tool-buttons.css'
       - 'artifacts/calcstride/src/App.tsx'
       - 'artifacts/calcstride/src/lib/file-tools-catalog.ts'
+      - 'artifacts/calcstride/src/lib/file-tools-category-content.ts'
+      - 'artifacts/calcstride/src/lib/units-preferences.ts'
       - 'artifacts/calcstride/public/sitemap.xml'
       - 'docs/file-tools/FT-12-IMAGE-CONVERTER-GATE.md'
       - '.github/workflows/ft12-image-converter-qa.yml'
@@ -55,19 +57,15 @@ jobs:
           grep -F 'assertDecodedImageSize' src/pages/ImageConverterPage.tsx
           grep -F 'encodedBlobMatchesTargetMime' src/pages/ImageConverterPage.tsx
 
-      - name: Enforce unpublished boundary until publication gate passes
+      - name: Require atomic publication parity
         working-directory: artifacts/calcstride
         run: |
-          if grep -F 'path="/file-tools/image-converter"' src/App.tsx; then
-            echo 'FT-12 route was published before privacy/mobile/SEO release gate'; exit 1
-          fi
-          if grep -F "'image-converter'" src/lib/file-tools-catalog.ts; then
-            echo 'FT-12 catalog entry was published before release gate'; exit 1
-          fi
-          if grep -F '<loc>https://figurenest.com/file-tools/image-converter/</loc>' public/sitemap.xml; then
-            echo 'FT-12 sitemap entry was published before release gate'; exit 1
-          fi
+          grep -F 'path="/file-tools/image-converter"' src/App.tsx
+          grep -F "'image-converter'" src/lib/file-tools-catalog.ts
+          grep -F "slug: 'image-converter'" src/lib/file-tools-category-content.ts
+          grep -F "'image-converter': unitless()" src/lib/units-preferences.ts
+          grep -F '<loc>https://figurenest.com/file-tools/image-converter/</loc>' public/sitemap.xml
 
-      - name: Build unpublished site
+      - name: Build publication candidate
         working-directory: artifacts/calcstride
         run: pnpm run build

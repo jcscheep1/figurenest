@@ -205,7 +205,7 @@ export function ImageConverterPage() {
 
   return <Shell>
     <Seo path="/file-tools/image-converter" />
-    <div className="file-tool-page" data-testid="page-image-converter-unpublished">
+    <div className="file-tool-page" data-testid="page-image-converter">
       <nav className="calc-breadcrumb" aria-label="Breadcrumb">
         <Link href="/"><ArrowLeft size={15} aria-hidden="true" /> Home</Link>
         <Link href="/category/file-tools">PDF &amp; File Tools</Link>
@@ -272,7 +272,7 @@ export function ImageConverterPage() {
         </div>
       </section>
 
-      <section className="file-tool-guide" aria-labelledby="image-converter-guide-heading">
+      <article className="file-tool-guide advanced-content" aria-labelledby="image-converter-guide-heading">
         <h2 id="image-converter-guide-heading">How to convert PNG, JPG and WebP safely in your browser</h2>
         <p>Select one supported image, choose JPG, PNG or WebP as the output, adjust quality when the selected format supports it, and convert. The browser decodes the source image and creates the new file locally, so the image itself does not need to be uploaded to FigureNest.</p>
         <h3>Which format should I choose?</h3>
@@ -280,9 +280,9 @@ export function ImageConverterPage() {
         <h3>Privacy, metadata and fidelity limits</h3>
         <p>The converter accepts still PNG, JPG/JPEG and WebP images and applies local file-signature and decoded-pixel safety checks. Animated WebP is rejected because browser Canvas export would otherwise keep only a still frame. Re-encoding can remove EXIF, GPS, ICC/color-profile and other metadata, so keep the original when archival metadata or exact colour management matters.</p>
         <p>Decoded images are limited to 40 megapixels to reduce browser memory pressure, especially on phones. If the browser cannot reliably encode the requested JPG or WebP MIME type, conversion fails closed instead of offering a mislabeled file.</p>
-      </section>
+      </article>
 
-      <section className="file-tool-guide" aria-labelledby="image-converter-faq-heading">
+      <section className="file-tool-guide advanced-faq" aria-labelledby="image-converter-faq-heading">
         <h2 id="image-converter-faq-heading">Image converter FAQ</h2>
         <h3>Is the FigureNest image converter free?</h3>
         <p>Yes. The PNG, JPG and WebP converter is free to use in your browser and does not require an account.</p>
