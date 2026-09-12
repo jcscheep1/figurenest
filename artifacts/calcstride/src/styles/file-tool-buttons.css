@@ -1,0 +1,111 @@
+/* FigureNest file-tool button treatment.
+   Keep every newly added PDF/file tool visually consistent on desktop and mobile. */
+
+.file-tool-page button:not(.danger-action),
+.file-tool-page .image-pdf-file-button {
+  min-height: 42px;
+  border: 1px solid var(--primary, #175cd3) !important;
+  border-radius: 10px;
+  background: var(--primary, #175cd3) !important;
+  color: #fff !important;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+/* The shared file picker is used by PDF→image, PDF→DOCX, DOCX→PDF,
+   CSV↔XLSX and future file tools. Keep this action unmistakably visible. */
+.file-tool-page .file-tool-choose-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 180px;
+  padding: 11px 20px !important;
+  border: 1px solid var(--primary, #175cd3) !important;
+  border-radius: 12px !important;
+  background: var(--primary, #175cd3) !important;
+  color: #fff !important;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: 0 6px 16px rgb(23 92 211 / 20%);
+}
+
+.file-tool-page .file-tool-dropzone {
+  gap: 10px;
+}
+
+.file-tool-page .file-tool-drag-copy {
+  color: var(--muted-foreground);
+}
+
+.file-tool-page button:not(.danger-action):not(:disabled):hover,
+.file-tool-page .image-pdf-file-button:hover {
+  filter: brightness(.93);
+}
+
+.file-tool-page button:not(.danger-action):not(:disabled):active,
+.file-tool-page .image-pdf-file-button:active {
+  transform: translateY(1px);
+}
+
+.file-tool-page button:not(.danger-action):focus-visible,
+.file-tool-page .image-pdf-file-button:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--primary, #175cd3) 28%, transparent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px var(--primary, #175cd3);
+}
+
+.file-tool-page button:not(.danger-action):disabled {
+  border-color: var(--border) !important;
+  background: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+  opacity: 1;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Destructive actions stay clearly separate from the blue action system. */
+.file-tool-page button.danger-action {
+  border-color: #b42318 !important;
+  background: transparent !important;
+  color: #b42318 !important;
+}
+
+.file-tool-page button.danger-action:disabled {
+  border-color: var(--border) !important;
+  color: var(--muted-foreground) !important;
+  opacity: .55;
+}
+
+/* The image picker is a label styled as a button, so give its disabled state parity. */
+.file-tool-page .image-pdf-file-button:has(input:disabled) {
+  border-color: var(--border) !important;
+  background: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .file-tool-page button:not(.danger-action),
+  .file-tool-page .image-pdf-file-button {
+    min-height: 46px;
+  }
+
+  .file-tool-page .file-tool-choose-button {
+    width: 100% !important;
+    min-width: 0;
+    min-height: 50px;
+    font-size: 1rem;
+  }
+
+  .file-tool-page .file-tool-dropzone {
+    display: grid !important;
+    align-content: center;
+    justify-items: stretch;
+  }
+}
