@@ -42,7 +42,7 @@ async function connect() {
 const routes = [
   ['home', '/'],
   ['directory', '/calculators/'],
-  ['finance-category', '/category/money-finance/'],
+  ['finance-category', '/category/finance/'],
   ['salary', '/calculators/salary-work/salary/'],
   ['brick', '/calculators/construction/brick/'],
   ['circle', '/calculators/math/circle/'],
@@ -91,7 +91,8 @@ try {
       try { if (await evaluate(expression, true)) return; } catch {}
       await sleep(150);
     }
-    throw new Error(`Timed out waiting for ${label}`);
+    const state = await evaluate(`({ href: location.href, title: document.title, h1: document.querySelector('main h1')?.textContent || '', body: document.body?.innerText.slice(0, 240) || '' })`).catch(() => ({}));
+    throw new Error(`Timed out waiting for ${label}: ${JSON.stringify(state)}`);
   };
 
   await command('Page.enable');
@@ -103,7 +104,7 @@ try {
   for (const [name, route] of routes) {
     runtimeErrors.length = 0;
     await command('Page.navigate', { url: new URL(route, baseUrl).href });
-    await waitFor(`document.readyState === 'complete' && document.querySelector('main h1')`, `${name} render`);
+    await waitFor(`document.readyState === 'complete' && location.pathname.replace(/\\/$/, '') === ${JSON.stringify(route.replace(/\/$/, ''))} && document.querySelector('main h1')`, `${name} render`);
     const general = await evaluate(`(() => {
       const route = ${JSON.stringify(route)};
       const h1 = document.querySelector('main h1');
@@ -116,7 +117,8 @@ try {
       if (document.querySelectorAll('main').length !== 1) failures.push('main landmark count');
       if (document.querySelectorAll('main h1').length !== 1) failures.push('H1 count');
       if (!document.title || description.length < 90) failures.push('metadata');
-      if (!canonical.startsWith('https://figurenest.com') || new URL(canonical).pathname !== route) failures.push('canonical');
+      const normalize = (path) => path === '/' ? path : path.replace(/\\/$/, '');
+      if (!canonical.startsWith('https://figurenest.com') || normalize(new URL(canonical).pathname) !== normalize(route)) failures.push('canonical ' + canonical);
       if (document.documentElement.scrollWidth > innerWidth + 1) failures.push('horizontal overflow ' + document.documentElement.scrollWidth);
       if (rect.width <= 0 || rect.height <= 0) failures.push('H1 not visible');
       if ((main?.innerText.trim().split(/\\s+/).length || 0) < 150) failures.push('insufficient visible guidance');

@@ -37,7 +37,7 @@ Every sampled File Tool must additionally verify:
 | --- | --- | --- | --- | --- |
 | Home | `/` | pending | pending | navigation, category discovery, trust/footer links |
 | All tools directory | `/calculators/` | pending | pending | search, sorting/filtering, category links, editorial guidance |
-| Money & Finance | `/category/money-finance/` | pending | pending | rich category content, related guides, finance tool discovery |
+| Money & Finance | `/category/finance/` | pending | pending | rich category content, related guides, finance tool discovery |
 | Salary & Work | `/calculators/salary-work/salary/` | pending | pending | currency selector, schedule inputs, result updates |
 | Home & Construction | `/calculators/construction/brick/` | pending | pending | metric/imperial controls, multi-input layout, result breakdown |
 | Math & Statistics | `/calculators/math/circle/` | pending | pending | select + numeric input, result breakdown, methodology |
