@@ -54,6 +54,8 @@ const sitemap = fs.readFileSync(sitemapPath, 'utf8');
 const urls = [...sitemap.matchAll(/<loc>(https:\/\/figurenest\.com[^<]+)<\/loc>/g)].map((match) => match[1]);
 if (urls.length < 200) fail('/sitemap.xml', `expected at least 200 public URLs, found ${urls.length}`);
 
+const trustRoutes = new Set(['/about/', '/contact/', '/privacy/', '/cookies/', '/terms/', '/disclaimer/', '/methodology/']);
+
 for (const url of urls) {
   const parsed = new URL(url);
   const route = parsed.pathname;
@@ -88,15 +90,17 @@ for (const url of urls) {
   const isCategory = route.startsWith('/category/');
   const isDirectory = route === '/calculators/';
   const isTool = route.startsWith('/calculators/') || route.startsWith('/converters/') || route.startsWith('/file-tools/');
+  const isTrust = trustRoutes.has(route);
   const minimumWords = isCategory ? 450 : isDirectory ? 350 : isTool ? 220 : 160;
   if (words < minimumWords) fail(route, `thin rendered main content: ${words} words; minimum ${minimumWords}`);
+  if (isTrust && words < 300) warn(route, `trust surface is editorially light: ${words} words; target at least 300 before AdSense resubmission`);
   if (/\b(coming soon|placeholder|lorem ipsum|still being stocked)\b/i.test(mainText)) fail(route, 'unfinished or placeholder language is publicly rendered');
   if ((isCategory || isTool) && schemas === 0) fail(route, 'missing rendered JSON-LD schema');
 
   registerUnique(seenTitles, title, route, 'title');
   registerUnique(seenDescriptions, description, route, 'meta description');
   registerUnique(seenCanonicals, canonical, route, 'canonical');
-  records.push({ route, file: path.relative(repoRoot, file), title, descriptionLength: description.length, canonical, words, h1Count, schemas });
+  records.push({ route, file: path.relative(repoRoot, file), title, descriptionLength: description.length, canonical, words, h1Count, schemas, isTrust });
 }
 
 const report = {
